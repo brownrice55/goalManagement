@@ -30,28 +30,28 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　新規登録・目標一覧 |  |  |
 | ---- | ---- | ---- |
-| <img src="" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/9b48ef0d-3b56-442c-b3b6-a8c048c811fd" width="200"> |  |  |
 
 | 設定　年間目標 | 設定　月間目標 | 設定　週間目標 |
 | ---- | ---- | ---- |
-| <img src="" width="200"> | <img src="" width="200"> | <img src="" width="200"> |
-
-| 設定　ご褒美１ | 設定　ご褒美２ |  |
-| ---- | ---- | ---- |
-| <img src="" width="200"> | <img src="" width="200"> |  |
+| <img src="https://github.com/user-attachments/assets/76f26ebc-914f-4dd0-b2ee-54be04e24e06" width="200"> | <img src="https://github.com/user-attachments/assets/ad860986-f72f-4412-b8da-255123475b15" width="200"> | <img src="https://github.com/user-attachments/assets/e2230ab1-a1f3-4bcb-8b19-ceab09229f4f" width="200"> |
 
 | 設定　todo |  |  |
 | ---- | ---- | ---- |
-| <img src="" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/d8b02702-1a16-4778-83b6-9849d9cbbb6d" width="200"> |  |  |
+
+| 設定　ご褒美１ | 設定　ご褒美２ |  |
+| ---- | ---- | ---- |
+| <img src="https://github.com/user-attachments/assets/3a826487-3c83-42f6-8ff5-1336d4b15600" width="200"> | <img src="https://github.com/user-attachments/assets/902ec2bd-99f4-421e-937c-3a49dfc52a67" width="200"> |  |
 
 | 設定　編集１ | 設定　編集２ | 設定　モーダル |
 | ---- | ---- | ---- |
-| <img src="" width="200"> | <img src="" width="200"> | <img src="" width="200"> |
+| <img src="https://github.com/user-attachments/assets/5e485c72-f01c-44a3-ac35-f8e3c637d646" width="200"> | <img src="https://github.com/user-attachments/assets/c1bcf036-b914-4d2a-9fd8-8e13ab0bff87" width="200"> | <img src="https://github.com/user-attachments/assets/fe40f685-1cdf-43a4-a71f-e5245489fe53" width="200"> |
 
 | 設定後home |  |  |
 | ---- | ---- | ---- |
-| <img src="" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/f59ac2f8-50d9-415b-a23f-a90b26347a91" width="200"> |  |  |
 
 | 結果 |  |  |
 | ---- | ---- | ---- |
-| <img src="" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/3a792627-c3c7-4b25-868f-d379a47582fd" width="200"> |  |  |
