@@ -17,66 +17,96 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item py-2 active">毎日のtodo</li>
-            <li class="nav-item py-2">新規登録・目標一覧</li>
-            <li class="nav-item py-2">todo設定</li>
-            <li class="nav-item py-2">ご褒美設定</li>
-            <li class="nav-item py-2">結果</li>
+            <li class="nav-item py-2 px-3 active">毎日のtodo</li>
+            <li class="nav-item py-2 px-3 dropdown">
+              <span class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                設定
+              </span>
+              <ul class="dropdown-menu">
+                <li class="nav-item py-2 px-4">新規登録・目標一覧</li>
+                <li class="nav-item py-2 px-4">todo設定</li>
+                <li class="nav-item py-2 px-4">ご褒美設定</li>
+              </ul>
+            </li>
+            <li class="nav-item py-2 px-3">結果</li>
           </ul>
         </div>
       </div>
     </nav>
   </header>
   <main class="container">
-    <div class="mt-5">
-      <p>あなたが達成したいことは何ですか？</p>
-      <input class="form-control form-control-lg" type="text" placeholder="" aria-label="">
-      <p class="small mt-2">例）（良い発音の）英語で自信を持って自分の意見を言えるようになる</p>  
-    </div>
-    <div>
-      <p class="mt-5">いつからいつまでの期間で達成したいですか？</p>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="" id="" checked>
-        <label class="form-check-label" for="">期間あり</label>
+    <section class="js-section">
+      毎日のtodo
+    </section>
+    <section class="js-section">
+      <div class="js-settingsSection">
+        <div class="mt-5">
+          <p>あなたが達成したいことは何ですか？</p>
+          <input class="form-control" type="text" id="inputGoal">
+          <p class="small mt-2">例）（良い発音の）英語で自信を持って自分の意見を言えるようになる</p>
+        </div>
+        <div>
+          <p class="mt-5">いつからいつまでの期間で達成したいですか？</p>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="radioPeriod" id="radioPeriod1" checked>
+            <label class="form-check-label" for="radioPeriod1">期間あり</label>
+          </div>
+          <div class="d-flex flex-row justify-content-center mt-3">
+            <div class="flex-fill">
+              <input class="form-control" type="date" id="meeting-time" name="meeting-time" value="" min="" max="">
+            </div>
+            <div class="flex-fill align-self-center">から</div>
+            <div class="flex-fill">
+              <select name="selectPeriod2" id="selectPeriod2" class="form-select js-selectPeriod">
+                <option value="1">3ヶ月</option>
+                <option value="2">半年</option>
+                <option value="3">1年</option>
+                <option value="4">2年</option>
+                <option value="5">3年</option>
+                <option value="5">4年</option>
+                <option value="5">5年</option>
+                <option value="5">6年</option>
+                <option value="5">7年</option>
+                <option value="5">8年</option>
+                <option value="5">9年</option>
+                <option value="5">10年</option>
+                <option value="6">カスタム</option>
+              </select>
+            </div>
+            <div class="flex-fill align-self-center">の期間</div>
+          </div>
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="radio" name="radioPeriod" id="radioPeriod2">
+            <label class="form-check-label" for="radioPeriod2">期間なし（todoの設定のみ）</label>
+          </div>
+        </div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
+        <div class="border-top py-2">
+          <p class="py-3">登録済みの達成したいことリスト</p>
+          <div class="js-goalList"></div>
+        </div>
       </div>
-      <div class="row mt-3">
-        <div class="col">
-          <select name="" id="" class="form-select">
-            <option value="">2025年5月1日</option>
-          </select>
-        </div>
-        <div class="col">
-          から
-        </div>
-        <div class="col">
-          <select name="" id="" class="form-select">
-            <option value="">3ヶ月</option>
-          </select>
-        </div>
-        <div class="col">
-          の期間
-        </div>
+      <div class="d-none js-settingsSection">
+        年間目標
       </div>
-      <div class="form-check mt-3">
-        <input class="form-check-input" type="radio" name="" id="">
-        <label class="form-check-label" for="">期間なし（todoの設定のみ）</label>
+      <div class="d-none js-settingsSection">
+        月間目標
       </div>
-    </div>
-    <div class="text-center pt-3 pb-5">
-      <button class="btn btn-primary">保存して次へ</button>
-    </div>
-
-    <div class="border-top py-2">
-      <p class="py-3">登録済みの達成したいことリスト</p>
-      <div class="row">
-        <div class="col">
-          健康的に生活する
-        </div>
-        <div class="col">
-          <button class="btn btn-primary">削除する</button>
-        </div>
-      </div>  
-    </div>
+      <div class="d-none js-settingsSection">
+        週間目標
+      </div>
+      <div class="d-none js-settingsSection">
+        todo設定
+      </div>
+      <div class="d-none js-settingsSection">
+        ご褒美設定
+      </div>
+    </section>
+    <section class="js-section">
+      結果
+    </section>
   </main>
   <footer>
 
