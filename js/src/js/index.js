@@ -8,35 +8,70 @@
   };
 
   NavAndCommon.prototype.initialize = function() {
-    let commonElms = this.commonElms();
-    this.sectionElms = commonElms[0];
+    let commonElms = this.commonElmsAndData();
+    this.settingsData = commonElms[0];
+    this.sectionElms = commonElms[1];
+    this.settingsSectionElms = commonElms[2];
   };
 
-  NavAndCommon.prototype.commonElms = function() {
+  NavAndCommon.prototype.commonElmsAndData = function() {
+    const getSettingsDataFromLocalStorage = () => {
+      let settingsData = new Map();
+      let settingsDataFromLocalStorage = localStorage.getItem('goalManagementSettingsData');
+      if(settingsDataFromLocalStorage!=='undefined') {
+        const dataJson = JSON.parse(settingsDataFromLocalStorage);
+        settingsData = new Map(dataJson);
+      }
+      return settingsData;
+    };
+
+    let settingsData = getSettingsDataFromLocalStorage();
     let sectionElms = document.querySelectorAll('.js-section');
-    return [sectionElms];
+    let settingsSectionElms = document.querySelectorAll('.js-settingsSection');
+    return [settingsData, sectionElms, settingsSectionElms];
   };
 
-  NavAndCommon.prototype.getSettingsDataFromLocalStorage = function() {//要検討
-    let settingsData = new Map();
-    let settingsDataFromLocalStorage = localStorage.getItem('goalManagementSettingsData');
-    if(settingsDataFromLocalStorage!=='undefined') {
-      const dataJson = JSON.parse(settingsDataFromLocalStorage);
-      settingsData = new Map(dataJson);
-    }
-    return settingsData;
-  };
-  
-  NavAndCommon.prototype.displayGlobalNav = function() {
-    this.sectionElms.forEach(elm => {
+  NavAndCommon.prototype.switchPage = function(aIndex, aSectionElms) { //common
+    aSectionElms.forEach(elm => {
       elm.classList.add('d-none');
     });
-    this.sectionElms[1].classList.remove('d-none');
+    if(aIndex==null) {
+      aIndex = (this.settingsData.size) ? 0 : 1;
+    }
+    aSectionElms[aIndex].classList.remove('d-none');
+  };
+
+  NavAndCommon.prototype.hideAndShowGlobalNav = function() {
+    let headerElm = document.querySelector('.js-header');
+    if(this.settingsData.size) {
+      headerElm.classList.remove('d-none');
+    }
+    else {
+      headerElm.classList.add('d-none');
+    }
   };
 
   NavAndCommon.prototype.setEvent = function() {
-    this.displayGlobalNav();
+    this.switchPage(null, this.sectionElms);
+    this.hideAndShowGlobalNav();
 
+    let globalNavElms = document.querySelectorAll('.js-globalNav');
+    let globalNavSettingsElms = document.querySelectorAll('.js-globalNavSettings');
+    
+    const that = this;
+    const sectionIndex = [[0, 2], [0, 4, 5]];
+    for(let cnt=0,len=globalNavElms.length;cnt<len;++cnt) {
+      globalNavElms[cnt].addEventListener('click', function() {
+        that.switchPage(sectionIndex[0][cnt], that.sectionElms);
+      });
+    }
+
+    for(let cnt=0,len=globalNavSettingsElms.length;cnt<len;++cnt) {
+      globalNavSettingsElms[cnt].addEventListener('click', function() {
+        that.switchPage(1, that.sectionElms);
+        that.switchPage(sectionIndex[1][cnt], that.settingsSectionElms);
+      });
+    }
   };
 
   NavAndCommon.prototype.run = function() {
@@ -49,11 +84,13 @@
   };
 
   Settings.prototype.initialize = function() {
-    this.settingsData = navAndCommon.getSettingsDataFromLocalStorage();
-    let commonElms = navAndCommon.commonElms();
-    this.sectionElms = commonElms[0];
+    let commonElms = navAndCommon.commonElmsAndData();
+    this.settingsData = commonElms[0];
+    this.sectionElms = commonElms[1];
+    this.settingsSectionElms = commonElms[2];
     
     this.saveAndNextBtnElms = document.querySelectorAll('.js-saveAndNextBtn');
+    this.inputAlertElms = document.querySelectorAll('.js-inputAlert');
     this.id = 0;
   };
 
@@ -61,11 +98,7 @@
     this.settingsData.set(this.id, this.currentSettingsData);
     localStorage.setItem('goalManagementSettingsData', JSON.stringify([...this.settingsData]));
 
-    let settingsSectionElms = document.querySelectorAll('.js-settingsSection');
-    settingsSectionElms.forEach(elm=> {
-      elm.classList.add('d-none');
-    });
-    settingsSectionElms[aIndex].classList.remove('d-none');
+    navAndCommon.switchPage(aIndex, this.settingsSectionElms);
   };
 
   Settings.prototype.resetInput = function(aElms) {
@@ -123,8 +156,23 @@
       this.disabled = true;
     });
 
+    let duplication = false;
     inputElms[0].addEventListener('keyup', function() {
-      that.saveAndNextBtnElms[0].disabled = (this.value) ? false : true;
+      that.settingsData.forEach((val, key) => {
+        if(val.goal==this.value) {
+          that.inputAlertElms[0].textContent = '既に登録済みです';
+          that.inputAlertElms[0].classList.remove('d-none');
+          this.classList.add('border-danger');
+          duplication = true;
+        }
+        else {
+          that.inputAlertElms[0].textContent = '';
+          that.inputAlertElms[0].classList.add('d-none');
+          this.classList.remove('border-danger');
+          duplication = false;
+        }
+      });
+      that.saveAndNextBtnElms[0].disabled = (!duplication && this.value) ? false : true;
     });
 
     let goalListResult = '';

@@ -8,7 +8,7 @@
   <title>Document</title>
 </head>
 <body>
-  <header class="header mb-4">
+  <header class="header mb-4 js-header">
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
       <div class="container-fluid">
         <div class="navbar-brand">Goal Management</div>
@@ -17,18 +17,18 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item py-2 px-3 active">毎日のtodo</li>
+            <li class="nav-item py-2 px-3 active js-globalNav">毎日のtodo</li>
             <li class="nav-item py-2 px-3 dropdown">
               <span class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 設定
               </span>
               <ul class="dropdown-menu">
-                <li class="nav-item py-2 px-4">新規登録・目標一覧</li>
-                <li class="nav-item py-2 px-4">todo設定</li>
-                <li class="nav-item py-2 px-4">ご褒美設定</li>
+                <li class="nav-item py-2 px-4 js-globalNavSettings">新規登録・目標一覧</li>
+                <li class="nav-item py-2 px-4 js-globalNavSettings">todo設定</li>
+                <li class="nav-item py-2 px-4 js-globalNavSettings">ご褒美設定</li>
               </ul>
             </li>
-            <li class="nav-item py-2 px-3">結果</li>
+            <li class="nav-item py-2 px-3 js-globalNav">結果</li>
           </ul>
         </div>
       </div>
@@ -42,6 +42,7 @@
       <div class="js-settingsSection">
         <div class="mt-5">
           <p>あなたが達成したいことは何ですか？</p>
+          <span class="small text-danger d-none js-inputAlert"></span>
           <input class="form-control" type="text" id="inputGoal">
           <p class="small mt-2">例）（良い発音の）英語で自信を持って自分の意見を言えるようになる</p>
         </div>
