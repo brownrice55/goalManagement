@@ -1,0 +1,15 @@
+.nav-item {
+  cursor: pointer;
+}
+
+.dropdown {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+@media (min-width: 993px) {
+  .dropdown {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+}

@@ -12,6 +12,9 @@
     this.settingsData = commonElms[0];
     this.sectionElms = commonElms[1];
     this.settingsSectionElms = commonElms[2];
+
+    this.isGlobalMenuOpen = false;
+    this.headerElm = document.querySelector('.js-header');
   };
 
   NavAndCommon.prototype.commonElmsAndData = function() {
@@ -36,18 +39,52 @@
       elm.classList.add('d-none');
     });
     if(aIndex==null) {
-      aIndex = (this.settingsData.size) ? 0 : 1;
+      let isComplete = false;// todo設定まで完了したらcompleteで毎日のtodo表示
+      this.settingsData.forEach((val, key) => {
+        if(val.status=='complete') {
+          isComplete = true;
+        }
+      });
+      aIndex = (isComplete) ? 0 : 1;
     }
     aSectionElms[aIndex].classList.remove('d-none');
   };
 
+  NavAndCommon.prototype.closeGlobalMenu = function() {
+    const that = this;
+    const navbarNavElm = document.querySelector('.js-navbarNav');
+    const globalNavBtnElm = document.querySelector('.js-globalNavBtn');
+    const bsCollapse = new bootstrap.Collapse(navbarNavElm, { toggle: false });
+
+    const mediaQueryList = window.matchMedia('(max-width: 992px)');
+    let isOpen = false;
+    const listener = (event) => {
+      if (event.matches) {
+        document.addEventListener('click', function(event) {
+        isOpen = navbarNavElm.classList.contains('show');
+          if (isOpen && !that.headerElm.contains(event.target)) {
+            bsCollapse.hide();
+          }
+        });
+
+        this.navItemElms.forEach( elm => {
+          elm.addEventListener('click', function() {
+            bsCollapse.hide();
+          });
+        });
+      }
+    };
+
+    mediaQueryList.addEventListener('change', listener);
+    listener(mediaQueryList);
+  };
+
   NavAndCommon.prototype.hideAndShowGlobalNav = function() {
-    let headerElm = document.querySelector('.js-header');
     if(this.settingsData.size) {
-      headerElm.classList.remove('d-none');
+      this.headerElm.classList.remove('d-none');
     }
     else {
-      headerElm.classList.add('d-none');
+      this.headerElm.classList.add('d-none');
     }
   };
 
@@ -55,9 +92,10 @@
     this.switchPage(null, this.sectionElms);
     this.hideAndShowGlobalNav();
 
-    let globalNavElms = document.querySelectorAll('.js-globalNav');
-    let globalNavSettingsElms = document.querySelectorAll('.js-globalNavSettings');
-    
+    const globalNavElms = document.querySelectorAll('.js-globalNav');
+    const globalNavSettingsElms = document.querySelectorAll('.js-globalNavSettings');
+    this.navItemElms = Object.setPrototypeOf( [ ...globalNavElms, ...globalNavSettingsElms ], NodeList.prototype );
+
     const that = this;
     const sectionIndex = [[0, 2], [0, 4, 5]];
     for(let cnt=0,len=globalNavElms.length;cnt<len;++cnt) {
@@ -72,6 +110,9 @@
         that.switchPage(sectionIndex[1][cnt], that.settingsSectionElms);
       });
     }
+
+    this.closeGlobalMenu();
+
   };
 
   NavAndCommon.prototype.run = function() {
@@ -108,9 +149,9 @@
   };
 
   Settings.prototype.setEventSettings1 = function() {
-    let inputElms = this.sectionElms[1].querySelectorAll('input');
-    let selectElm = this.sectionElms[1].querySelector('select');
-    let goalListElm = this.sectionElms[1].querySelector('.js-goalList');
+    const inputElms = this.sectionElms[1].querySelectorAll('input');
+    const selectElm = this.sectionElms[1].querySelector('select');
+    const goalListElm = this.sectionElms[1].querySelector('.js-goalList');
 
     const setDate = () => {
       let now = new Date();
@@ -145,6 +186,7 @@
       that.id = 1; //仮
       that.currentSettingsData = new Map();
       that.currentSettingsData.goal = inputElms[0].value;
+      that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputElms[1].checked;
       that.currentSettingsData.period = [ inputElms[2].value, selectElm.value ];
       let nextPageIndex = (inputElms[1].checked) ? 1 : 4;
@@ -196,7 +238,7 @@
     goalListElm.innerHTML = goalListResult;
 
     hideOrShowGoalList();
-    let deleteSettingBtnElms = document.querySelectorAll('.js-deleteSettingBtn');
+    const deleteSettingBtnElms = document.querySelectorAll('.js-deleteSettingBtn');
     deleteSettingBtnElms.forEach(elm => {
       elm.addEventListener('click', function() {
         that.settingsData.delete(parseInt(this.dataset.key));

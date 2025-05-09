@@ -61,3 +61,11 @@ Could you please let me know if there are any errors in my English or code?</p>
 <ul>
 <li>https://getbootstrap.jp/</li>
 </ul>
+
+### 参考
+<ul>
+<li>https://getbootstrap.jp/docs/5.3/components/collapse/</li>
+<li>https://home.ryotafull.com/articles/AKnM43GGZgH</li>
+<li>https://zenn.dev/no4_dev/articles/878f4afbff6668d4e28a-2</li>
+<li>https://qiita.com/lhankor_mhy/items/9ad1d16fef0b4ecf6e5e</li>
+</ul>
