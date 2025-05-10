@@ -54,25 +54,43 @@
           </div>
           <div class="d-flex flex-row justify-content-center mt-3">
             <div class="flex-fill">
-              <input class="form-control" type="date" id="meeting-time" name="meeting-time" value="" min="" max="">
+              <input class="form-control" type="date" id="periodStart" name="periodStart" value="" min="" max="">
             </div>
             <div class="flex-fill align-self-center">から</div>
             <div class="flex-fill">
-              <select name="selectPeriod2" id="selectPeriod2" class="form-select js-selectPeriod">
-                <option value="1">3ヶ月</option>
-                <option value="2">半年</option>
-                <option value="3">1年</option>
-                <option value="4">2年</option>
-                <option value="5">3年</option>
-                <option value="5">4年</option>
-                <option value="5">5年</option>
-                <option value="5">6年</option>
-                <option value="5">7年</option>
-                <option value="5">8年</option>
-                <option value="5">9年</option>
-                <option value="5">10年</option>
-                <option value="6">カスタム</option>
+              <input class="form-control d-none" type="date" id="periodEnd" name="periodEnd" value="" min="" max="">
+              <select name="selectPeriod2" id="selectPeriod2" class="form-select">
+                <option value="1">1ヶ月後</option>
+                <option value="2">3ヶ月後</option>
+                <option value="3">半年後</option>
+                <option value="4">1年後</option>
+                <option value="5">2年後</option>
+                <option value="6">3年後</option>
+                <option value="7">4年後</option>
+                <option value="8">5年後</option>
+                <option value="9">6年後</option>
+                <option value="10">7年後</option>
+                <option value="11">8年後</option>
+                <option value="12">9年後</option>
+                <option value="13">10年後</option>
+                <option value="custom">カスタム</option>
               </select>
+              <div class="modal fade js-modal" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="btn-close js-periodCancelBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <input class="form-control" type="date" id="modalEndPeriod" name="modalEndPeriod" value="" min="" max="">
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary js-periodCancelBtn" data-bs-dismiss="modal">キャンセル</button>
+                      <button type="button" class="btn btn-primary js-periodCustomBtn" data-bs-dismiss="modal">設定する</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="flex-fill align-self-center">の期間</div>
           </div>

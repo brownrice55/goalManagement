@@ -13,7 +13,6 @@
     this.sectionElms = commonElms[1];
     this.settingsSectionElms = commonElms[2];
 
-    this.isGlobalMenuOpen = false;
     this.headerElm = document.querySelector('.js-header');
   };
 
@@ -153,8 +152,17 @@
     const selectElm = this.sectionElms[1].querySelector('select');
     const goalListElm = this.sectionElms[1].querySelector('.js-goalList');
 
-    const setDate = () => {
+    const inputGoalElm = inputElms[0];
+    const inputRadioElm = inputElms[1];
+    const inputPeriodStartElm = inputElms[2];
+    const inputPeriodEndElm = inputElms[3];
+    const inputModalElm = inputElms[4];
+
+    const setDate = (aEnd, aElm) => {
       let now = new Date();
+      if(aEnd) {
+        now.setDate(now.getDate()+1);
+      }
       let dateY = now.getFullYear();
       let dateM = now.getMonth() + 1;
       let dateD = now.getDate();
@@ -165,9 +173,9 @@
         dateD = '0' + dateD;
       }
       
-      inputElms[2].value = dateY + '-' + dateM + '-' + dateD;
-      inputElms[2].min = (dateY-1) + '-' + dateM + '-' + dateD;
-      inputElms[2].max = (dateY+50) + '-' + dateM + '-' + dateD;
+      aElm.value = dateY + '-' + dateM + '-' + dateD;
+      aElm.min = (aEnd) ? aElm.value : (dateY-1) + '-' + dateM + '-' + dateD;
+      aElm.max = (dateY+50) + '-' + dateM + '-' + dateD;
     };
 
     const hideOrShowGoalList = () => {
@@ -179,27 +187,27 @@
       }
     };
 
-    setDate();
+    setDate(false, inputPeriodStartElm);
+    setDate(true, inputModalElm);
 
     const that = this;
     this.saveAndNextBtnElms[0].addEventListener('click', function() {
       that.id = 1; //仮
       that.currentSettingsData = new Map();
-      that.currentSettingsData.goal = inputElms[0].value;
+      that.currentSettingsData.goal = inputGoalElm.value;
       that.currentSettingsData.status = 1;
-      that.currentSettingsData.radioPeriod = inputElms[1].checked;
-      that.currentSettingsData.period = [ inputElms[2].value, selectElm.value ];
-      let nextPageIndex = (inputElms[1].checked) ? 1 : 4;
+      that.currentSettingsData.radioPeriod = inputRadioElm.checked;
+      that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value ];
+      let nextPageIndex = (inputRadioElm.checked) ? 1 : 4;
       that.saveAndNextData(nextPageIndex);
 
       that.resetInput(inputElms);
       that.resetInput(selectElm);
-      setDate();
       this.disabled = true;
     });
 
     let duplication = false;
-    inputElms[0].addEventListener('keyup', function() {
+    inputGoalElm.addEventListener('keyup', function() {
       that.settingsData.forEach((val, key) => {
         if(val.goal==this.value) {
           that.inputAlertElms[0].textContent = '既に登録済みです';
@@ -215,6 +223,36 @@
         }
       });
       that.saveAndNextBtnElms[0].disabled = (!duplication && this.value) ? false : true;
+    });
+
+    const modalElm = document.querySelector('.js-modal');
+    const bsModal = new bootstrap.Modal(modalElm);
+    selectElm.addEventListener('change', function() {
+      if(this.value=='custom'){
+        bsModal.show();
+      }
+    });
+
+    modalElm.addEventListener('hide.bs.modal', () => {
+      if(document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    });
+
+    const periodCustomBtnElm = document.querySelector('.js-periodCustomBtn');
+    periodCustomBtnElm.addEventListener('click', function() {
+      inputPeriodEndElm.classList.remove('d-none');
+      selectElm.classList.add('d-none');
+      inputPeriodEndElm.value = inputModalElm.value;
+      inputPeriodEndElm.min = inputModalElm.min;
+      inputPeriodEndElm.max = inputModalElm.max;
+    });
+
+    const periodCancelBtnElms = document.querySelectorAll('.js-periodCancelBtn');
+    periodCancelBtnElms.forEach(elm => {
+      elm.addEventListener('click', function() {
+        selectElm.value = 1;
+      });
     });
 
     let goalListResult = '';
