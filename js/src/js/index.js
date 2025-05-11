@@ -147,10 +147,26 @@
     }
   };
 
+  Settings.prototype.getDate = function(aDiff, aDate) {
+    let now = (aDate) ? new Date(aDate) : new Date();
+    now.setDate(now.getDate()+aDiff);
+
+    let dateY = now.getFullYear();
+    let dateM = now.getMonth() + 1;
+    let dateD = now.getDate();
+    if(dateM<10) {
+      dateM = '0' + dateM;
+    }
+    if(dateD<10) {
+      dateD = '0' + dateD;
+    }
+    return [dateY, dateM, dateD];
+  };
+
   Settings.prototype.setEventSettings1 = function() {
-    const inputElms = this.sectionElms[1].querySelectorAll('input');
-    const selectElm = this.sectionElms[1].querySelector('select');
-    const goalListElm = this.sectionElms[1].querySelector('.js-goalList');
+    const inputElms = this.settingsSectionElms[0].querySelectorAll('input');
+    const selectElm = this.settingsSectionElms[0].querySelector('select');
+    const goalListElm = this.settingsSectionElms[0].querySelector('.js-goalList');
 
     const inputGoalElm = inputElms[0];
     const inputRadioElm = inputElms[1];
@@ -158,23 +174,16 @@
     const inputPeriodEndElm = inputElms[3];
     const inputModalElm = inputElms[4];
 
-    const setDate = (aEnd, aElm) => {
-      let now = new Date();
-      if(aEnd) {
-        now.setDate(now.getDate()+1);
-      }
-      let dateY = now.getFullYear();
-      let dateM = now.getMonth() + 1;
-      let dateD = now.getDate();
-      if(dateM<10) {
-        dateM = '0' + dateM;
-      }
-      if(dateD<10) {
-        dateD = '0' + dateD;
-      }
+    let diffInDays = 0;
+
+    const setDate = (aDiff, aElm, aDate) => {
+      let getDate = this.getDate(aDiff, aDate);
+      let dateY = getDate[0];
+      let dateM = getDate[1];
+      let dateD = getDate[2];
       
       aElm.value = dateY + '-' + dateM + '-' + dateD;
-      aElm.min = (aEnd) ? aElm.value : (dateY-1) + '-' + dateM + '-' + dateD;
+      aElm.min = (aDiff) ? aElm.value : (dateY-1) + '-' + dateM + '-' + dateD;
       aElm.max = (dateY+50) + '-' + dateM + '-' + dateD;
     };
 
@@ -187,18 +196,45 @@
       }
     };
 
-    setDate(false, inputPeriodStartElm);
-    setDate(true, inputModalElm);
+    setDate(0, inputPeriodStartElm);
+    setDate(1, inputModalElm);
+
+    const getNextPageIndex = () => {
+      if(!inputRadioElm.checked) {
+        return 4;
+      }
+      if(selectElm.value=='w1') {
+        return 3;
+      }
+      if(selectElm.value=='m1' || selectElm.value=='m2' || selectElm.value=='m3') {
+        return 2;
+      }
+      if(selectElm.value=='custom') {
+        if(diffInDays<=7) {
+          return 4;
+        }
+        if(diffInDays<=31) {
+          return 3;
+        }
+        if(diffInDays<=365) {
+          return 2;
+        }
+        return 1;
+      }
+      return 1;
+    };
 
     const that = this;
+
     this.saveAndNextBtnElms[0].addEventListener('click', function() {
       that.id = 1; //仮
       that.currentSettingsData = new Map();
       that.currentSettingsData.goal = inputGoalElm.value;
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
-      that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value ];
-      let nextPageIndex = (inputRadioElm.checked) ? 1 : 4;
+      that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays ];
+
+      let nextPageIndex = getNextPageIndex();
       that.saveAndNextData(nextPageIndex);
 
       that.resetInput(inputElms);
@@ -228,8 +264,9 @@
     const modalElm = document.querySelector('.js-modal');
     const bsModal = new bootstrap.Modal(modalElm);
     selectElm.addEventListener('change', function() {
-      if(this.value=='custom'){
+      if(this.value=='custom') {
         bsModal.show();
+        setDate(1, inputModalElm, inputPeriodStartElm.value);
       }
     });
 
@@ -246,6 +283,9 @@
       inputPeriodEndElm.value = inputModalElm.value;
       inputPeriodEndElm.min = inputModalElm.min;
       inputPeriodEndElm.max = inputModalElm.max;
+
+      const diffInMs = new Date(inputPeriodEndElm.value) - new Date(inputPeriodStartElm.value);
+      diffInDays = Math.floor(diffInMs/(1000*60*60*24));
     });
 
     const periodCancelBtnElms = document.querySelectorAll('.js-periodCancelBtn');
@@ -284,11 +324,47 @@
         hideOrShowGoalList();
       });
     });
+  };
 
+  Settings.prototype.setEventSettings2 = function() {//年間
+    const inputAreaElm = document.querySelector('.js-inputArea');
+
+    let currentData = this.settingsData.get(1); //仮
+
+    const getDate = (aMultiplier) => {
+      let getDate = this.getDate(365*aMultiplier, currentData.period[0]);
+      let dateY = getDate[0];
+      let dateM = getDate[1];
+      let dateD = getDate[2];
+      let date = dateY + '/' + dateM + '/' + dateD;
+      return date;
+    };
+
+    let displayStartDate = (currentData.period[0]).replace(/-/g, '/');
+    let displayEndDate = getDate(1);
+
+    let result = `<div class="p-2">
+    <label>1年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）※</label>
+    <input type="text" class="form-control my-2">
+    <p class="small text-secondary">例）英検１級を受験して一次試験に合格する</p>
+    </div>`;
+
+    let numberOfYears = (currentData.period[2]) ? Math.ceil(currentData.period[2]/365) : parseInt(currentData.period[1]);
+
+    for(let cnt=2;cnt<=numberOfYears;++cnt) {
+      displayStartDate = displayEndDate;
+      displayEndDate = getDate(cnt);
+      result += `<div class="p-2">
+        <label>` + cnt + `年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）</label>
+        <input type="text" class="form-control my-2">
+        </div>`;
+    }
+    inputAreaElm.innerHTML = result;
   };
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
+    this.setEventSettings2();//年間
   };
 
   Settings.prototype.run = function() {

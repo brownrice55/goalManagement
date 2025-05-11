@@ -39,7 +39,7 @@
       毎日のtodo
     </section>
     <section class="js-section">
-      <div class="js-settingsSection">
+      <div class="d-none js-settingsSection">
         <div class="mt-5">
           <p>あなたが達成したいことは何ですか？</p>
           <span class="small text-danger d-none js-inputAlert"></span>
@@ -56,23 +56,23 @@
             <div class="flex-fill">
               <input class="form-control" type="date" id="periodStart" name="periodStart" value="" min="" max="">
             </div>
-            <div class="flex-fill align-self-center">から</div>
+            <div class="flex-fill align-self-center text-center">から</div>
             <div class="flex-fill">
               <input class="form-control d-none" type="date" id="periodEnd" name="periodEnd" value="" min="" max="">
               <select name="selectPeriod2" id="selectPeriod2" class="form-select">
-                <option value="1">1ヶ月後</option>
-                <option value="2">3ヶ月後</option>
-                <option value="3">半年後</option>
-                <option value="4">1年後</option>
-                <option value="5">2年後</option>
-                <option value="6">3年後</option>
-                <option value="7">4年後</option>
-                <option value="8">5年後</option>
-                <option value="9">6年後</option>
-                <option value="10">7年後</option>
-                <option value="11">8年後</option>
-                <option value="12">9年後</option>
-                <option value="13">10年後</option>
+                <option value="w1">1ヶ月後</option>
+                <option value="m1">3ヶ月後</option>
+                <option value="m2">半年後</option>
+                <option value="m3">1年後</option>
+                <option value="2">2年後</option>
+                <option value="3">3年後</option>
+                <option value="4">4年後</option>
+                <option value="5">5年後</option>
+                <option value="6">6年後</option>
+                <option value="7">7年後</option>
+                <option value="8">8年後</option>
+                <option value="9">9年後</option>
+                <option value="10">10年後</option>
                 <option value="custom">カスタム</option>
               </select>
               <div class="modal fade js-modal" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -92,7 +92,7 @@
                 </div>
               </div>
             </div>
-            <div class="flex-fill align-self-center">の期間</div>
+            <div class="flex-fill align-self-center text-center">の期間</div>
           </div>
           <div class="form-check mt-3">
             <input class="form-check-input" type="radio" name="radioPeriod" id="radioPeriod2">
@@ -107,8 +107,20 @@
           <div class="js-goalList"></div>
         </div>
       </div>
-      <div class="d-none js-settingsSection">
-        年間目標
+      <div class="js-settingsSection">
+        <div class="js-goalTitleArea">
+          <p class="small mb-1 text-secondary">2025/5/1から2030/4/30までに達成したいこと</p>
+          <input type="text" class="form-control">
+        </div>
+        <p class="p-2">
+          上記を達成するための年ごとの目標を書きましょう。<br>
+          2年目以降の目標は、あとから立てることもできます。
+        </p>
+        <div class="js-inputArea"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
       </div>
       <div class="d-none js-settingsSection">
         月間目標
