@@ -132,6 +132,8 @@
     this.saveAndNextBtnElms = document.querySelectorAll('.js-saveAndNextBtn');
     this.inputAlertElms = document.querySelectorAll('.js-inputAlert');
     this.id = 0;
+
+    this.backBtnElm = document.querySelectorAll('.js-backBtn');
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -139,12 +141,6 @@
     localStorage.setItem('goalManagementSettingsData', JSON.stringify([...this.settingsData]));
 
     navAndCommon.switchPage(aIndex, this.settingsSectionElms);
-  };
-
-  Settings.prototype.resetInput = function(aElms) {
-    for(let cnt=0,len=aElms.length;cnt<len;++cnt) {
-      aElms[cnt].value = '';
-    }
   };
 
   Settings.prototype.getDate = function(aDiff, aDate) {
@@ -237,8 +233,8 @@
       let nextPageIndex = getNextPageIndex();
       that.saveAndNextData(nextPageIndex);
 
-      that.resetInput(inputElms);
-      that.resetInput(selectElm);
+      that.setEventSettings2();
+
       this.disabled = true;
     });
 
@@ -263,10 +259,14 @@
 
     const modalElm = document.querySelector('.js-modal');
     const bsModal = new bootstrap.Modal(modalElm);
+    this.tempSelectValue = selectElm.value;
     selectElm.addEventListener('change', function() {
       if(this.value=='custom') {
         bsModal.show();
         setDate(1, inputModalElm, inputPeriodStartElm.value);
+      }
+      else {
+        that.tempSelectValue = this.value;
       }
     });
 
@@ -291,7 +291,7 @@
     const periodCancelBtnElms = document.querySelectorAll('.js-periodCancelBtn');
     periodCancelBtnElms.forEach(elm => {
       elm.addEventListener('click', function() {
-        selectElm.value = 1;
+        selectElm.value = that.tempSelectValue;
       });
     });
 
@@ -328,11 +328,13 @@
 
   Settings.prototype.setEventSettings2 = function() {//年間
     const inputAreaElm = document.querySelector('.js-inputArea');
+    const goalTitleAreaPElm = document.querySelector('.js-goalTitleArea p');
+    const goalTitleAreaInputElm = document.querySelector('.js-goalTitleArea input');
 
-    let currentData = this.settingsData.get(1); //仮
+    this.currentSettingsData = this.settingsData.get(1); //仮
 
     const getDate = (aMultiplier) => {
-      let getDate = this.getDate(365*aMultiplier, currentData.period[0]);
+      let getDate = this.getDate(365*aMultiplier, this.currentSettingsData.period[0]);
       let dateY = getDate[0];
       let dateM = getDate[1];
       let dateD = getDate[2];
@@ -340,16 +342,17 @@
       return date;
     };
 
-    let displayStartDate = (currentData.period[0]).replace(/-/g, '/');
+    let displayStartDate = (this.currentSettingsData.period[0]).replace(/-/g, '/');
     let displayEndDate = getDate(1);
 
     let result = `<div class="p-2">
-    <label>1年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）※</label>
+    <label>1年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）<span class="text-danger">※</span></label>
     <input type="text" class="form-control my-2">
     <p class="small text-secondary">例）英検１級を受験して一次試験に合格する</p>
     </div>`;
 
-    let numberOfYears = (currentData.period[2]) ? Math.ceil(currentData.period[2]/365) : parseInt(currentData.period[1]);
+    let goalTitleAreaText = displayStartDate + 'から';
+    let numberOfYears = (this.currentSettingsData.period[2]) ? Math.ceil(this.currentSettingsData.period[2]/365) : parseInt(this.currentSettingsData.period[1]);
 
     for(let cnt=2;cnt<=numberOfYears;++cnt) {
       displayStartDate = displayEndDate;
@@ -360,11 +363,42 @@
         </div>`;
     }
     inputAreaElm.innerHTML = result;
+
+    goalTitleAreaText += displayEndDate + 'までに達成したいこと';
+    goalTitleAreaPElm.textContent = goalTitleAreaText;
+    goalTitleAreaInputElm.value = this.currentSettingsData.goal;
+
+    const inputElms = inputAreaElm.querySelectorAll('input');
+    const that = this;
+    inputElms[0].addEventListener('keyup', function() {
+      that.saveAndNextBtnElms[1].disabled = (this.value) ? false : true;
+    });
+
+    this.saveAndNextBtnElms[1].addEventListener('click', function() {
+      let annualGoalArray = [];
+      inputElms.forEach(elm => {
+        annualGoalArray.push(elm.value);
+      });
+
+      that.id = 1; //仮
+      that.currentSettingsData.goalperiodtext = goalTitleAreaText;
+      that.currentSettingsData.status = 2;
+      that.currentSettingsData.annualgoal = annualGoalArray;
+
+      that.saveAndNextData(2);
+
+      this.disabled = true;
+    });
+
+    this.backBtnElm[0].addEventListener('click', function() {
+      navAndCommon.switchPage(0, that.settingsSectionElms);
+    });
+
   };
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
-    this.setEventSettings2();//年間
+    this.setEventSettings2();//***後で消す */
   };
 
   Settings.prototype.run = function() {
