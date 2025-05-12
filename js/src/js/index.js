@@ -133,7 +133,7 @@
     this.inputAlertElms = document.querySelectorAll('.js-inputAlert');
     this.id = 0;
 
-    this.backBtnElm = document.querySelectorAll('.js-backBtn');
+    this.backBtnElms = document.querySelectorAll('.js-backBtn');
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -233,7 +233,9 @@
       let nextPageIndex = getNextPageIndex();
       that.saveAndNextData(nextPageIndex);
 
-      that.setEventSettings2();
+      if(nextPageIndex==1) {
+        that.setEventSettings2();
+      }
 
       this.disabled = true;
     });
@@ -326,12 +328,23 @@
     });
   };
 
-  Settings.prototype.setEventSettings2 = function() {//年間
-    const inputAreaElm = document.querySelector('.js-inputArea');
-    const goalTitleAreaPElm = document.querySelector('.js-goalTitleArea p');
-    const goalTitleAreaInputElm = document.querySelector('.js-goalTitleArea input');
+  Settings.prototype.commonElmsAndDataForInput = function(aIndex) {
+    const inputAreaElm = this.settingsSectionElms[aIndex].querySelector('.js-inputArea');
+    const goalTitleAreaPElm = this.settingsSectionElms[aIndex].querySelector('.js-goalTitleArea p');
+    let goalTitleAreaInputOrSelect = (aIndex==1) ? '.js-goalTitleArea input' : '.js-goalTitleArea select'
+    let goalTitleAreaInputOrSelectElm = this.settingsSectionElms[aIndex].querySelector(goalTitleAreaInputOrSelect);
 
     this.currentSettingsData = this.settingsData.get(1); //仮
+
+    return [inputAreaElm, goalTitleAreaPElm, goalTitleAreaInputOrSelectElm];
+  };
+
+  Settings.prototype.setEventSettings2 = function() {//年間
+
+    let commonElmsAndDataForInput = this.commonElmsAndDataForInput(1);
+    const inputAreaElm = commonElmsAndDataForInput[0];
+    const goalTitleAreaPElm = commonElmsAndDataForInput[1];
+    const goalTitleAreaInputElm = commonElmsAndDataForInput[2];
 
     const getDate = (aMultiplier) => {
       let getDate = this.getDate(365*aMultiplier, this.currentSettingsData.period[0]);
@@ -351,8 +364,10 @@
     <p class="small text-secondary">例）英検１級を受験して一次試験に合格する</p>
     </div>`;
 
-    let goalTitleAreaText = displayStartDate + 'から';
     let numberOfYears = (this.currentSettingsData.period[2]) ? Math.ceil(this.currentSettingsData.period[2]/365) : parseInt(this.currentSettingsData.period[1]);
+    let goalTitleAreaTextArray = Array(numberOfYears);
+    goalTitleAreaText = displayStartDate + 'から';
+    goalTitleAreaTextArray[0] = displayStartDate + 'から' + displayEndDate + 'までに達成したいこと';
 
     for(let cnt=2;cnt<=numberOfYears;++cnt) {
       displayStartDate = displayEndDate;
@@ -361,6 +376,7 @@
         <label>` + cnt + `年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）</label>
         <input type="text" class="form-control my-2">
         </div>`;
+      goalTitleAreaTextArray[(cnt-1)] = displayStartDate + 'から' + displayEndDate + 'までに達成したいこと';
     }
     inputAreaElm.innerHTML = result;
 
@@ -375,30 +391,69 @@
     });
 
     this.saveAndNextBtnElms[1].addEventListener('click', function() {
-      let annualGoalArray = [];
-      inputElms.forEach(elm => {
-        annualGoalArray.push(elm.value);
-      });
+      let annualGoalArray = Array(numberOfYears);
+      for(let cnt=0,len=inputElms.length;cnt<len;++cnt) {
+        annualGoalArray[cnt] = inputElms[cnt].value;
+      }
 
       that.id = 1; //仮
       that.currentSettingsData.goalperiodtext = goalTitleAreaText;
+      that.currentSettingsData.goalperiodtextarray = goalTitleAreaTextArray;
       that.currentSettingsData.status = 2;
-      that.currentSettingsData.annualgoal = annualGoalArray;
+      that.currentSettingsData.annualgoalarray = annualGoalArray;
 
       that.saveAndNextData(2);
+      that.setEventSettings3();
 
       this.disabled = true;
     });
 
-    this.backBtnElm[0].addEventListener('click', function() {
+    this.backBtnElms[0].addEventListener('click', function() {
       navAndCommon.switchPage(0, that.settingsSectionElms);
     });
+  };
 
+  Settings.prototype.setEventSettings3 = function() {//月間
+    let commonElmsAndDataForInput = this.commonElmsAndDataForInput(2);
+    const inputAreaElm = commonElmsAndDataForInput[0];
+    const goalTitleAreaPElm = commonElmsAndDataForInput[1];
+    const goalTitleAreaSelectElm = commonElmsAndDataForInput[2];
+
+    goalTitleAreaPElm.textContent = this.currentSettingsData.goalperiodtextarray[0];
+    let annualGoalOption = ''
+    this.currentSettingsData.annualgoalarray.forEach((val, key) => {
+      if(val) {
+        annualGoalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
+      }
+    });
+    goalTitleAreaSelectElm.innerHTML = annualGoalOption;
+
+    let result = '';
+    let required = '';
+    for(let cnt=0;cnt<12;++cnt) {
+      required = (cnt<2) ? ' <span class="text-danger">※</span>' : '';
+      result += `<div class="p-2">
+        <label>` + cnt + `月の目標` + required + `</label>
+        <input type="text" class="form-control my-2">
+        </div>`;
+    }
+    inputAreaElm.innerHTML = result;
+
+    const that = this;
+
+    let selectedIndex = 0;
+    goalTitleAreaSelectElm.addEventListener('change', function() {
+      selectedIndex = parseInt(this.value);
+      goalTitleAreaPElm.textContent = that.currentSettingsData.goalperiodtextarray[selectedIndex];
+    });
+
+    this.backBtnElms[1].addEventListener('click', function() {
+      navAndCommon.switchPage(1, that.settingsSectionElms);
+    });
   };
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
-    this.setEventSettings2();//***後で消す */
   };
 
   Settings.prototype.run = function() {

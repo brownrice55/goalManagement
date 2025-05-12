@@ -39,7 +39,7 @@
       毎日のtodo
     </section>
     <section class="js-section">
-      <div class="d-none js-settingsSection">
+      <div class="js-settingsSection">
         <div class="mt-5">
           <p>あなたが達成したいことは何ですか？</p>
           <span class="small text-danger d-none js-inputAlert"></span>
@@ -107,14 +107,14 @@
           <div class="js-goalList"></div>
         </div>
       </div>
-      <div class="js-settingsSection">
+      <div class="d-none js-settingsSection">
         <div class="js-goalTitleArea">
           <p class="small mb-1 text-secondary"></p>
           <input type="text" class="form-control">
         </div>
         <p class="p-2">
           上記を達成するための年ごとの目標を書きましょう。<br>
-          2年目以降の目標は、あとから立てることもできます。
+          2年目以降の目標は、後から立てることもできます。
         </p>
         <div class="js-inputArea"></div>
         <div class="text-center pt-3 pb-5">
@@ -123,7 +123,19 @@
         </div>
       </div>
       <div class="d-none js-settingsSection">
-        月間目標
+        <div class="js-goalTitleArea">
+          <p class="small mb-1 text-secondary"></p>
+          <select name="selectPeriod3" id="selectPeriod3" class="form-select"></select>
+        </div>
+        <p class="p-2">
+          上記を達成するための月ごとの目標を書きましょう。<br>
+          後で変更することもできます。
+        </p>
+        <div class="js-inputArea"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
       </div>
       <div class="d-none js-settingsSection">
         週間目標
