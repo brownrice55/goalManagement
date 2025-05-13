@@ -236,6 +236,9 @@
       if(nextPageIndex==1) {
         that.setEventSettings2();
       }
+      else if(nextPageIndex==2) {
+        that.setEventSettings3();
+      }
     });
 
     let duplication = false;
@@ -329,12 +332,28 @@
   Settings.prototype.commonElmsAndDataForInput = function(aIndex) {
     const inputAreaElm = this.settingsSectionElms[aIndex].querySelector('.js-inputArea');
     const goalTitleAreaPElm = this.settingsSectionElms[aIndex].querySelector('.js-goalTitleArea p');
-    let goalTitleAreaInputOrSelect = (aIndex==1) ? '.js-goalTitleArea input' : '.js-goalTitleArea select'
-    let goalTitleAreaInputOrSelectElm = this.settingsSectionElms[aIndex].querySelector(goalTitleAreaInputOrSelect);
+    let goalTitleAreaInputOrDiv = (aIndex==1) ? '.js-goalTitleArea input' : '.js-goalTitleArea div'
+    let goalTitleAreaInputOrDivElm = this.settingsSectionElms[aIndex].querySelector(goalTitleAreaInputOrDiv);
 
     this.currentSettingsData = this.settingsData.get(1); //仮
 
-    return [inputAreaElm, goalTitleAreaPElm, goalTitleAreaInputOrSelectElm];
+    return [inputAreaElm, goalTitleAreaPElm, goalTitleAreaInputOrDivElm];
+  };
+
+  Settings.prototype.getYearlyOrMonthlyDate = function(aMultiplier, aMonth) { //**閏年や月の計算を後で見直し・検討
+    let multiplication = 0;
+    if(aMonth) {
+      multiplication = (aMultiplier==12) ? 365 : 31*aMultiplier;
+    }
+    else {
+      multiplication = 365*aMultiplier;
+    }
+    let getDate = this.getDate(multiplication, this.currentSettingsData.period[0]);
+    let dateY = getDate[0];
+    let dateM = getDate[1];
+    let dateD = getDate[2];
+    let date = dateY + '/' + dateM + '/' + dateD;
+    return date;
   };
 
   Settings.prototype.setEventSettings2 = function() {//年間
@@ -344,17 +363,8 @@
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
     const goalTitleAreaInputElm = commonElmsAndDataForInput[2];
 
-    const getDate = (aMultiplier) => {
-      let getDate = this.getDate(365*aMultiplier, this.currentSettingsData.period[0]);
-      let dateY = getDate[0];
-      let dateM = getDate[1];
-      let dateD = getDate[2];
-      let date = dateY + '/' + dateM + '/' + dateD;
-      return date;
-    };
-
     let displayStartDate = (this.currentSettingsData.period[0]).replace(/-/g, '/');
-    let displayEndDate = getDate(1);
+    let displayEndDate = this.getYearlyOrMonthlyDate(1);
 
     let result = `<div class="p-2">
     <label for="inputAnnualGoal1">1年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）<span class="text-danger">※</span></label>
@@ -369,7 +379,7 @@
 
     for(let cnt=2;cnt<=numberOfYears;++cnt) {
       displayStartDate = displayEndDate;
-      displayEndDate = getDate(cnt);
+      displayEndDate = this.getYearlyOrMonthlyDate(cnt);
       result += `<div class="p-2">
         <label for="inputAnnualGoal` + cnt +  `">` + cnt + `年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）</label>
         <input type="text" class="form-control my-2" id="inputAnnualGoal` + cnt + `">
@@ -413,72 +423,119 @@
     let commonElmsAndDataForInput = this.commonElmsAndDataForInput(2);
     const inputAreaElm = commonElmsAndDataForInput[0];
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
-    const goalTitleAreaSelectElm = commonElmsAndDataForInput[2];
+    const goalTitleAreaDivElm = commonElmsAndDataForInput[2];
 
-    const getTextContent = (aStart, aEnd) => {
-      return (aStart + 'から' + aEnd + 'までに達成したいこと');
-    };
-
-    goalTitleAreaPElm.textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
-    let annualGoalOption = ''
-    this.currentSettingsData.annualgoalarray.forEach((val, key) => {
-      if(val) {
-        annualGoalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
-      }
-    });
-    goalTitleAreaSelectElm.innerHTML = annualGoalOption;
-
-    let length = this.currentSettingsData.annualgoalarray.length;
-    let resultArray = Array(length);
-    let startDateArray = '';
+    const that = this;
 
     let required = '';
     let year = 0;
     let month = 0;
-    let value = '';
 
-    let selectedIndex = 0;
-    let tempInputMonthlyArray = Array(length);
-
-    const getResultArray = () => {
-      for(let cnt=0;cnt<length;++cnt) {
-        startDateArray = this.currentSettingsData.goalperiodarray[cnt][0].split('/');
-        year = parseInt(startDateArray[0]) + cnt;
-        resultArray[cnt] = '';
-        for(let cnt2=0;cnt2<12;++cnt2) {
-          month = parseInt(startDateArray[1]) + cnt2;
-          month = (month>12) ? month-12 : month;
-          required = (cnt2<2) ? ' <span class="text-danger">※</span>' : '';
-          value = (tempInputMonthlyArray[cnt]) ? tempInputMonthlyArray[cnt][cnt2] : ' ';
-          resultArray[cnt] += `<div class="p-2">
-            <label for="inputMonthly` + year + '-' + month + `">` + month + `月の目標` + required + `</label>
-            <input type="text" class="form-control my-2" id="inputMonthly` + year + '-' + month + `" value="` + value + `">
-          </div>`;
-        }
+    if(!this.currentSettingsData.goalperiodarray) {
+      let monthCnt = 0;
+      let getEndDate = '';
+      let resultText = this.currentSettingsData.period[0].replace(/-/g, '/') + 'から';
+      if(this.currentSettingsData.period[1]=='m1') {
+        resultText += '3ヶ月';
+        monthCnt = 3;
       }
-      return resultArray;
-    };
-    inputAreaElm.innerHTML = getResultArray()[selectedIndex];
+      else if(this.currentSettingsData.period[1]=='m2') {
+        resultText += '半年';
+        monthCnt = 6;
+      }
+      else {
+        resultText += '1年';
+        monthCnt = 12;
+      }
+      getEndDate = this.getYearlyOrMonthlyDate(monthCnt, true);
+      resultText += '後（' + getEndDate + '）までに達成したいこと';
+      goalTitleAreaPElm.textContent = resultText;
+      goalTitleAreaDivElm.innerHTML = '<input class="form-control" type="text" id="inputGoal3" value="' + this.currentSettingsData.goal + '">';
 
-    const that = this;
+      let mongthEndCntArray = getEndDate.split('/');
+      if(parseInt(this.currentSettingsData.period[0].split('/')) + monthCnt!=parseInt(mongthEndCntArray[1])) {
+        ++monthCnt;
+      }
+      
+      let startDateArray = this.currentSettingsData.period[0].split('-');
+      let result = '';
+      for(let cnt=0;cnt<monthCnt;++cnt) {
+        month = parseInt(startDateArray[1]) + cnt;
+        month = (month>12) ? month-12 : month;
+        required = (cnt<2) ? ' <span class="text-danger">※</span>' : '';
+        result += `<div class="p-2">
+          <label for="inputMonthly` + year + '-' + month + `">` + month + `月の目標` + required + `</label>
+          <input type="text" class="form-control my-2" id="inputMonthly` + year + '-' + month + `">
+        </div>`;
+      }
+      inputAreaElm.innerHTML = result;
+    }
+    else {
+      const getTextContent = (aStart, aEnd) => {
+        return (aStart + 'から' + aEnd + 'までに達成したいこと');
+      };
 
-    goalTitleAreaSelectElm.addEventListener('change', function() {
-      let inputMonthlyElms = inputAreaElm.querySelectorAll('input');
-      let tempInputMonthlyValueArray = Array(12); //後で変更　日付指定の時は異なる
-      inputMonthlyElms.forEach((elm, key) => {
-        if(elm.value) {
-          tempInputMonthlyValueArray[key] = elm.value;
+      const select = document.createElement('select');
+      goalTitleAreaDivElm.innerHTML = '<select name="selectPeriod3" id="selectPeriod3" class="form-select"></select>';
+      const goalTitleAreaSelectElm = goalTitleAreaDivElm.querySelector('select');
+      goalTitleAreaPElm.textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
+
+      let annualGoalOption = ''
+      this.currentSettingsData.annualgoalarray.forEach((val, key) => {
+        if(val) {
+          annualGoalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
         }
       });
-      tempInputMonthlyArray[selectedIndex] = tempInputMonthlyValueArray;
+      goalTitleAreaSelectElm.innerHTML = annualGoalOption;
 
-      selectedIndex = parseInt(this.value);
-      goalTitleAreaPElm.textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
+      let length = this.currentSettingsData.annualgoalarray.length;
+      let resultArray = Array(length);
+      let startDateArray = '';
+
+      let value = '';
+
+      let selectedIndex = 0;
+      let tempInputMonthlyArray = Array(length);
+
+      const getResultArray = () => {
+        for(let cnt=0;cnt<length;++cnt) {
+          startDateArray = this.currentSettingsData.goalperiodarray[cnt][0].split('/');
+          year = parseInt(startDateArray[0]) + cnt;
+          resultArray[cnt] = '';
+          for(let cnt2=0;cnt2<12;++cnt2) {
+            month = parseInt(startDateArray[1]) + cnt2;
+            month = (month>12) ? month-12 : month;
+            required = (cnt2<2) ? ' <span class="text-danger">※</span>' : '';
+            value = (tempInputMonthlyArray[cnt]) ? tempInputMonthlyArray[cnt][cnt2] : ' ';
+            resultArray[cnt] += `<div class="p-2">
+              <label for="inputMonthly` + year + '-' + month + `">` + month + `月の目標` + required + `</label>
+              <input type="text" class="form-control my-2" id="inputMonthly` + year + '-' + month + `" value="` + value + `">
+            </div>`;
+          }
+        }
+        return resultArray;
+      };
       inputAreaElm.innerHTML = getResultArray()[selectedIndex];
-    });
+
+      goalTitleAreaSelectElm.addEventListener('change', function() {
+        let inputMonthlyElms = inputAreaElm.querySelectorAll('input');
+        let tempInputMonthlyValueArray = Array(12); //後で変更　日付指定の時は異なる
+        inputMonthlyElms.forEach((elm, key) => {
+          if(elm.value) {
+            tempInputMonthlyValueArray[key] = elm.value;
+          }
+        });
+        tempInputMonthlyArray[selectedIndex] = tempInputMonthlyValueArray;
+
+        selectedIndex = parseInt(this.value);
+        goalTitleAreaPElm.textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
+        inputAreaElm.innerHTML = getResultArray()[selectedIndex];
+      });
+    }
 
     this.backBtnElms[1].addEventListener('click', function() {
-      navAndCommon.switchPage(1, that.settingsSectionElms);
+      let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
+      navAndCommon.switchPage(pageNo, that.settingsSectionElms);
     });
   };
 
