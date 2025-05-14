@@ -134,6 +134,7 @@
     this.id = 0;
 
     this.backBtnElms = document.querySelectorAll('.js-backBtn');
+    this.goalListElm = this.settingsSectionElms[0].querySelector('.js-goalList');
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -141,6 +142,7 @@
     localStorage.setItem('goalManagementSettingsData', JSON.stringify([...this.settingsData]));
 
     navAndCommon.switchPage(aIndex, this.settingsSectionElms);
+    this.displayGoalList();
   };
 
   Settings.prototype.getDate = function(aDiff, aDate) {
@@ -159,10 +161,32 @@
     return [dateY, dateM, dateD];
   };
 
+  Settings.prototype.displayGoalList = function() {
+    let goalListResult = '';
+    this.settingsData.forEach((val, key) => {
+      goalListResult += `<div class="d-flex flex-row justify-content-between">
+        <div class="flex-grow-1 align-self-center">` + val.goal + `</div>
+        <button class="btn js-editSettingBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+          </svg>
+        </button>
+        <button class="btn js-deleteSettingBtn" data-key="` + key + `">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+          </svg>
+        </button>
+      </div>`;
+    });
+
+    this.goalListElm.innerHTML = goalListResult;
+  };
+
+
   Settings.prototype.setEventSettings1 = function() {
     const inputElms = this.settingsSectionElms[0].querySelectorAll('input');
     const selectElm = this.settingsSectionElms[0].querySelector('select');
-    const goalListElm = this.settingsSectionElms[0].querySelector('.js-goalList');
 
     const inputGoalElm = inputElms[0];
     const inputRadioElm = inputElms[1];
@@ -185,10 +209,10 @@
 
     const hideOrShowGoalList = () => {
       if(this.settingsData.size) {
-        goalListElm.parentNode.classList.remove('d-none');
+        this.goalListElm.parentNode.classList.remove('d-none');
       }
       else {
-        goalListElm.parentNode.classList.add('d-none');
+        this.goalListElm.parentNode.classList.add('d-none');
       }
     };
 
@@ -298,25 +322,7 @@
       });
     });
 
-    let goalListResult = '';
-    this.settingsData.forEach((val, key) => {
-      goalListResult += `<div class="d-flex flex-row justify-content-between">
-        <div class="flex-grow-1 align-self-center">` + val.goal + `</div>
-        <button class="btn js-editSettingBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
-            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
-          </svg>
-        </button>
-        <button class="btn js-deleteSettingBtn" data-key="` + key + `">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-          </svg>
-        </button>
-      </div>`;
-    });
-
-    goalListElm.innerHTML = goalListResult;
+    this.displayGoalList();
 
     hideOrShowGoalList();
     const deleteSettingBtnElms = document.querySelectorAll('.js-deleteSettingBtn');
@@ -357,7 +363,6 @@
   };
 
   Settings.prototype.setEventSettings2 = function() {//年間
-
     let commonElmsAndDataForInput = this.commonElmsAndDataForInput(1);
     const inputAreaElm = commonElmsAndDataForInput[0];
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
@@ -430,33 +435,39 @@
     let required = '';
     let year = 0;
     let month = 0;
+    let monthCnt = 0;
 
-    if(!this.currentSettingsData.goalperiodarray) {
-      let monthCnt = 0;
+    if(!this.currentSettingsData.goalperiodarray) {//one year or less
+      let getStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
+      let resultText = getStartDate + 'から';
       let getEndDate = '';
-      let resultText = this.currentSettingsData.period[0].replace(/-/g, '/') + 'から';
-      if(this.currentSettingsData.period[1]=='m1') {
-        resultText += '3ヶ月';
-        monthCnt = 3;
-      }
-      else if(this.currentSettingsData.period[1]=='m2') {
-        resultText += '半年';
-        monthCnt = 6;
+
+      if(this.currentSettingsData.period[2]) { //custom
+        getEndDate = this.currentSettingsData.period[1].replace(/-/g, '/');
+        resultText += getEndDate + 'までに達成したいこと';
       }
       else {
-        resultText += '1年';
-        monthCnt = 12;
+        let periodObj = {
+          'm1': ['3ヶ月', 3],
+          'm2': ['半年', 6],
+          'm3': ['1年', 12]
+        };
+        resultText += periodObj[this.currentSettingsData.period[1]][0] + '後' || '';
+
+        getEndDate = this.getYearlyOrMonthlyDate(periodObj[this.currentSettingsData.period[1]][1], true);
+        resultText += '（' + getEndDate + '）までに達成したいこと';
       }
-      getEndDate = this.getYearlyOrMonthlyDate(monthCnt, true);
-      resultText += '後（' + getEndDate + '）までに達成したいこと';
+
       goalTitleAreaPElm.textContent = resultText;
       goalTitleAreaDivElm.innerHTML = '<input class="form-control" type="text" id="inputGoal3" value="' + this.currentSettingsData.goal + '">';
-
-      let mongthEndCntArray = getEndDate.split('/');
-      if(parseInt(this.currentSettingsData.period[0].split('/')) + monthCnt!=parseInt(mongthEndCntArray[1])) {
-        ++monthCnt;
-      }
       
+      let monthStartCntArray = getStartDate.split('/');
+      let monthEndCntArray = getEndDate.split('/');
+      monthCnt = parseInt(monthEndCntArray[1]) - parseInt(monthStartCntArray[1]) + 1;
+      if(parseInt(monthStartCntArray[0])!=parseInt(monthEndCntArray[0])) {
+        monthCnt += 12; 
+      }
+
       let startDateArray = this.currentSettingsData.period[0].split('-');
       let result = '';
       for(let cnt=0;cnt<monthCnt;++cnt) {
@@ -464,8 +475,8 @@
         month = (month>12) ? month-12 : month;
         required = (cnt<2) ? ' <span class="text-danger">※</span>' : '';
         result += `<div class="p-2">
-          <label for="inputMonthly` + year + '-' + month + `">` + month + `月の目標` + required + `</label>
-          <input type="text" class="form-control my-2" id="inputMonthly` + year + '-' + month + `">
+          <label for="inputMonthly` + cnt + `">` + month + `月の目標` + required + `</label>
+          <input type="text" class="form-control my-2" id="inputMonthly` + cnt + `">
         </div>`;
       }
       inputAreaElm.innerHTML = result;
