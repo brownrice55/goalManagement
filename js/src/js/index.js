@@ -247,6 +247,11 @@
     const that = this;
 
     this.saveAndNextBtnElms[0].addEventListener('click', function() {
+      if(selectElm.value=='custom') {
+        const diffInMs = new Date(inputPeriodEndElm.value) - new Date(inputPeriodStartElm.value);
+        diffInDays = Math.floor(diffInMs/(1000*60*60*24));  
+      }
+
       that.id = 1; //仮
       that.currentSettingsData = new Map();
       that.currentSettingsData.goal = inputGoalElm.value;
@@ -310,9 +315,6 @@
       inputPeriodEndElm.value = inputModalElm.value;
       inputPeriodEndElm.min = inputModalElm.min;
       inputPeriodEndElm.max = inputModalElm.max;
-
-      const diffInMs = new Date(inputPeriodEndElm.value) - new Date(inputPeriodStartElm.value);
-      diffInDays = Math.floor(diffInMs/(1000*60*60*24));
     });
 
     const periodCancelBtnElms = document.querySelectorAll('.js-periodCancelBtn');
@@ -368,7 +370,7 @@
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
     const goalTitleAreaInputElm = commonElmsAndDataForInput[2];
 
-    let displayStartDate = (this.currentSettingsData.period[0]).replace(/-/g, '/');
+    let displayStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
     let displayEndDate = this.getYearlyOrMonthlyDate(1);
 
     let result = `<div class="p-2">
@@ -377,19 +379,33 @@
     <p class="small text-secondary">例）英検１級を受験して一次試験に合格する</p>
     </div>`;
 
-    let numberOfYears = (this.currentSettingsData.period[2]) ? Math.ceil(this.currentSettingsData.period[2]/365) : parseInt(this.currentSettingsData.period[1]);
+    let numberOfYears = (this.currentSettingsData.period[2]) ? Math.floor(this.currentSettingsData.period[2]/365) : parseInt(this.currentSettingsData.period[1]);
     let goalTitleAreaTextArray = Array(numberOfYears);
     goalTitleAreaText = displayStartDate + 'から';
     goalTitleAreaTextArray[0] = [ displayStartDate, displayEndDate];
 
-    for(let cnt=2;cnt<=numberOfYears;++cnt) {
-      displayStartDate = displayEndDate;
-      displayEndDate = this.getYearlyOrMonthlyDate(cnt);
-      result += `<div class="p-2">
-        <label for="inputAnnualGoal` + cnt +  `">` + cnt + `年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）</label>
-        <input type="text" class="form-control my-2" id="inputAnnualGoal` + cnt + `">
+    const getInputAreaHTML = (aCnt, aDisplayStartDate, aDisplayEndDate) => {
+      return `<div class="p-2">
+        <label for="inputAnnualGoal` + aCnt +  `">` + aCnt + `年目の目標（` + aDisplayStartDate + `から` + aDisplayEndDate + `まで）</label>
+        <input type="text" class="form-control my-2" id="inputAnnualGoal` + aCnt + `">
         </div>`;
+    };
+
+    if(numberOfYears>1) {
+      for(let cnt=2;cnt<=numberOfYears;++cnt) {
+        displayStartDate = displayEndDate;
+        displayEndDate = this.getYearlyOrMonthlyDate(cnt);
+        goalTitleAreaTextArray[(cnt-1)] = [ displayStartDate, displayEndDate ];
+        result += getInputAreaHTML(cnt, displayStartDate, displayEndDate);
+      }  
+    }
+
+    if(this.currentSettingsData.period[2]) {
+      let cnt = numberOfYears + 1;
+      displayStartDate = displayEndDate;
+      displayEndDate = this.currentSettingsData.period[1].replace(/-/g, '/');
       goalTitleAreaTextArray[(cnt-1)] = [ displayStartDate, displayEndDate ];
+      result += getInputAreaHTML(cnt, displayStartDate, displayEndDate);
     }
     inputAreaElm.innerHTML = result;
 
