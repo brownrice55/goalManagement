@@ -348,13 +348,37 @@
     return [inputAreaElm, goalTitleAreaPElm, goalTitleAreaInputOrDivElm];
   };
 
-  Settings.prototype.getYearlyOrMonthlyDate = function(aMultiplier, aMonth) { //**閏年や月の計算を後で見直し・検討
+  Settings.prototype.getYearlyOrMonthlyDate = function(aMultiplier, aMonth, aStartYear, aStartMonth) {
+    const getDaysOfTheYear = (aStartYear, aStartMonth) => {
+      let startYear = (aStartMonth>2) ? (aStartYear+1) : aStartYear;
+      if(startYear%100==0 && startYear%400!=0) {
+        return 365;
+      }
+      if(startYear%4==0) {
+        return 366;
+      }
+      return 365;
+    };
     let multiplication = 0;
+    let daysOfTheYear = getDaysOfTheYear(aStartYear, aStartMonth);
+
+    const theNumberOfDaysInAMonth = (aStartMonth) => {
+      let daysOfTheEachMonths = [31,28,31,30,31,30,31,31,30,31,30,31];
+      if(daysOfTheYear==366) {
+        daysOfTheEachMonths[1] = 29;
+      }
+      return daysOfTheEachMonths[(aStartMonth-1)];
+    };
+    
     if(aMonth) {
-      multiplication = (aMultiplier==12) ? 365 : 31*aMultiplier;
+      let theSumOfDays = 0;
+      for(let cnt=0;cnt<aMultiplier;++cnt) {
+        theSumOfDays += theNumberOfDaysInAMonth(aStartMonth+cnt);
+      }
+      multiplication = (aMultiplier==12) ? daysOfTheYear : theSumOfDays;
     }
     else {
-      multiplication = 365*aMultiplier;
+      multiplication = daysOfTheYear*aMultiplier;
     }
     let getDate = this.getDate(multiplication, this.currentSettingsData.period[0]);
     let dateY = getDate[0];
@@ -370,8 +394,9 @@
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
     const goalTitleAreaInputElm = commonElmsAndDataForInput[2];
 
+    let displayStartDateArray = this.currentSettingsData.period[0].split('-');
     let displayStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
-    let displayEndDate = this.getYearlyOrMonthlyDate(1);
+    let displayEndDate = this.getYearlyOrMonthlyDate(1, false, parseInt(displayStartDateArray[0]), parseInt(displayStartDateArray[1]));
 
     let result = `<div class="p-2">
     <label for="inputAnnualGoal1">1年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）<span class="text-danger">※</span></label>
@@ -394,7 +419,8 @@
     if(numberOfYears>1) {
       for(let cnt=2;cnt<=numberOfYears;++cnt) {
         displayStartDate = displayEndDate;
-        displayEndDate = this.getYearlyOrMonthlyDate(cnt);
+        displayStartDateArray = displayStartDate.split('/');
+        displayEndDate = this.getYearlyOrMonthlyDate(cnt, false, parseInt(displayStartDateArray[0]), parseInt(displayStartDateArray[1]));
         goalTitleAreaTextArray[(cnt-1)] = [ displayStartDate, displayEndDate ];
         result += getInputAreaHTML(cnt, displayStartDate, displayEndDate);
       }  
@@ -464,6 +490,7 @@
 
     if(!this.currentSettingsData.goalperiodarray) {//one year or less
       let getStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
+      let getStartDateArray = this.currentSettingsData.period[0].split('-');
       let resultText = getStartDate + 'から';
       let getEndDate = '';
 
@@ -479,7 +506,7 @@
         };
         resultText += periodObj[this.currentSettingsData.period[1]][0] + '後' || '';
 
-        getEndDate = this.getYearlyOrMonthlyDate(periodObj[this.currentSettingsData.period[1]][1], true);
+        getEndDate = this.getYearlyOrMonthlyDate(periodObj[this.currentSettingsData.period[1]][1], true, parseInt(getStartDateArray[0]), parseInt(getStartDateArray[1]));
         resultText += '（' + getEndDate + '）までに達成したいこと';
       }
 
