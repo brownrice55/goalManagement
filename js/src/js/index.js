@@ -446,6 +446,15 @@
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
     const goalTitleAreaDivElm = commonElmsAndDataForInput[2];
 
+    const judgeDisabled = () => {
+      let inputElms = inputAreaElm.querySelectorAll('input');
+      inputElms.forEach(elm=> {
+        elm.addEventListener('keyup', function() {
+          that.saveAndNextBtnElms[2].disabled = (!inputElms[0].value.trim() || !inputElms[1].value.trim()) ? true : false;
+        });
+      });
+    };
+
     const that = this;
 
     let required = '';
@@ -524,19 +533,25 @@
       let selectedIndex = 0;
       let tempInputMonthlyArray = Array(length);
 
+      let startDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
+      let endDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][1].split('/');
+      let diffInMonths = parseInt(endDateLastArray[1]) - parseInt(startDateLastArray[1]) + 1;
+
+      let length2 = 0;
       const getResultArray = () => {
         for(let cnt=0;cnt<length;++cnt) {
           startDateArray = this.currentSettingsData.goalperiodarray[cnt][0].split('/');
           year = parseInt(startDateArray[0]) + cnt;
           resultArray[cnt] = '';
-          for(let cnt2=0;cnt2<12;++cnt2) {
+          length2 = (cnt==(length-1)) ? diffInMonths : 13;
+          for(let cnt2=0;cnt2<length2;++cnt2) {
             month = parseInt(startDateArray[1]) + cnt2;
             month = (month>12) ? month-12 : month;
-            required = (cnt2<2) ? ' <span class="text-danger">※</span>' : '';
-            value = (tempInputMonthlyArray[cnt]) ? tempInputMonthlyArray[cnt][cnt2] : ' ';
+            required = (cnt==0 && cnt2<2) ? ' <span class="text-danger">※</span>' : '';
+            value = (tempInputMonthlyArray[cnt]) ? (tempInputMonthlyArray[cnt][cnt2]) ? tempInputMonthlyArray[cnt][cnt2].trim() : '' : '';
             resultArray[cnt] += `<div class="p-2">
-              <label for="inputMonthly` + year + '-' + month + `">` + month + `月の目標` + required + `</label>
-              <input type="text" class="form-control my-2" id="inputMonthly` + year + '-' + month + `" value="` + value + `">
+              <label for="inputMonthly` + cnt + '-' + cnt2 + `">` + month + `月の目標` + required + `</label>
+              <input type="text" class="form-control my-2" id="inputMonthly` + cnt + '-' + cnt2 + `" value="` + value + `">
             </div>`;
           }
         }
@@ -557,8 +572,13 @@
         selectedIndex = parseInt(this.value);
         goalTitleAreaPElm.textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
         inputAreaElm.innerHTML = getResultArray()[selectedIndex];
+        if(!selectedIndex) {
+          judgeDisabled();
+        }
       });
     }
+
+    judgeDisabled();
 
     this.backBtnElms[1].addEventListener('click', function() {
       let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
