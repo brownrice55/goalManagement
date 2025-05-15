@@ -143,6 +143,7 @@
 
     navAndCommon.switchPage(aIndex, this.settingsSectionElms);
     this.displayGoalList();
+    this.saveAndNextBtnElms[aIndex].disabled = true;
   };
 
   Settings.prototype.getDate = function(aDiff, aDate) {
@@ -183,6 +184,56 @@
     this.goalListElm.innerHTML = goalListResult;
   };
 
+  Settings.prototype.setFormValidationForInput = function(aInputGoalElm, aIndex, aInputElm) {
+    let duplication = false;
+    let isOkForGoal = (aIndex) ? true : false;
+    let isOkForInput = false;
+    const that = this;
+    aInputGoalElm.addEventListener('keyup', function() {
+      let thisValue = this.value.trim();
+      that.settingsData.forEach((val, key) => {
+        let isFirst = true;
+        if(val.goal==thisValue) {
+          if(aIndex && isFirst) {
+            isFirst = false;
+            return;
+          }
+          that.inputAlertElms[aIndex].textContent = '既に登録済みです';
+          that.inputAlertElms[aIndex].classList.remove('d-none');
+          this.classList.add('border-danger');
+          duplication = true;
+        }
+        else {
+          that.inputAlertElms[aIndex].textContent = '';
+          that.inputAlertElms[aIndex].classList.add('d-none');
+          this.classList.remove('border-danger');
+          duplication = false;
+        }
+      });
+      isOkForGoal = (!duplication && thisValue) ? true : false;
+      if(aIndex) {
+        that.saveAndNextBtnElms[aIndex].disabled = (isOkForGoal && isOkForInput) ? false : true;
+      }
+      else {
+        that.saveAndNextBtnElms[aIndex].disabled = isOkForGoal ? false : true;
+      }
+    });
+
+    if(aIndex==1) {
+      aInputElm.addEventListener('keyup', function() {
+        isOkForInput = (this.value.trim()) ? true : false;
+        that.saveAndNextBtnElms[aIndex].disabled = (isOkForGoal && isOkForInput) ? false : true;
+      });
+    }
+    else if(aIndex==2) {
+      aInputElm.forEach(elm=> {
+        elm.addEventListener('keyup', function() {
+          isOkForInput = (aInputElm[0].value.trim() && aInputElm[1].value.trim()) ? true : false;
+          that.saveAndNextBtnElms[aIndex].disabled = (isOkForGoal && isOkForInput) ? false : true;
+        });
+      });
+    }
+  };
 
   Settings.prototype.setEventSettings1 = function() {
     const inputElms = this.settingsSectionElms[0].querySelectorAll('input');
@@ -254,7 +305,7 @@
 
       that.id = 1; //仮
       that.currentSettingsData = new Map();
-      that.currentSettingsData.goal = inputGoalElm.value;
+      that.currentSettingsData.goal = inputGoalElm.value.trim();
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
       that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays ];
@@ -270,24 +321,7 @@
       }
     });
 
-    let duplication = false;
-    inputGoalElm.addEventListener('keyup', function() {
-      that.settingsData.forEach((val, key) => {
-        if(val.goal==this.value) {
-          that.inputAlertElms[0].textContent = '既に登録済みです';
-          that.inputAlertElms[0].classList.remove('d-none');
-          this.classList.add('border-danger');
-          duplication = true;
-        }
-        else {
-          that.inputAlertElms[0].textContent = '';
-          that.inputAlertElms[0].classList.add('d-none');
-          this.classList.remove('border-danger');
-          duplication = false;
-        }
-      });
-      that.saveAndNextBtnElms[0].disabled = (!duplication && this.value) ? false : true;
-    });
+    this.setFormValidationForInput(inputGoalElm, 0, null);
 
     const modalElm = document.querySelector('.js-modal');
     const bsModal = new bootstrap.Modal(modalElm);
@@ -340,8 +374,7 @@
   Settings.prototype.commonElmsAndDataForInput = function(aIndex) {
     const inputAreaElm = this.settingsSectionElms[aIndex].querySelector('.js-inputArea');
     const goalTitleAreaPElm = this.settingsSectionElms[aIndex].querySelector('.js-goalTitleArea p');
-    let goalTitleAreaInputOrDiv = (aIndex==1) ? '.js-goalTitleArea input' : '.js-goalTitleArea div'
-    let goalTitleAreaInputOrDivElm = this.settingsSectionElms[aIndex].querySelector(goalTitleAreaInputOrDiv);
+    let goalTitleAreaInputOrDivElm = (aIndex==1) ? this.settingsSectionElms[aIndex].querySelector('.js-goalTitleArea input') : this.settingsSectionElms[aIndex].querySelectorAll('.js-goalTitleArea div');
 
     this.currentSettingsData = this.settingsData.get(1); //仮
 
@@ -369,7 +402,7 @@
       }
       return daysOfTheEachMonths[(aStartMonth-1)];
     };
-    
+
     if(aMonth) {
       let theSumOfDays = 0;
       for(let cnt=0;cnt<aMultiplier;++cnt) {
@@ -441,9 +474,8 @@
 
     const inputElms = inputAreaElm.querySelectorAll('input');
     const that = this;
-    inputElms[0].addEventListener('keyup', function() {
-      that.saveAndNextBtnElms[1].disabled = (this.value) ? false : true;
-    });
+
+    this.setFormValidationForInput(goalTitleAreaInputElm, 1, inputElms[0]);
 
     this.saveAndNextBtnElms[1].addEventListener('click', function() {
       let annualGoalArray = Array(numberOfYears);
@@ -470,15 +502,32 @@
     let commonElmsAndDataForInput = this.commonElmsAndDataForInput(2);
     const inputAreaElm = commonElmsAndDataForInput[0];
     const goalTitleAreaPElm = commonElmsAndDataForInput[1];
-    const goalTitleAreaDivElm = commonElmsAndDataForInput[2];
+    const goalTitleAreaDivElms = commonElmsAndDataForInput[2];
+    const goalTitleAreaInputElm = goalTitleAreaDivElms[0].querySelector('input');
+    const goalTitleAreaSelectElm = goalTitleAreaDivElms[1].querySelector('select');
+    
+    if(!this.currentSettingsData.goalperiodarray) {//one year or less
+      goalTitleAreaInputElm.value = this.currentSettingsData.goal;
+      goalTitleAreaDivElms[0].classList.remove('d-none');
+      goalTitleAreaDivElms[1].classList.add('d-none');
+    }
+    else {
+      goalTitleAreaDivElms[0].classList.add('d-none');
+      goalTitleAreaDivElms[1].classList.remove('d-none');
+    }
 
-    const judgeDisabled = () => {
+    const judgeDisabled = (aIsOneYearOrLess) => {
       let inputElms = inputAreaElm.querySelectorAll('input');
-      inputElms.forEach(elm=> {
-        elm.addEventListener('keyup', function() {
-          that.saveAndNextBtnElms[2].disabled = (!inputElms[0].value.trim() || !inputElms[1].value.trim()) ? true : false;
-        });
-      });
+      if(aIsOneYearOrLess) {
+        this.setFormValidationForInput(goalTitleAreaInputElm, 2, inputElms);
+      }
+      else {
+        inputElms.forEach(elm=> {
+          elm.addEventListener('keyup', function() {
+            that.saveAndNextBtnElms[2].disabled = (inputElms[0].value.trim() && inputElms[1].value.trim()) ? false : true;
+          });
+        });  
+      }
     };
 
     const that = this;
@@ -511,8 +560,7 @@
       }
 
       goalTitleAreaPElm.textContent = resultText;
-      goalTitleAreaDivElm.innerHTML = '<input class="form-control" type="text" id="inputGoal3" value="' + this.currentSettingsData.goal + '">';
-      
+
       let monthStartCntArray = getStartDate.split('/');
       let monthEndCntArray = getEndDate.split('/');
       monthCnt = parseInt(monthEndCntArray[1]) - parseInt(monthStartCntArray[1]) + 1;
@@ -538,9 +586,6 @@
         return (aStart + 'から' + aEnd + 'までに達成したいこと');
       };
 
-      const select = document.createElement('select');
-      goalTitleAreaDivElm.innerHTML = '<select name="selectPeriod3" id="selectPeriod3" class="form-select"></select>';
-      const goalTitleAreaSelectElm = goalTitleAreaDivElm.querySelector('select');
       goalTitleAreaPElm.textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
 
       let annualGoalOption = ''
@@ -600,12 +645,12 @@
         goalTitleAreaPElm.textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
         inputAreaElm.innerHTML = getResultArray()[selectedIndex];
         if(!selectedIndex) {
-          judgeDisabled();
+          judgeDisabled(false);
         }
       });
     }
 
-    judgeDisabled();
+    judgeDisabled(!this.currentSettingsData.goalperiodarray);
 
     this.backBtnElms[1].addEventListener('click', function() {
       let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
