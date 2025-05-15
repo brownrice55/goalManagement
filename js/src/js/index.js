@@ -130,9 +130,12 @@
     this.settingsSectionElms = commonElms[2];
     
     this.saveAndNextBtnElms = document.querySelectorAll('.js-saveAndNextBtn');
+    this.inputGoalElms = document.querySelectorAll('.js-inputGoal');
     this.inputAlertElms = document.querySelectorAll('.js-inputAlert');
     this.id = 0;
 
+    this.inputAreaElms = document.querySelectorAll('.js-inputArea');
+    this.goalPeriodElms = document.querySelectorAll('.js-goalPeriod');
     this.backBtnElms = document.querySelectorAll('.js-backBtn');
     this.goalListElm = this.settingsSectionElms[0].querySelector('.js-goalList');
   };
@@ -184,12 +187,12 @@
     this.goalListElm.innerHTML = goalListResult;
   };
 
-  Settings.prototype.setFormValidationForInput = function(aInputGoalElm, aIndex, aInputElm) {
+  Settings.prototype.setFormValidationForInput = function(aIndex, aInputElm) {
     let duplication = false;
     let isOkForGoal = (aIndex) ? true : false;
     let isOkForInput = false;
     const that = this;
-    aInputGoalElm.addEventListener('keyup', function() {
+    this.inputGoalElms[aIndex].addEventListener('keyup', function() {
       let thisValue = this.value.trim();
       that.settingsData.forEach((val, key) => {
         let isFirst = true;
@@ -236,14 +239,13 @@
   };
 
   Settings.prototype.setEventSettings1 = function() {
-    const inputElms = this.settingsSectionElms[0].querySelectorAll('input');
+    const inputElms = this.settingsSectionElms[0].querySelectorAll('.js-inputSettingsTop');
     const selectElm = this.settingsSectionElms[0].querySelector('select');
 
-    const inputGoalElm = inputElms[0];
-    const inputRadioElm = inputElms[1];
-    const inputPeriodStartElm = inputElms[2];
-    const inputPeriodEndElm = inputElms[3];
-    const inputModalElm = inputElms[4];
+    const inputRadioElm = inputElms[0];
+    const inputPeriodStartElm = inputElms[1];
+    const inputPeriodEndElm = inputElms[2];
+    const inputModalElm = inputElms[3];
 
     let diffInDays = 0;
 
@@ -305,7 +307,7 @@
 
       that.id = 1; //仮
       that.currentSettingsData = new Map();
-      that.currentSettingsData.goal = inputGoalElm.value.trim();
+      that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
       that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays ];
@@ -321,7 +323,7 @@
       }
     });
 
-    this.setFormValidationForInput(inputGoalElm, 0, null);
+    this.setFormValidationForInput(0, null);
 
     const modalElm = document.querySelector('.js-modal');
     const bsModal = new bootstrap.Modal(modalElm);
@@ -371,16 +373,6 @@
     });
   };
 
-  Settings.prototype.commonElmsAndDataForInput = function(aIndex) {
-    const inputAreaElm = this.settingsSectionElms[aIndex].querySelector('.js-inputArea');
-    const goalTitleAreaPElm = this.settingsSectionElms[aIndex].querySelector('.js-goalTitleArea p');
-    let goalTitleAreaInputOrDivElm = (aIndex==1) ? this.settingsSectionElms[aIndex].querySelector('.js-goalTitleArea input') : this.settingsSectionElms[aIndex].querySelectorAll('.js-goalTitleArea div');
-
-    this.currentSettingsData = this.settingsData.get(1); //仮
-
-    return [inputAreaElm, goalTitleAreaPElm, goalTitleAreaInputOrDivElm];
-  };
-
   Settings.prototype.getYearlyOrMonthlyDate = function(aMultiplier, aMonth, aStartYear, aStartMonth) {
     const getDaysOfTheYear = (aStartYear, aStartMonth) => {
       let startYear = (aStartMonth>2) ? (aStartYear+1) : aStartYear;
@@ -422,10 +414,7 @@
   };
 
   Settings.prototype.setEventSettings2 = function() {//年間
-    let commonElmsAndDataForInput = this.commonElmsAndDataForInput(1);
-    const inputAreaElm = commonElmsAndDataForInput[0];
-    const goalTitleAreaPElm = commonElmsAndDataForInput[1];
-    const goalTitleAreaInputElm = commonElmsAndDataForInput[2];
+    this.currentSettingsData = this.settingsData.get(1); //仮
 
     let displayStartDateArray = this.currentSettingsData.period[0].split('-');
     let displayStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
@@ -466,16 +455,16 @@
       goalTitleAreaTextArray[(cnt-1)] = [ displayStartDate, displayEndDate ];
       result += getInputAreaHTML(cnt, displayStartDate, displayEndDate);
     }
-    inputAreaElm.innerHTML = result;
+    this.inputAreaElms[0].innerHTML = result;
 
     goalTitleAreaText += displayEndDate + 'までに達成したいこと';
-    goalTitleAreaPElm.textContent = goalTitleAreaText;
-    goalTitleAreaInputElm.value = this.currentSettingsData.goal;
+    this.goalPeriodElms[0].textContent = goalTitleAreaText;
+    this.inputGoalElms[1].value = this.currentSettingsData.goal;
 
-    const inputElms = inputAreaElm.querySelectorAll('input');
+    const inputElms = this.inputAreaElms[0].querySelectorAll('input');
     const that = this;
 
-    this.setFormValidationForInput(goalTitleAreaInputElm, 1, inputElms[0]);
+    this.setFormValidationForInput(1, inputElms[0]);
 
     this.saveAndNextBtnElms[1].addEventListener('click', function() {
       let annualGoalArray = Array(numberOfYears);
@@ -484,6 +473,9 @@
       }
 
       that.id = 1; //仮
+      if(that.currentSettingsData.goal!=that.inputGoalElms[1].value.trim()) {
+        that.currentSettingsData.goal = that.inputGoalElms[1].value.trim();
+      }
       that.currentSettingsData.goalperiodtext = goalTitleAreaText;
       that.currentSettingsData.goalperiodarray = goalTitleAreaTextArray;
       that.currentSettingsData.status = 2;
@@ -499,15 +491,11 @@
   };
 
   Settings.prototype.setEventSettings3 = function() {//月間
-    let commonElmsAndDataForInput = this.commonElmsAndDataForInput(2);
-    const inputAreaElm = commonElmsAndDataForInput[0];
-    const goalTitleAreaPElm = commonElmsAndDataForInput[1];
-    const goalTitleAreaDivElms = commonElmsAndDataForInput[2];
-    const goalTitleAreaInputElm = goalTitleAreaDivElms[0].querySelector('input');
-    const goalTitleAreaSelectElm = goalTitleAreaDivElms[1].querySelector('select');
+    const goalTitleAreaSelectElm = this.settingsSectionElms[2].querySelector('select');
+    const goalTitleAreaDivElms = [this.inputGoalElms[2].parentNode, goalTitleAreaSelectElm.parentNode];
     
     if(!this.currentSettingsData.goalperiodarray) {//one year or less
-      goalTitleAreaInputElm.value = this.currentSettingsData.goal;
+      this.inputGoalElms[2].value = this.currentSettingsData.goal;
       goalTitleAreaDivElms[0].classList.remove('d-none');
       goalTitleAreaDivElms[1].classList.add('d-none');
     }
@@ -517,9 +505,9 @@
     }
 
     const judgeDisabled = (aIsOneYearOrLess) => {
-      let inputElms = inputAreaElm.querySelectorAll('input');
+      let inputElms = this.inputAreaElms[1].querySelectorAll('input');
       if(aIsOneYearOrLess) {
-        this.setFormValidationForInput(goalTitleAreaInputElm, 2, inputElms);
+        this.setFormValidationForInput(2, inputElms);
       }
       else {
         inputElms.forEach(elm=> {
@@ -559,7 +547,7 @@
         resultText += '（' + getEndDate + '）までに達成したいこと';
       }
 
-      goalTitleAreaPElm.textContent = resultText;
+      this.goalPeriodElms[1].textContent = resultText;
 
       let monthStartCntArray = getStartDate.split('/');
       let monthEndCntArray = getEndDate.split('/');
@@ -579,14 +567,14 @@
           <input type="text" class="form-control my-2" id="inputMonthly` + cnt + `">
         </div>`;
       }
-      inputAreaElm.innerHTML = result;
+      this.inputAreaElms[1].innerHTML = result;
     }
     else {
       const getTextContent = (aStart, aEnd) => {
         return (aStart + 'から' + aEnd + 'までに達成したいこと');
       };
 
-      goalTitleAreaPElm.textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
+      this.goalPeriodElms[1].textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
 
       let annualGoalOption = ''
       this.currentSettingsData.annualgoalarray.forEach((val, key) => {
@@ -607,7 +595,8 @@
 
       let startDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
       let endDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][1].split('/');
-      let diffInMonths = parseInt(endDateLastArray[1]) - parseInt(startDateLastArray[1]) + 1;
+      let diffInMonths = (endDateLastArray[0]==startDateLastArray[0]) ? 1 : 13;
+      diffInMonths += parseInt(endDateLastArray[1]) - parseInt(startDateLastArray[1]);
 
       let length2 = 0;
       const getResultArray = () => {
@@ -629,10 +618,10 @@
         }
         return resultArray;
       };
-      inputAreaElm.innerHTML = getResultArray()[selectedIndex];
+      this.inputAreaElms[1].innerHTML = getResultArray()[selectedIndex];
 
       goalTitleAreaSelectElm.addEventListener('change', function() {
-        let inputMonthlyElms = inputAreaElm.querySelectorAll('input');
+        let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
         let tempInputMonthlyValueArray = Array(12); //後で変更　日付指定の時は異なる
         inputMonthlyElms.forEach((elm, key) => {
           if(elm.value) {
@@ -642,8 +631,8 @@
         tempInputMonthlyArray[selectedIndex] = tempInputMonthlyValueArray;
 
         selectedIndex = parseInt(this.value);
-        goalTitleAreaPElm.textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
-        inputAreaElm.innerHTML = getResultArray()[selectedIndex];
+        that.goalPeriodElms[1].textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
+        that.inputAreaElms[1].innerHTML = getResultArray()[selectedIndex];
         if(!selectedIndex) {
           judgeDisabled(false);
         }
@@ -655,6 +644,15 @@
     this.backBtnElms[1].addEventListener('click', function() {
       let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
       navAndCommon.switchPage(pageNo, that.settingsSectionElms);
+    });
+
+    this.saveAndNextBtnElms[2].addEventListener('click', function() {
+      if(that.currentSettingsData.goal!=that.inputGoalElms[2].value.trim()) {
+        that.currentSettingsData.goal = that.inputGoalElms[2].value.trim();
+      }
+
+      that.saveAndNextData(3);
+      // that.setEventSettings4();
     });
   };
 

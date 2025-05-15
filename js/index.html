@@ -43,22 +43,22 @@
         <div class="mt-5">
           <p>あなたが達成したいことは何ですか？</p>
           <span class="small text-danger d-none js-inputAlert"></span>
-          <input class="form-control" type="text" id="inputGoal">
+          <input class="form-control js-inputGoal" type="text" id="inputGoal">
           <p class="small mt-2">例）（良い発音の）英語で自信を持って自分の意見を言えるようになる</p>
         </div>
         <div>
           <p class="mt-5">いつからいつまでの期間で達成したいですか？</p>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioPeriod" id="radioPeriod1" checked>
+            <input class="form-check-input js-inputSettingsTop" type="radio" name="radioPeriod" id="radioPeriod1" checked>
             <label class="form-check-label" for="radioPeriod1">期間あり</label>
           </div>
           <div class="d-flex flex-row justify-content-center mt-3">
             <div class="flex-fill">
-              <input class="form-control" type="date" id="periodStart" name="periodStart" value="" min="" max="">
+              <input class="form-control js-inputSettingsTop" type="date" id="periodStart" name="periodStart" value="" min="" max="">
             </div>
             <div class="flex-fill align-self-center text-center">から</div>
             <div class="flex-fill">
-              <input class="form-control d-none" type="date" id="periodEnd" name="periodEnd" value="" min="" max="">
+              <input class="form-control d-none js-inputSettingsTop" type="date" id="periodEnd" name="periodEnd" value="" min="" max="">
               <select name="selectPeriod2" id="selectPeriod2" class="form-select">
                 <option value="w1">1ヶ月後</option>
                 <option value="m1">3ヶ月後</option>
@@ -82,7 +82,7 @@
                       <button type="button" class="btn-close js-periodCancelBtn" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                      <input class="form-control" type="date" id="modalEndPeriod" name="modalEndPeriod" value="" min="" max="">
+                      <input class="form-control js-inputSettingsTop" type="date" id="modalEndPeriod" name="modalEndPeriod" value="" min="" max="">
                     </div>
                     <div class="modal-footer">
                       <button type="button" class="btn btn-secondary js-periodCancelBtn" data-bs-dismiss="modal">キャンセル</button>
@@ -108,10 +108,10 @@
         </div>
       </div>
       <div class="d-none js-settingsSection">
-        <div class="js-goalTitleArea">
-          <p class="small mb-1 text-secondary"></p>
+        <div>
+          <p class="small mb-1 text-secondary js-goalPeriod"></p>
           <span class="small text-danger d-none js-inputAlert"></span>
-          <input type="text" class="form-control" id="inputGoal2">
+          <input type="text" class="form-control js-inputGoal" id="inputGoal2">
         </div>
         <p class="p-2">
           上記を達成するための年ごとの目標を書きましょう。<br>
@@ -124,11 +124,11 @@
         </div>
       </div>
       <div class="d-none js-settingsSection">
-        <div class="js-goalTitleArea">
-          <p class="small mb-1 text-secondary"></p>
+        <div>
+          <p class="small mb-1 text-secondary js-goalPeriod"></p>
           <div class="d-none">
             <span class="small text-danger d-none js-inputAlert"></span>
-            <input type="text" class="form-control" id="inputGoal3">
+            <input type="text" class="form-control js-inputGoal" id="inputGoal3">
           </div>
           <div class="d-none">
             <select name="selectPeriod3" id="selectPeriod3" class="form-select"></select>
@@ -146,6 +146,10 @@
       </div>
       <div class="d-none js-settingsSection">
         週間目標
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
       </div>
       <div class="d-none js-settingsSection">
         todo設定
