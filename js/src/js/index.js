@@ -490,9 +490,47 @@
     });
   };
 
+  Settings.prototype.addGoalOptions = function(aIndex) {
+    console.log(this.currentSettingsData);
+    let annualGoalOption = ''
+    if(!aIndex) {//monthly
+      this.currentSettingsData.annualgoalarray.forEach((val, key) => {
+        if(val) {
+          annualGoalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
+        }
+      });  
+    }
+    else if(aIndex==1) {//weekly
+      const is2DimensionalArray = (aObj) => {
+        if(Array.isArray(aObj)) {
+          return aObj.some(elm => Array.isArray(elm));
+        }
+        return false;
+      };
+
+      if(is2DimensionalArray(this.currentSettingsData.monthlygoalsarray)) {
+        for(let cnt=0;cnt<2;++cnt) {
+          this.currentSettingsData.monthlygoalsarray[cnt].forEach((val, key) => {
+            if(val) {
+              annualGoalOption += '<option value="' + key + '">' + val + '</option>'
+            }
+          });  
+        }
+      }
+      else {
+        this.currentSettingsData.monthlygoalsarray.forEach((val, key) => {
+          if(val) {
+            annualGoalOption += '<option value="' + key + '">' + val + '</option>'
+          }
+        });  
+      }
+    }
+    this.selectGoalsElms[aIndex].innerHTML = annualGoalOption;
+  };
+
   Settings.prototype.setEventSettings3 = function() {//月間
-    const goalTitleAreaSelectElm = this.settingsSectionElms[2].querySelector('select');
-    const goalTitleAreaDivElms = [this.inputGoalElms[2].parentNode, goalTitleAreaSelectElm.parentNode];
+    this.selectGoalsElms = document.querySelectorAll('.js-selectGoals');
+    const goalTitleAreaDivElms = [this.inputGoalElms[2].parentNode, this.selectGoalsElms[0].parentNode];
     
     if(!this.currentSettingsData.goalperiodarray) {//one year or less
       this.inputGoalElms[2].value = this.currentSettingsData.goal;
@@ -524,6 +562,8 @@
     let year = 0;
     let month = 0;
     let monthCnt = 0;
+
+    let tempInputMonthlyArray = [];
 
     if(!this.currentSettingsData.goalperiodarray) {//one year or less
       let getStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
@@ -576,13 +616,7 @@
 
       this.goalPeriodElms[1].textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
 
-      let annualGoalOption = ''
-      this.currentSettingsData.annualgoalarray.forEach((val, key) => {
-        if(val) {
-          annualGoalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
-        }
-      });
-      goalTitleAreaSelectElm.innerHTML = annualGoalOption;
+      this.addGoalOptions(0);
 
       let length = this.currentSettingsData.annualgoalarray.length;
       let resultArray = Array(length);
@@ -591,7 +625,7 @@
       let value = '';
 
       let selectedIndex = 0;
-      let tempInputMonthlyArray = Array(length);
+      tempInputMonthlyArray = Array(length);
 
       let startDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
       let endDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][1].split('/');
@@ -620,7 +654,7 @@
       };
       this.inputAreaElms[1].innerHTML = getResultArray()[selectedIndex];
 
-      goalTitleAreaSelectElm.addEventListener('change', function() {
+      this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
         let tempInputMonthlyValueArray = Array(12); //後で変更　日付指定の時は異なる
         inputMonthlyElms.forEach((elm, key) => {
@@ -637,6 +671,7 @@
           judgeDisabled(false);
         }
       });
+    
     }
 
     judgeDisabled(!this.currentSettingsData.goalperiodarray);
@@ -647,13 +682,40 @@
     });
 
     this.saveAndNextBtnElms[2].addEventListener('click', function() {
-      if(that.currentSettingsData.goal!=that.inputGoalElms[2].value.trim()) {
+      if(that.inputGoalElms[2].value.trim() && that.currentSettingsData.goal!=that.inputGoalElms[2].value.trim()) {
         that.currentSettingsData.goal = that.inputGoalElms[2].value.trim();
       }
 
+      const inputElms = that.inputAreaElms[1].querySelectorAll('input');
+      let inputElmsLength = inputElms.length;
+      let inputArray = Array(inputElms.length);
+      for(let cnt=0;cnt<inputElmsLength;++cnt) {
+        inputArray[cnt] = inputElms[cnt].value;
+      }
+
+      that.currentSettingsData.monthlygoalsarray = (tempInputMonthlyArray[0]) ? tempInputMonthlyArray : inputArray;
+
       that.saveAndNextData(3);
-      // that.setEventSettings4();
+      that.setEventSettings4();
     });
+  };
+
+
+  Settings.prototype.setEventSettings4 = function() {//週間
+
+    this.addGoalOptions(1);
+
+    // this.backBtnElms[2].addEventListener('click', function() {
+    //   let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
+    //   navAndCommon.switchPage(pageNo, that.settingsSectionElms);
+    // });
+
+    // this.saveAndNextBtnElms[3].addEventListener('click', function() {
+
+    //   that.saveAndNextData(4);
+    //   that.setEventSettings5();
+    // });
+
   };
 
   Settings.prototype.setEvent = function() {

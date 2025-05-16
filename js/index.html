@@ -131,7 +131,7 @@
             <input type="text" class="form-control js-inputGoal" id="inputGoal3">
           </div>
           <div class="d-none">
-            <select name="selectPeriod3" id="selectPeriod3" class="form-select"></select>
+            <select name="selectPeriod3" id="selectPeriod3" class="form-select js-selectGoals"></select>
           </div>
         </div>
         <p class="p-2">
@@ -145,7 +145,14 @@
         </div>
       </div>
       <div class="d-none js-settingsSection">
-        週間目標
+        <div>
+          <select name="selectPeriod4" id="selectPeriod4" class="form-select js-selectGoals"></select>
+        </div>
+        <p class="p-2">
+          上記を達成するための週ごとの目標を書きましょう。<br>
+          後で変更することもできます。
+        </p>
+        <div class="js-inputArea"></div>
         <div class="text-center pt-3 pb-5">
           <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
           <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>

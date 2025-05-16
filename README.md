@@ -34,11 +34,11 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　年間目標 | 設定　月間目標 | 設定　週間目標 |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/76f26ebc-914f-4dd0-b2ee-54be04e24e06" width="200"> | <img src="https://github.com/user-attachments/assets/ad860986-f72f-4412-b8da-255123475b15" width="200"> | <img src="https://github.com/user-attachments/assets/e2230ab1-a1f3-4bcb-8b19-ceab09229f4f" width="200"> |
+| <img src="https://github.com/user-attachments/assets/76f26ebc-914f-4dd0-b2ee-54be04e24e06" width="200"> | <img src="https://github.com/user-attachments/assets/ad860986-f72f-4412-b8da-255123475b15" width="200"> | <img src="https://github.com/user-attachments/assets/f9f63469-3ca6-485e-bad8-1fe2bd6c3eb5" width="200"> |
 
 | 設定　todo |  |  |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/d8b02702-1a16-4778-83b6-9849d9cbbb6d" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/fbd3ce5f-761b-405d-9a09-91bd76eab4fa" width="200"> |  |  |
 
 | 設定　ご褒美１ | 設定　ご褒美２ |  |
 | ---- | ---- | ---- |
