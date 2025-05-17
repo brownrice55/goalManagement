@@ -373,32 +373,33 @@
     });
   };
 
-  Settings.prototype.getYearlyOrMonthlyDate = function(aMultiplier, aMonth, aStartYear, aStartMonth) {
-    const getDaysOfTheYear = (aStartYear, aStartMonth) => {
-      let startYear = (aStartMonth>2) ? (aStartYear+1) : aStartYear;
-      if(startYear%100==0 && startYear%400!=0) {
-        return 365;
-      }
-      if(startYear%4==0) {
-        return 366;
-      }
+  Settings.prototype.getDaysOfTheYear = function(aYear, aMonth) {
+    let startYear = (aMonth>2) ? (aYear+1) : aYear;
+    if(startYear%100==0 && startYear%400!=0) {
       return 365;
-    };
-    let multiplication = 0;
-    let daysOfTheYear = getDaysOfTheYear(aStartYear, aStartMonth);
+    }
+    if(startYear%4==0) {
+      return 366;
+    }
+    return 365;
+  };
 
-    const theNumberOfDaysInAMonth = (aStartMonth) => {
-      let daysOfTheEachMonths = [31,28,31,30,31,30,31,31,30,31,30,31];
-      if(daysOfTheYear==366) {
-        daysOfTheEachMonths[1] = 29;
-      }
-      return daysOfTheEachMonths[(aStartMonth-1)];
-    };
+  Settings.prototype.getTheNumberOfDaysInAMonth = function(aMonth, aDaysOfTheYear) {
+    let daysOfTheEachMonths = [31,28,31,30,31,30,31,31,30,31,30,31];
+    if(aDaysOfTheYear==366) {
+      daysOfTheEachMonths[1] = 29;
+    }
+    return daysOfTheEachMonths[(aMonth-1)];
+  };
+
+  Settings.prototype.getYearlyOrMonthlyDate = function(aMultiplier, aMonth, aStartYear, aStartMonth) {
+    let multiplication = 0;
+    let daysOfTheYear = this.getDaysOfTheYear(aStartYear, aStartMonth);
 
     if(aMonth) {
       let theSumOfDays = 0;
       for(let cnt=0;cnt<aMultiplier;++cnt) {
-        theSumOfDays += theNumberOfDaysInAMonth(aStartMonth+cnt);
+        theSumOfDays += this.getTheNumberOfDaysInAMonth((aStartMonth+cnt), daysOfTheYear);
       }
       multiplication = (aMultiplier==12) ? daysOfTheYear : theSumOfDays;
     }
@@ -490,42 +491,137 @@
     });
   };
 
+  Settings.prototype.getDimensionNum = function(aObj) {
+    if(!Array.isArray(aObj)) {
+      return 0;
+    }
+    let max = 0;
+    for (let cnt=0,len=aObj.length;cnt<len;++cnt) {
+      max = Math.max(max, this.getDimensionNum(aObj[cnt]));
+    }
+    return ++max;
+  };
+
   Settings.prototype.addGoalOptions = function(aIndex) {
-    console.log(this.currentSettingsData);
-    let annualGoalOption = ''
+    let goalOption = ''
+    let inputHTML = '';
     if(!aIndex) {//monthly
       this.currentSettingsData.annualgoalarray.forEach((val, key) => {
         if(val) {
-          annualGoalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
+          goalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
         }
       });  
     }
     else if(aIndex==1) {//weekly
-      const is2DimensionalArray = (aObj) => {
-        if(Array.isArray(aObj)) {
-          return aObj.some(elm => Array.isArray(elm));
-        }
-        return false;
-      };
-
-      if(is2DimensionalArray(this.currentSettingsData.monthlygoalsarray)) {
-        for(let cnt=0;cnt<2;++cnt) {
+      let dimensionNum = this.getDimensionNum(this.currentSettingsData.monthlygoalsarray);
+      if(dimensionNum==2) {
+        for(let cnt=0,len=this.currentSettingsData.monthlygoalsarray.length;cnt<len;++cnt) {
           this.currentSettingsData.monthlygoalsarray[cnt].forEach((val, key) => {
             if(val) {
-              annualGoalOption += '<option value="' + key + '">' + val + '</option>'
+              goalOption += '<option value="' + cnt + '-' + key + '">' + val + '</option>'
             }
-          });  
+          });
         }
       }
       else {
         this.currentSettingsData.monthlygoalsarray.forEach((val, key) => {
           if(val) {
-            annualGoalOption += '<option value="' + key + '">' + val + '</option>'
+            goalOption += '<option value="' + key + '">' + val + '</option>'
           }
         });  
       }
     }
-    this.selectGoalsElms[aIndex].innerHTML = annualGoalOption;
+    this.selectGoalsElms[aIndex].innerHTML = goalOption;
+  };
+
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIndex, aSelectedIndex, aYear, aMonth) {
+    let array = (aIndex==1) ? this.currentSettingsData.annualgoalarray : this.currentSettingsData.monthlygoalsarray;
+    let peridoArray = (!aIndex) ? this.currentSettingsData.goalperiodarray : this.currentSettingsData.monthlygoalsarrayperiod;
+    let length = array.length;
+    let resultArray = [];
+    let startDateArray = '';
+    let value = '';
+    let length2 = 0;
+
+    if(aIndex==1) {//monthly
+      let startDateLastArray = this.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
+      let endDateLastArray = this.currentSettingsData.goalperiodarray[(length-1)][1].split('/');
+      let diffInMonths = (endDateLastArray[0]==startDateLastArray[0]) ? 1 : 13;
+      diffInMonths += parseInt(endDateLastArray[1]) - parseInt(startDateLastArray[1]);
+
+      for(let cnt=0;cnt<length;++cnt) {
+        startDateArray = this.currentSettingsData.goalperiodarray[cnt][0].split('/');
+        year = parseInt(startDateArray[0]) + cnt;
+        resultArray[cnt] = '';
+        length2 = (cnt==(length-1)) ? diffInMonths : 13;
+        for(let cnt2=0;cnt2<length2;++cnt2) {
+          month = parseInt(startDateArray[1]) + cnt2;
+          month = (month>12) ? month-12 : month;
+          required = (cnt==0 && cnt2<2) ? ' <span class="text-danger">※</span>' : '';
+          value = (aTempInputArray) ? (aTempInputArray[cnt]) ? (aTempInputArray[cnt][cnt2]) ? aTempInputArray[cnt][cnt2].trim() : '' : '' : '';
+          resultArray[cnt] += `<div class="p-2">
+            <label for="inputMonthly` + cnt + '-' + cnt2 + `">` + month + `月の目標` + required + `</label>
+            <input type="text" class="form-control my-2" id="inputMonthly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="` + year + ',' + month + `">
+            </div>`;
+        }
+      }
+    }
+    else {//weekly
+      const getWeekArray = (aYear, aMonth) => {
+
+        let daysOfTheYear = this.getDaysOfTheYear(aYear, aMonth);
+        let theNumberOfDaysInAMonth = this.getTheNumberOfDaysInAMonth(aMonth, daysOfTheYear);
+
+        const firstDayOfTheMonth = new Date(aYear + '-0' + aMonth + '-01');
+        let dayIndexOfFirstDayOfTheMonth = firstDayOfTheMonth.getDay();
+
+        let addendArray = [1, 7, 6, 5, 4, 3, 2];
+        let firstMonday = 1 + addendArray[dayIndexOfFirstDayOfTheMonth];
+
+        let weekArray = [];
+        weekArray[0] = [1, (firstMonday-1)];
+        for(let cnt=0;cnt<=5;++cnt) {
+          if((firstMonday+6)+7*cnt<=31) {
+            weekArray[(cnt+1)] = [firstMonday+7*cnt, (firstMonday+6)+7*cnt];
+          }
+          else {
+            weekArray[(cnt+1)] = [firstMonday+7*cnt, theNumberOfDaysInAMonth];
+            return weekArray;
+          }
+        }
+      };
+
+      for(let cnt=0;cnt<length;++cnt) {
+        let month = aMonth;
+        let year = aYear;
+        let stringYearAndMonth = year + '/' + month + '/';
+        let weekArray = getWeekArray(year,month);
+        resultArray[cnt] = [];
+        if(Array.isArray(aSelectedIndex)) {
+          for(let cnt3=0,len3=this.currentSettingsData.monthlygoalsarrayperiod[0].length;cnt3<len3;++cnt3) {
+            resultArray[cnt][cnt3] = [];
+            for(let cnt2=0,len2=weekArray.length;cnt2<len2;++cnt2) {
+              value = (aTempInputArray) ? (aTempInputArray[cnt]) ? (aTempInputArray[cnt][cnt2]) ? aTempInputArray[cnt][cnt2].trim() : '' : '' : '';
+              resultArray[cnt][cnt3] += `<div class="p-2">
+              <label for="inputWeekly` + cnt + '-' + cnt2 + `">` + stringYearAndMonth + weekArray[cnt2][0] + `から` + stringYearAndMonth + weekArray[cnt2][1] + `の目標</label>
+              <input type="text" class="form-control my-2" id="inputWeekly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="">
+              </div>`;
+            }
+          }
+        }
+        else {
+          for(let cnt2=0,len2=weekArray.length;cnt2<len2;++cnt2) {
+            value = (aTempInputArray) ? (aTempInputArray[cnt]) ? (aTempInputArray[cnt][cnt2]) ? aTempInputArray[cnt][cnt2].trim() : '' : '' : '';
+            resultArray[cnt] += `<div class="p-2">
+            <label for="inputWeekly` + cnt + '-' + cnt2 + `">` + stringYearAndMonth + weekArray[cnt2][0] + `から` + stringYearAndMonth + weekArray[cnt2][1] + `の目標</label>
+            <input type="text" class="form-control my-2" id="inputWeekly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="">
+            </div>`;
+          }
+        }
+      }
+    }
+
+    this.inputAreaElms[aIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
   };
 
   Settings.prototype.setEventSettings3 = function() {//月間
@@ -564,6 +660,7 @@
     let monthCnt = 0;
 
     let tempInputMonthlyArray = [];
+    let tempInputMonthlyArrayPeriod = [];
 
     if(!this.currentSettingsData.goalperiodarray) {//one year or less
       let getStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
@@ -599,12 +696,13 @@
       let startDateArray = this.currentSettingsData.period[0].split('-');
       let result = '';
       for(let cnt=0;cnt<monthCnt;++cnt) {
+        year = (month==12) ? parseInt(startDateArray[0])+1 : parseInt(startDateArray[0]);
         month = parseInt(startDateArray[1]) + cnt;
         month = (month>12) ? month-12 : month;
         required = (cnt<2) ? ' <span class="text-danger">※</span>' : '';
         result += `<div class="p-2">
           <label for="inputMonthly` + cnt + `">` + month + `月の目標` + required + `</label>
-          <input type="text" class="form-control my-2" id="inputMonthly` + cnt + `">
+          <input type="text" class="form-control my-2" id="inputMonthly` + cnt + `" data-period="` + year + ',' + month + `">
         </div>`;
       }
       this.inputAreaElms[1].innerHTML = result;
@@ -617,56 +715,27 @@
       this.goalPeriodElms[1].textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
 
       this.addGoalOptions(0);
-
-      let length = this.currentSettingsData.annualgoalarray.length;
-      let resultArray = Array(length);
-      let startDateArray = '';
-
-      let value = '';
-
+      
       let selectedIndex = 0;
-      tempInputMonthlyArray = Array(length);
-
-      let startDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
-      let endDateLastArray = that.currentSettingsData.goalperiodarray[(length-1)][1].split('/');
-      let diffInMonths = (endDateLastArray[0]==startDateLastArray[0]) ? 1 : 13;
-      diffInMonths += parseInt(endDateLastArray[1]) - parseInt(startDateLastArray[1]);
-
-      let length2 = 0;
-      const getResultArray = () => {
-        for(let cnt=0;cnt<length;++cnt) {
-          startDateArray = this.currentSettingsData.goalperiodarray[cnt][0].split('/');
-          year = parseInt(startDateArray[0]) + cnt;
-          resultArray[cnt] = '';
-          length2 = (cnt==(length-1)) ? diffInMonths : 13;
-          for(let cnt2=0;cnt2<length2;++cnt2) {
-            month = parseInt(startDateArray[1]) + cnt2;
-            month = (month>12) ? month-12 : month;
-            required = (cnt==0 && cnt2<2) ? ' <span class="text-danger">※</span>' : '';
-            value = (tempInputMonthlyArray[cnt]) ? (tempInputMonthlyArray[cnt][cnt2]) ? tempInputMonthlyArray[cnt][cnt2].trim() : '' : '';
-            resultArray[cnt] += `<div class="p-2">
-              <label for="inputMonthly` + cnt + '-' + cnt2 + `">` + month + `月の目標` + required + `</label>
-              <input type="text" class="form-control my-2" id="inputMonthly` + cnt + '-' + cnt2 + `" value="` + value + `">
-            </div>`;
-          }
-        }
-        return resultArray;
-      };
-      this.inputAreaElms[1].innerHTML = getResultArray()[selectedIndex];
+      this.getInputHtmlArray(null, 1, selectedIndex, null, null);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
-        let tempInputMonthlyValueArray = Array(12); //後で変更　日付指定の時は異なる
+        let tempInputMonthlyValueArray = Array(12);
+        let tempInputMonthlyValueArrayPeriod = Array(12);
         inputMonthlyElms.forEach((elm, key) => {
           if(elm.value) {
             tempInputMonthlyValueArray[key] = elm.value;
+            tempInputMonthlyValueArrayPeriod[key] = elm.dataset.period.split(',');
           }
         });
         tempInputMonthlyArray[selectedIndex] = tempInputMonthlyValueArray;
+        tempInputMonthlyArrayPeriod[selectedIndex] = tempInputMonthlyValueArrayPeriod;
 
         selectedIndex = parseInt(this.value);
         that.goalPeriodElms[1].textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
-        that.inputAreaElms[1].innerHTML = getResultArray()[selectedIndex];
+
+        that.getInputHtmlArray(tempInputMonthlyArray, 1, selectedIndex, null, null);
         if(!selectedIndex) {
           judgeDisabled(false);
         }
@@ -689,11 +758,14 @@
       const inputElms = that.inputAreaElms[1].querySelectorAll('input');
       let inputElmsLength = inputElms.length;
       let inputArray = Array(inputElms.length);
+      let inputArrayPeriod = Array(inputElms.length);
       for(let cnt=0;cnt<inputElmsLength;++cnt) {
         inputArray[cnt] = inputElms[cnt].value;
+        inputArrayPeriod[cnt] = inputElms[cnt].dataset.period.split(',');
       }
 
       that.currentSettingsData.monthlygoalsarray = (tempInputMonthlyArray[0]) ? tempInputMonthlyArray : inputArray;
+      that.currentSettingsData.monthlygoalsarrayperiod = (tempInputMonthlyArrayPeriod[0]) ? tempInputMonthlyArrayPeriod : inputArrayPeriod;
 
       that.saveAndNextData(3);
       that.setEventSettings4();
@@ -703,7 +775,51 @@
 
   Settings.prototype.setEventSettings4 = function() {//週間
 
+    const getTextContent = (aYear, aMonth) => {
+      return (aYear + '年' + aMonth + '月に達成したいこと');
+    };
+
     this.addGoalOptions(1);
+    let dimensionNumPeriod = this.getDimensionNum(this.currentSettingsData.monthlygoalsarrayperiod);
+
+    let startYear = (dimensionNumPeriod==3) ? this.currentSettingsData.monthlygoalsarrayperiod[0][0][0] : this.currentSettingsData.monthlygoalsarrayperiod[0][0];
+    let startMonth = (dimensionNumPeriod==3) ? this.currentSettingsData.monthlygoalsarrayperiod[0][0][1] : this.currentSettingsData.monthlygoalsarrayperiod[0][1];
+
+    this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth);
+
+    let tempInputWeeklyArray = [];
+    let tempInputWeeklyArrayPeriod = [];
+    let selectedIndex = 0;
+    this.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth);
+
+    const that = this;
+    
+    this.selectGoalsElms[1].addEventListener('change', function() {
+      let inputWeeklyElms = that.inputAreaElms[1].querySelectorAll('input');
+      let tempInputWeeklyValueArray = Array(5);
+      let tempInputWeeklyValueArrayPeriod = Array(5);
+      inputWeeklyElms.forEach((elm, key) => {
+        if(elm.value) {
+          tempInputWeeklyValueArray[key] = elm.value;
+          tempInputWeeklyValueArrayPeriod[key] = elm.dataset.period;
+        }
+      });
+      tempInputWeeklyArray[selectedIndex] = tempInputWeeklyValueArray;
+      tempInputWeeklyArrayPeriod[selectedIndex] = tempInputWeeklyValueArrayPeriod;
+
+      selectedIndex = (dimensionNumPeriod==3) ? this.value.split('-') : parseInt(this.value);
+      startYear = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][0] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][0];
+      startMonth = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][1] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][1];
+  
+      that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth);
+
+      that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth);
+
+      // that.inputAreaElms[2].innerHTML = getInputHtmlArray()[selectedIndex];
+      // if(!selectedIndex) {
+      //   judgeDisabled(false);
+      // }
+    });
 
     // this.backBtnElms[2].addEventListener('click', function() {
     //   let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
