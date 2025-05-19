@@ -146,7 +146,9 @@
 
     navAndCommon.switchPage(aIndex, this.settingsSectionElms);
     this.displayGoalList();
-    this.saveAndNextBtnElms[aIndex].disabled = true;
+    if(aIndex!=4) {
+      this.saveAndNextBtnElms[aIndex].disabled = true;
+    }
   };
 
   Settings.prototype.getDate = function(aDiff, aDate) {
@@ -591,6 +593,30 @@
         }
       };
 
+      const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth) => {
+        let value = '';
+        let result = '';
+        let span = '';
+        let requiredClass = '';
+        for(let cntWeekly=0,len=aWeekArray.length;cntWeekly<len;++cntWeekly) {
+          if(aDimension==3) {
+            value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cntWeekly]!=null) ? String(aTempInputArray[aCnt][aCnt2][cntWeekly]).trim() : '';
+            span = (!aCnt && !aCnt2 && !cntWeekly || !aCnt && !aCnt2 && cntWeekly==1) ? '<span class="text-danger">※</span>' : '';
+            requiredClass = (!aCnt && !aCnt2 && !cntWeekly || !aCnt && !aCnt2 && cntWeekly==1) ? ' js-required' : '';
+          }
+          else {
+            value = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cntWeekly]!=null) ? String(aTempInputArray[aCnt][cntWeekly]).trim() : '';
+            span = (!aCnt && !cntWeekly || !aCnt && cntWeekly==1) ? '<span class="text-danger">※</span>' : '';
+            requiredClass = (!aCnt && !cntWeekly || !aCnt && cntWeekly==1) ? ' js-required' : '';
+          }
+          result += `<div class="p-2">
+                <label for="inputWeekly` + aCnt + '-' + cntWeekly + `">` + aStringYearAndMonth + aWeekArray[cntWeekly][0] + `から` + aStringYearAndMonth + aWeekArray[cntWeekly][1] + `の目標` + span + ` </label>
+                <input type="text" class="form-control my-2` + requiredClass + `" id="inputWeekly` + aCnt + '-' + cntWeekly + `" value="` + value + `" data-period="` + aYear + ',' + aMonth + ',' + aWeekArray[cntWeekly][0] + ',' + aWeekArray[cntWeekly][1] + `">
+                </div>`;
+        }
+        return result;
+      };
+
       for(let cnt=0;cnt<length;++cnt) {
         let month = aMonth;
         let year = aYear;
@@ -598,25 +624,13 @@
         let weekArray = getWeekArray(year,month);
         resultArray[cnt] = [];
         if(Array.isArray(aSelectedIndex)) {
-          for(let cnt3=0,len3=this.currentSettingsData.monthlygoalsarrayperiod[cnt].length;cnt3<len3;++cnt3) {
-            resultArray[cnt][cnt3] = [];
-            for(let cnt2=0,len2=weekArray.length;cnt2<len2;++cnt2) {
-              value = (aTempInputArray[cnt][cnt3] && aTempInputArray[cnt][cnt3][cnt2]!=null) ? String(aTempInputArray[cnt][cnt3][cnt2]).trim() : '';
-              resultArray[cnt][cnt3] += `<div class="p-2">
-              <label for="inputWeekly` + cnt + '-' + cnt2 + `">` + stringYearAndMonth + weekArray[cnt2][0] + `から` + stringYearAndMonth + weekArray[cnt2][1] + `の目標</label>
-              <input type="text" class="form-control my-2" id="inputWeekly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="` + year + ',' + month + ',' + weekArray[cnt2][0] + ',' + weekArray[cnt2][1] + `">
-              </div>`;
-            }
+          for(let cnt2=0,len2=this.currentSettingsData.monthlygoalsarrayperiod[cnt].length;cnt2<len2;++cnt2) {
+            resultArray[cnt][cnt2] = [];
+            resultArray[cnt][cnt2] += getResultArray(3, aTempInputArray, cnt, cnt2, weekArray, year, month, stringYearAndMonth);
           }
         }
         else {
-          for(let cnt2=0,len2=weekArray.length;cnt2<len2;++cnt2) {
-            value = (aTempInputArray[cnt] && aTempInputArray[cnt][cnt2]!=null) ? String(aTempInputArray[cnt][cnt2]).trim() : '';
-            resultArray[cnt] += `<div class="p-2">
-            <label for="inputWeekly` + cnt + '-' + cnt2 + `">` + stringYearAndMonth + weekArray[cnt2][0] + `から` + stringYearAndMonth + weekArray[cnt2][1] + `の目標</label>
-            <input type="text" class="form-control my-2" id="inputWeekly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="` + year + ',' + month + ',' + weekArray[cnt2][0] + ',' + weekArray[cnt2][1] + `">
-            </div>`;
-          }
+          resultArray[cnt] += getResultArray(2, aTempInputArray, cnt, null, weekArray, year, month, stringYearAndMonth);
         }
       }
     }
@@ -758,8 +772,8 @@
 
       const inputElms = that.inputAreaElms[1].querySelectorAll('input');
       let inputElmsLength = inputElms.length;
-      let inputArray = Array(inputElms.length);
-      let inputArrayPeriod = Array(inputElms.length);
+      let inputArray = Array(inputElmsLength);
+      let inputArrayPeriod = Array(inputElmsLength);
       for(let cnt=0;cnt<inputElmsLength;++cnt) {
         inputArray[cnt] = inputElms[cnt].value;
         inputArrayPeriod[cnt] = inputElms[cnt].dataset.period.split(',');
@@ -831,23 +845,51 @@
 
       that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth);
 
-      // that.inputAreaElms[2].innerHTML = getInputHtmlArray()[selectedIndex];
-      // if(!selectedIndex) {
-      //   judgeDisabled(false);
-      // }
+      judgeDisabled();
+
     });
 
-    // this.backBtnElms[2].addEventListener('click', function() {
-    //   let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
-    //   navAndCommon.switchPage(pageNo, that.settingsSectionElms);
-    // });
+    const judgeDisabled = () => {
+      let requiredInputElms = document.querySelectorAll('.js-required');
+      requiredInputElms.forEach(elm => {
+        elm.addEventListener('keyup', function() {
+          that.saveAndNextBtnElms[3].disabled = (String(requiredInputElms[0].value).trim() && String(requiredInputElms[1].value).trim()) ? false : true;
+        });
+      });
+    };
+    judgeDisabled();
 
-    // this.saveAndNextBtnElms[3].addEventListener('click', function() {
+    this.backBtnElms[2].addEventListener('click', function() {
+      navAndCommon.switchPage(2, that.settingsSectionElms);
+    });
 
-    //   that.saveAndNextData(4);
-    //   that.setEventSettings5();
-    // });
+    this.saveAndNextBtnElms[3].addEventListener('click', function() {
 
+      const inputElms = that.inputAreaElms[2].querySelectorAll('input');
+      let inputElmsLength = inputElms.length;
+      let inputArray = Array(inputElmsLength);
+      let inputArrayPeriod = Array(inputElmsLength);
+      for(let cnt=0;cnt<inputElmsLength;++cnt) {
+        inputArray[cnt] = inputElms[cnt].value;
+        inputArrayPeriod[cnt] = inputElms[cnt].dataset.period.split(',');
+      }
+
+      that.currentSettingsData.weeklygoalsarray = (tempInputWeeklyArray[0]) ? tempInputWeeklyArray : inputArray;
+      that.currentSettingsData.weeklygoalsarrayperiod = (tempInputWeeklyArrayPeriod[0]) ? tempInputWeeklyArrayPeriod : inputArrayPeriod;
+
+      that.saveAndNextData(4);
+      that.setEventSettings5();
+    });
+
+  };
+
+  Settings.prototype.setEventSettings5 = function() {
+
+    const that = this;
+    
+    this.backBtnElms[3].addEventListener('click', function() {
+      navAndCommon.switchPage(3, that.settingsSectionElms);
+    });
   };
 
   Settings.prototype.setEvent = function() {
