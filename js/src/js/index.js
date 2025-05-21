@@ -583,7 +583,8 @@
     let year = 0;
     let month = 0;
     let date = aDate;
-    let required = '';
+    let span = '';
+    let requiredClass = '';
 
     if(aIndex==1) {//monthly
       let startDateLastArray = this.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
@@ -599,11 +600,12 @@
         for(let cnt2=0;cnt2<length2;++cnt2) {
           month = parseInt(startDateArray[1]) + cnt2;
           month = (month>12) ? month-12 : month;
-          required = (cnt==0 && cnt2<2) ? ' <span class="text-danger">※</span>' : '';
+          span = (!cnt&&!cnt2 || !cnt&&cnt2==1) ? '<span class="text-danger">※</span>' : '';
+          requiredClass = (!cnt&&!cnt2 || !cnt&&cnt2==1) ? ' js-required' : '';
           value = (aTempInputArray) ? (aTempInputArray[cnt]) ? (aTempInputArray[cnt][cnt2]) ? aTempInputArray[cnt][cnt2].trim() : '' : '' : '';
           resultArray[cnt] += `<div class="p-2">
-            <label for="inputMonthly` + cnt + '-' + cnt2 + `">` + month + `月の目標` + required + `</label>
-            <input type="text" class="form-control my-2" id="inputMonthly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="` + year + ',' + month + `">
+            <label for="inputMonthly` + cnt + '-' + cnt2 + `">` + month + `月の目標` + span + `</label>
+            <input type="text" class="form-control my-2` + requiredClass + `" id="inputMonthly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="` + year + ',' + month + `">
             </div>`;
         }
       }
@@ -612,8 +614,6 @@
       const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth, aDate) => {
         let value = '';
         let result = '';
-        let span = '';
-        let requiredClass = '';
         let date = aDate;
 
         for(let cntWeekly=0,len=aWeekArray.length;cntWeekly<len;++cntWeekly) {
@@ -671,7 +671,7 @@
   };
 
   Settings.prototype.judgeDisabledForEventSettings3AndEventSettings4 = function(aIndex, aIsOneOrLess) {
-    let inputElms = (aIndex==2) ? this.inputAreaElms[(aIndex-1)].querySelectorAll('input') : this.inputAreaElms[(aIndex-1)].querySelectorAll('.js-required');
+    let inputElms = this.inputAreaElms[(aIndex-1)].querySelectorAll('.js-required');
     const that = this;
     if(aIsOneOrLess) {
       this.setFormValidationForInput(aIndex, inputElms);
@@ -732,14 +732,17 @@
 
       let startDateArray = this.currentSettingsData.period[0].split('-');
       let result = '';
+      let span = '';
+      let requiredClass = '';
       for(let cnt=0;cnt<monthCnt;++cnt) {
         year = (month==12) ? parseInt(startDateArray[0])+1 : parseInt(startDateArray[0]);
         month = parseInt(startDateArray[1]) + cnt;
         month = (month>12) ? month-12 : month;
-        required = (cnt<2) ? ' <span class="text-danger">※</span>' : '';
+        span = (!cnt || cnt==1) ? '<span class="text-danger">※</span>' : '';
+        requiredClass = (!cnt || cnt==1) ? ' js-required' : '';
         result += `<div class="p-2">
-          <label for="inputMonthly` + cnt + `">` + month + `月の目標` + required + `</label>
-          <input type="text" class="form-control my-2" id="inputMonthly` + cnt + `" data-period="` + year + ',' + month + `">
+          <label for="inputMonthly` + cnt + `">` + month + `月の目標` + span + `</label>
+          <input type="text" class="form-control my-2' + requiredClass + '" id="inputMonthly` + cnt + `" data-period="` + year + ',' + month + `">
         </div>`;
       }
       this.inputAreaElms[1].innerHTML = result;
