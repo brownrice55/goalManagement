@@ -556,6 +556,10 @@
     let endDate = (aYear==parseInt(endDateArray[0]) && aMonth==parseInt(endDateArray[1])) ? parseInt(endDateArray[2]) : theNumberOfDaysInAMonth;
 
     let weekArray = [];
+    if((firstMonday-1)>=endDate) {
+      weekArray[0] = [aDate, endDate];
+      return weekArray;
+    }
     weekArray[0] = [aDate, (firstMonday-1)];
     for(let cnt=0;cnt<=5;++cnt) {
       if((firstMonday+6)+7*cnt<=endDate) {
@@ -837,7 +841,7 @@
       this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, startDate, isOneMonthOrLessCustom);
       let endDateArray = this.currentSettingsData.period[3];
 
-      const getWeekDataResult = (aYear, aMonth, aDate, aIsTheLast) => {
+      const getWeekDataResultArray = (aYear, aMonth, aDate, aIsTheLast, aMoreRequired) => {
         let year = aYear;
         let month = aMonth;
         let date = (aIsTheLast) ? 1 : aDate;
@@ -853,18 +857,38 @@
             span = (!cnt || cnt==1) ? '<span class="text-danger">※</span>' : '';
             requiredClass = (!cnt || cnt==1) ? ' js-required' : '';
           }
+          else if(aMoreRequired) {
+            span = (!cnt) ? '<span class="text-danger">※</span>' : '';
+            requiredClass = (!cnt) ? ' js-required' : '';
+          }
           result += `<div class="p-2">
           <label for="inputWeekly` + month + '-' + cnt + `">` + stringYearAndMonth + weekArray[cnt][0] + `から` + stringYearAndMonth + weekArray[cnt][1] + `の目標` + span + ` </label>
           <input type="text" class="form-control my-2` + requiredClass + `" id="inputWeekly` + month + '-' + cnt + `" data-period="` + year + ',' + month + ',' + weekArray[cnt][0] + ',' + weekArray[cnt][1] + `">
           </div>`;
         }
-        return result;
+        return [result, ((weekArray.length==1)?true:false)];
       };
 
-      let result = getWeekDataResult(startYear, startMonth, startDate, false);
-      if(parseInt(endDateArray[0])!=startYear || (parseInt(endDateArray[1])!=startMonth)) {
-        result += getWeekDataResult(parseInt(endDateArray[0]), parseInt(endDateArray[1]), parseInt(endDateArray[2]), true);
+      const getNextYearAndMonth = (aStartYear, aStartMonth) => {
+        let newMonth = (aStartMonth==12) ? (aStartMonth-11) : (aStartMonth+1);
+        let newYear = (aStartMonth==12) ? (aStartYear+1) : aStartYear;
+        return [newYear, newMonth];
+      };
+
+      let getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, false, true);
+      let result = getResultArray[0];
+      if((parseInt(endDateArray[1])-startMonth)==2 || (startMonth-parseInt(endDateArray[1]))==10) {
+        let nextYearAndMonth = getNextYearAndMonth(startYear, startMonth);
+        startYear = nextYearAndMonth[0];
+        startMonth = nextYearAndMonth[1];
+        getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, true, getResultArray[1]);
+        result += getResultArray[0];
       }
+      if(parseInt(endDateArray[0])!=startYear || (parseInt(endDateArray[1])!=startMonth)) {
+        getResultArray = getWeekDataResultArray(parseInt(endDateArray[0]), parseInt(endDateArray[1]), parseInt(endDateArray[2]), true, false);
+        result += getResultArray[0];
+      }
+
       this.inputAreaElms[2].innerHTML = result;
 
     }
@@ -890,8 +914,8 @@
       
       this.selectGoalsElms[1].addEventListener('change', function() {
         let inputWeeklyElms = that.inputAreaElms[2].querySelectorAll('input');
-        let tempInputWeeklyValueArray = Array(5);
-        let tempInputWeeklyValueArrayPeriod = Array(5);
+        let tempInputWeeklyValueArray = Array(6);
+        let tempInputWeeklyValueArrayPeriod = Array(6);
         inputWeeklyElms.forEach((elm, key) => {
           if(elm.value) {
             tempInputWeeklyValueArray[key] = elm.value;
@@ -912,9 +936,9 @@
         startMonth = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][1] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][1];
     
         that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
-
-        that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, 1);
-  
+        let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
+        that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, targetStartDate);
+        
         judgeDisabled();  
       });
     }
@@ -930,11 +954,11 @@
     judgeDisabled();
 
     this.backBtnElms[2].addEventListener('click', function() {
-      navAndCommon.switchPage(2, that.settingsSectionElms);
+      let index = (isOneMonthOrLess) ? 0 : 2;
+      navAndCommon.switchPage(index, that.settingsSectionElms);
     });
 
     this.saveAndNextBtnElms[3].addEventListener('click', function() {
-
       const inputElms = that.inputAreaElms[2].querySelectorAll('input');
       let inputElmsLength = inputElms.length;
       let inputArray = Array(inputElmsLength);
@@ -950,7 +974,6 @@
       that.saveAndNextData(4);
       that.setEventSettings5();
     });
-
   };
 
   Settings.prototype.setEventSettings5 = function() {
