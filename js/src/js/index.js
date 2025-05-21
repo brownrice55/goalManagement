@@ -138,6 +138,8 @@
     this.goalPeriodElms = document.querySelectorAll('.js-goalPeriod');
     this.backBtnElms = document.querySelectorAll('.js-backBtn');
     this.goalListElm = this.settingsSectionElms[0].querySelector('.js-goalList');
+
+    this.selectGoalsElms = document.querySelectorAll('.js-selectGoals');//monthly, weekly
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -288,7 +290,7 @@
         if(diffInDays<=7) {
           return 4;
         }
-        if(diffInDays<=31) {
+        if(diffInDays<=31) {//31の部分は要検討***
           return 3;
         }
         if(diffInDays<=365) {
@@ -312,7 +314,7 @@
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
-      that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays ];
+      that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays, (selectElm.value=='custom') ? inputPeriodEndElm.value.split('-') : 0 ];
 
       let nextPageIndex = getNextPageIndex();
       that.saveAndNextData(nextPageIndex);
@@ -322,6 +324,9 @@
       }
       else if(nextPageIndex==2) {
         that.setEventSettings3();
+      }
+      else if(nextPageIndex==3) {
+        that.setEventSettings4();
       }
     });
 
@@ -409,6 +414,7 @@
       multiplication = daysOfTheYear*aMultiplier;
     }
     let getDate = this.getDate(multiplication, this.currentSettingsData.period[0]);
+    this.currentSettingsData.period[3] = getDate;
     let dateY = getDate[0];
     let dateM = getDate[1];
     let dateD = getDate[2];
@@ -431,7 +437,7 @@
 
     let numberOfYears = (this.currentSettingsData.period[2]) ? Math.floor(this.currentSettingsData.period[2]/365) : parseInt(this.currentSettingsData.period[1]);
     let goalTitleAreaTextArray = Array(numberOfYears);
-    goalTitleAreaText = displayStartDate + 'から';
+    let goalTitleAreaText = displayStartDate + 'から';
     goalTitleAreaTextArray[0] = [ displayStartDate, displayEndDate];
 
     const getInputAreaHTML = (aCnt, aDisplayStartDate, aDisplayEndDate) => {
@@ -536,7 +542,33 @@
     this.selectGoalsElms[aIndex].innerHTML = goalOption;
   };
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIndex, aSelectedIndex, aYear, aMonth) {
+  Settings.prototype.getWeekArray = function(aYear, aMonth, aDate) {
+    let daysOfTheYear = this.getDaysOfTheYear(aYear, aMonth);
+    let theNumberOfDaysInAMonth = this.getTheNumberOfDaysInAMonth(aMonth, daysOfTheYear);
+
+    const firstDayOfTheMonth = new Date(aYear + '-0' + aMonth + '-0' + aDate);
+    let dayIndexOfFirstDayOfTheMonth = firstDayOfTheMonth.getDay();
+
+    let addendArray = [1, 7, 6, 5, 4, 3, 2];
+    let firstMonday = aDate + addendArray[dayIndexOfFirstDayOfTheMonth];
+
+    let endDateArray = this.currentSettingsData.period[3];
+    let endDate = (aYear==parseInt(endDateArray[0]) && aMonth==parseInt(endDateArray[1])) ? parseInt(endDateArray[2]) : theNumberOfDaysInAMonth;
+
+    let weekArray = [];
+    weekArray[0] = [aDate, (firstMonday-1)];
+    for(let cnt=0;cnt<=5;++cnt) {
+      if((firstMonday+6)+7*cnt<=endDate) {
+        weekArray[(cnt+1)] = [firstMonday+7*cnt, (firstMonday+6)+7*cnt];
+      }
+      else {
+        weekArray[(cnt+1)] = [firstMonday+7*cnt, endDate];
+        return weekArray;
+      }
+    }
+  };
+
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIndex, aSelectedIndex, aYear, aMonth, aDate) {
     let array = (aIndex==1) ? this.currentSettingsData.annualgoalarray : this.currentSettingsData.monthlygoalsarray;
     let peridoArray = (aIndex==1) ? this.currentSettingsData.goalperiodarray : this.currentSettingsData.monthlygoalsarrayperiod;
     let length = array.length;
@@ -544,6 +576,10 @@
     let startDateArray = '';
     let value = '';
     let length2 = 0;
+    let year = 0;
+    let month = 0;
+    let date = aDate;
+    let required = '';
 
     if(aIndex==1) {//monthly
       let startDateLastArray = this.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
@@ -569,35 +605,13 @@
       }
     }
     else {//weekly
-      const getWeekArray = (aYear, aMonth) => {
-
-        let daysOfTheYear = this.getDaysOfTheYear(aYear, aMonth);
-        let theNumberOfDaysInAMonth = this.getTheNumberOfDaysInAMonth(aMonth, daysOfTheYear);
-
-        const firstDayOfTheMonth = new Date(aYear + '-0' + aMonth + '-01');
-        let dayIndexOfFirstDayOfTheMonth = firstDayOfTheMonth.getDay();
-
-        let addendArray = [1, 7, 6, 5, 4, 3, 2];
-        let firstMonday = 1 + addendArray[dayIndexOfFirstDayOfTheMonth];
-
-        let weekArray = [];
-        weekArray[0] = [1, (firstMonday-1)];
-        for(let cnt=0;cnt<=5;++cnt) {
-          if((firstMonday+6)+7*cnt<=31) {
-            weekArray[(cnt+1)] = [firstMonday+7*cnt, (firstMonday+6)+7*cnt];
-          }
-          else {
-            weekArray[(cnt+1)] = [firstMonday+7*cnt, theNumberOfDaysInAMonth];
-            return weekArray;
-          }
-        }
-      };
-
-      const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth) => {
+      const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth, aDate) => {
         let value = '';
         let result = '';
         let span = '';
         let requiredClass = '';
+        let date = aDate;
+
         for(let cntWeekly=0,len=aWeekArray.length;cntWeekly<len;++cntWeekly) {
           if(aDimension==3) {
             value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cntWeekly]!=null) ? String(aTempInputArray[aCnt][aCnt2][cntWeekly]).trim() : '';
@@ -618,19 +632,19 @@
       };
 
       for(let cnt=0;cnt<length;++cnt) {
-        let month = aMonth;
-        let year = aYear;
+        year = aYear;
+        month = aMonth;
         let stringYearAndMonth = year + '/' + month + '/';
-        let weekArray = getWeekArray(year,month);
+        let weekArray = this.getWeekArray(year, month, date);
         resultArray[cnt] = [];
         if(Array.isArray(aSelectedIndex)) {
           for(let cnt2=0,len2=this.currentSettingsData.monthlygoalsarrayperiod[cnt].length;cnt2<len2;++cnt2) {
             resultArray[cnt][cnt2] = [];
-            resultArray[cnt][cnt2] += getResultArray(3, aTempInputArray, cnt, cnt2, weekArray, year, month, stringYearAndMonth);
+            resultArray[cnt][cnt2] += getResultArray(3, aTempInputArray, cnt, cnt2, weekArray, year, month, stringYearAndMonth, date);
           }
         }
         else {
-          resultArray[cnt] += getResultArray(2, aTempInputArray, cnt, null, weekArray, year, month, stringYearAndMonth);
+          resultArray[cnt] += getResultArray(2, aTempInputArray, cnt, null, weekArray, year, month, stringYearAndMonth, date);
         }
       }
     }
@@ -638,12 +652,11 @@
     this.inputAreaElms[aIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
   };
 
-  Settings.prototype.setEventSettings3 = function() {//月間
-    this.selectGoalsElms = document.querySelectorAll('.js-selectGoals');
-    const goalTitleAreaDivElms = [this.inputGoalElms[2].parentNode, this.selectGoalsElms[0].parentNode];
+  Settings.prototype.setInitialStateForEventSettings3AndEventSettings4 = function(aIndex, aConditions) {
+    const goalTitleAreaDivElms = [this.inputGoalElms[(aIndex+2)].parentNode, this.selectGoalsElms[aIndex].parentNode];
     
-    if(!this.currentSettingsData.goalperiodarray) {//one year or less
-      this.inputGoalElms[2].value = this.currentSettingsData.goal;
+    if(aConditions) {
+      this.inputGoalElms[(aIndex+2)].value = this.currentSettingsData.goal;
       goalTitleAreaDivElms[0].classList.remove('d-none');
       goalTitleAreaDivElms[1].classList.add('d-none');
     }
@@ -651,6 +664,10 @@
       goalTitleAreaDivElms[0].classList.add('d-none');
       goalTitleAreaDivElms[1].classList.remove('d-none');
     }
+  };
+
+  Settings.prototype.setEventSettings3 = function() {//月間
+    this.setInitialStateForEventSettings3AndEventSettings4(0, !this.currentSettingsData.goalperiodarray);
 
     const judgeDisabled = (aIsOneYearOrLess) => {
       let inputElms = this.inputAreaElms[1].querySelectorAll('input');
@@ -731,7 +748,7 @@
       this.addGoalOptions(0);
       
       let selectedIndex = 0;
-      this.getInputHtmlArray(null, 1, selectedIndex, null, null);
+      this.getInputHtmlArray(null, 1, selectedIndex, null, null, null);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
@@ -750,7 +767,7 @@
         selectedIndex = parseInt(this.value);
         that.goalPeriodElms[1].textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
 
-        that.getInputHtmlArray(tempInputMonthlyArray, 1, selectedIndex, null, null);
+        that.getInputHtmlArray(tempInputMonthlyArray, 1, selectedIndex, null, null, null);
         if(!selectedIndex) {
           judgeDisabled(false);
         }
@@ -787,67 +804,120 @@
     });
   };
 
-
   Settings.prototype.setEventSettings4 = function() {//週間
+
+    const isOneMonth = (this.currentSettingsData.period[1]=='w1') ? true : false;
+    const isOneMonthOrLessCustom = (this.currentSettingsData.period[1]!='w1' && this.currentSettingsData.period[2]!=0 && this.currentSettingsData.period[2]<=31) ? true : false;//31の部分は要検討***
+    const isOneMonthOrLess = (isOneMonth || isOneMonthOrLessCustom) ? true : false;
+    this.setInitialStateForEventSettings3AndEventSettings4(1, isOneMonthOrLess);
 
     let tempInputWeeklyArray = [];
     let tempInputWeeklyArrayPeriod = [];
+    let dimensionNumPeriod = 0;
 
-    const getTextContent = (aYear, aMonth) => {
-      return (aYear + '年' + aMonth + '月に達成したいこと');
-    };
-
-    this.addGoalOptions(1);
-    let dimensionNumPeriod = this.getDimensionNum(this.currentSettingsData.monthlygoalsarrayperiod);
-
-    if(dimensionNumPeriod==3) {
-      for(let cnt=0,len=this.currentSettingsData.monthlygoalsarrayperiod.length;cnt<len;++cnt) {
-        tempInputWeeklyArray[cnt] = [];
-        tempInputWeeklyArrayPeriod[cnt] = [];
-      }
-    }
-
-    let startYear = (dimensionNumPeriod==3) ? this.currentSettingsData.monthlygoalsarrayperiod[0][0][0] : this.currentSettingsData.monthlygoalsarrayperiod[0][0];
-    let startMonth = (dimensionNumPeriod==3) ? this.currentSettingsData.monthlygoalsarrayperiod[0][0][1] : this.currentSettingsData.monthlygoalsarrayperiod[0][1];
-
-    this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth);
-
-    let selectedIndex = (dimensionNumPeriod==3) ? [0,0] : 0;
-
-    this.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth);
+    let getStartDateArray = this.currentSettingsData.period[0].split('-');
+    let startYear = parseInt(getStartDateArray[0]);
+    let startMonth = parseInt(getStartDateArray[1]);
+    let startDate = parseInt(getStartDateArray[2]);
 
     const that = this;
+
+    const getTextContent = (aYear, aMonth, aDate, aIsOneMonthOrLessCustom) => {
+      if(aIsOneMonthOrLessCustom) {
+        return (aYear + '/' + aMonth + '/' + aDate + 'から' + this.currentSettingsData.period[1].replace(/-/g, '/') + 'までに達成したいこと');
+      }
+      if(aDate) {
+        let getEndDate = this.getYearlyOrMonthlyDate(1, true, parseInt(aYear), parseInt(aMonth));
+        return (aYear + '/' + aMonth + '/' + aDate + 'から1ヶ月後（' + getEndDate + '）まで達成したいこと');
+      }
+      return (aYear + '年' + aMonth + '月に達成したいこと');
+    };
     
-    this.selectGoalsElms[1].addEventListener('change', function() {
-      let inputWeeklyElms = that.inputAreaElms[2].querySelectorAll('input');
-      let tempInputWeeklyValueArray = Array(5);
-      let tempInputWeeklyValueArrayPeriod = Array(5);
-      inputWeeklyElms.forEach((elm, key) => {
-        if(elm.value) {
-          tempInputWeeklyValueArray[key] = elm.value;
-          tempInputWeeklyValueArrayPeriod[key] = elm.dataset.period;
-        }
-      });
-      if(dimensionNumPeriod==3) {
-        tempInputWeeklyArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArray;
-        tempInputWeeklyArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArrayPeriod;
-      }
-      else {
-        tempInputWeeklyArray[selectedIndex] = tempInputWeeklyValueArray;
-        tempInputWeeklyArrayPeriod[selectedIndex] = tempInputWeeklyValueArrayPeriod;
-      }
+    if(isOneMonthOrLess) {
+      this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, startDate, isOneMonthOrLessCustom);
+      let endDateArray = this.currentSettingsData.period[3];
 
-      selectedIndex = (dimensionNumPeriod==3) ? this.value.split('-') : parseInt(this.value);
-      startYear = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][0] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][0];
-      startMonth = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][1] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][1];
+      const getWeekDataResult = (aYear, aMonth, aDate, aIsTheLast) => {
+        let year = aYear;
+        let month = aMonth;
+        let date = (aIsTheLast) ? 1 : aDate;
+
+        let weekArray = this.getWeekArray(year, month, date);
+        let stringYearAndMonth = year + '/' + month + '/';
+        let span = '';
+        let requiredClass = '';
   
-      that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth);
+        let result = '<p class="px-2">' + month + '月</p>';
+        for(let cnt=0,len=weekArray.length;cnt<len;++cnt) {
+          if(!aIsTheLast) {
+            span = (!cnt || cnt==1) ? '<span class="text-danger">※</span>' : '';
+            requiredClass = (!cnt || cnt==1) ? ' js-required' : '';
+          }
+          result += `<div class="p-2">
+          <label for="inputWeekly` + month + '-' + cnt + `">` + stringYearAndMonth + weekArray[cnt][0] + `から` + stringYearAndMonth + weekArray[cnt][1] + `の目標` + span + ` </label>
+          <input type="text" class="form-control my-2` + requiredClass + `" id="inputWeekly` + month + '-' + cnt + `" data-period="` + year + ',' + month + ',' + weekArray[cnt][0] + ',' + weekArray[cnt][1] + `">
+          </div>`;
+        }
+        return result;
+      };
 
-      that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth);
+      let result = getWeekDataResult(startYear, startMonth, startDate, false);
+      if(parseInt(endDateArray[0])!=startYear || (parseInt(endDateArray[1])!=startMonth)) {
+        result += getWeekDataResult(parseInt(endDateArray[0]), parseInt(endDateArray[1]), parseInt(endDateArray[2]), true);
+      }
+      this.inputAreaElms[2].innerHTML = result;
 
-      judgeDisabled();
+    }
+    else {
+      this.addGoalOptions(1);
+      dimensionNumPeriod = this.getDimensionNum(this.currentSettingsData.monthlygoalsarrayperiod);
 
-    });
+      if(dimensionNumPeriod==3) {
+        for(let cnt=0,len=this.currentSettingsData.monthlygoalsarrayperiod.length;cnt<len;++cnt) {
+          tempInputWeeklyArray[cnt] = [];
+          tempInputWeeklyArrayPeriod[cnt] = [];
+        }
+      }
+
+      startYear = (dimensionNumPeriod==3) ? this.currentSettingsData.monthlygoalsarrayperiod[0][0][0] : this.currentSettingsData.monthlygoalsarrayperiod[0][0];
+      startMonth = (dimensionNumPeriod==3) ? this.currentSettingsData.monthlygoalsarrayperiod[0][0][1] : this.currentSettingsData.monthlygoalsarrayperiod[0][1];
+
+      this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
+
+      let selectedIndex = (dimensionNumPeriod==3) ? [0,0] : 0;
+
+      this.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, startDate);
+      
+      this.selectGoalsElms[1].addEventListener('change', function() {
+        let inputWeeklyElms = that.inputAreaElms[2].querySelectorAll('input');
+        let tempInputWeeklyValueArray = Array(5);
+        let tempInputWeeklyValueArrayPeriod = Array(5);
+        inputWeeklyElms.forEach((elm, key) => {
+          if(elm.value) {
+            tempInputWeeklyValueArray[key] = elm.value;
+            tempInputWeeklyValueArrayPeriod[key] = elm.dataset.period;
+          }
+        });
+        if(dimensionNumPeriod==3) {
+          tempInputWeeklyArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArray;
+          tempInputWeeklyArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArrayPeriod;
+        }
+        else {
+          tempInputWeeklyArray[selectedIndex] = tempInputWeeklyValueArray;
+          tempInputWeeklyArrayPeriod[selectedIndex] = tempInputWeeklyValueArrayPeriod;
+        }
+  
+        selectedIndex = (dimensionNumPeriod==3) ? this.value.split('-') : parseInt(this.value);
+        startYear = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][0] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][0];
+        startMonth = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][1] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][1];
+    
+        that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
+
+        that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, 1);
+  
+        judgeDisabled();  
+      });
+    }
 
     const judgeDisabled = () => {
       let requiredInputElms = document.querySelectorAll('.js-required');
