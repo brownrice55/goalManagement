@@ -232,7 +232,7 @@
         that.saveAndNextBtnElms[aIndex].disabled = (isOkForGoal && isOkForInput) ? false : true;
       });
     }
-    else if(aIndex==2) {
+    else if(aIndex==2 || aIndex==3) {
       aInputElm.forEach(elm=> {
         elm.addEventListener('keyup', function() {
           isOkForInput = (aInputElm[0].value.trim() && aInputElm[1].value.trim()) ? true : false;
@@ -670,22 +670,24 @@
     }
   };
 
-  Settings.prototype.setEventSettings3 = function() {//月間
-    this.setInitialStateForEventSettings3AndEventSettings4(0, !this.currentSettingsData.goalperiodarray);
+  Settings.prototype.judgeDisabledForEventSettings3AndEventSettings4 = function(aIndex, aIsOneOrLess) {
+    let inputElms = (aIndex==2) ? this.inputAreaElms[(aIndex-1)].querySelectorAll('input') : this.inputAreaElms[(aIndex-1)].querySelectorAll('.js-required');
+    const that = this;
+    if(aIsOneOrLess) {
+      this.setFormValidationForInput(aIndex, inputElms);
+    }
+    else {
+      inputElms.forEach(elm=> {
+        elm.addEventListener('keyup', function() {
+          that.saveAndNextBtnElms[aIndex].disabled = (String(inputElms[0].value).trim() && String(inputElms[1].value).trim()) ? false : true;
+        });
+      });  
+    }
+  };
 
-    const judgeDisabled = (aIsOneYearOrLess) => {
-      let inputElms = this.inputAreaElms[1].querySelectorAll('input');
-      if(aIsOneYearOrLess) {
-        this.setFormValidationForInput(2, inputElms);
-      }
-      else {
-        inputElms.forEach(elm=> {
-          elm.addEventListener('keyup', function() {
-            that.saveAndNextBtnElms[2].disabled = (inputElms[0].value.trim() && inputElms[1].value.trim()) ? false : true;
-          });
-        });  
-      }
-    };
+  Settings.prototype.setEventSettings3 = function() {//月間
+
+    this.setInitialStateForEventSettings3AndEventSettings4(0, !this.currentSettingsData.goalperiodarray);
 
     const that = this;
 
@@ -773,13 +775,13 @@
 
         that.getInputHtmlArray(tempInputMonthlyArray, 1, selectedIndex, null, null, null);
         if(!selectedIndex) {
-          judgeDisabled(false);
+          that.judgeDisabledForEventSettings3AndEventSettings4(2, false);
         }
       });
     
     }
 
-    judgeDisabled(!this.currentSettingsData.goalperiodarray);
+    this.judgeDisabledForEventSettings3AndEventSettings4(2, !this.currentSettingsData.goalperiodarray);
 
     this.backBtnElms[1].addEventListener('click', function() {
       let pageNo = (that.currentSettingsData.goalperiodarray) ? 1 : 0;
@@ -939,19 +941,11 @@
         let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
         that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, targetStartDate);
         
-        judgeDisabled();  
+        that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
       });
     }
 
-    const judgeDisabled = () => {
-      let requiredInputElms = document.querySelectorAll('.js-required');
-      requiredInputElms.forEach(elm => {
-        elm.addEventListener('keyup', function() {
-          that.saveAndNextBtnElms[3].disabled = (String(requiredInputElms[0].value).trim() && String(requiredInputElms[1].value).trim()) ? false : true;
-        });
-      });
-    };
-    judgeDisabled();
+    this.judgeDisabledForEventSettings3AndEventSettings4(3, isOneMonthOrLess);
 
     this.backBtnElms[2].addEventListener('click', function() {
       let index = (isOneMonthOrLess) ? 0 : 2;
