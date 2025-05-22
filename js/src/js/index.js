@@ -995,14 +995,28 @@
 
     const getInputAreaHtmlSet = (aCnt) => {
       const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt) => {
-        let result = `<div class="p-2">`;
+        let name = '';
+        let inputType = 'checkbox';
+        let className = 'p-2';
+
+        if(aPrefix=='frequency') {
+          name = ' name="frequency-' + aCnt + '"';
+          inputType = 'radio';
+          className = 'p-2 js-frequencyCheckbox';
+        }
+        else if(aPrefix=='youbi') {
+          className = 'px-2 checkboxDisabled js-youbiCheckbox';
+        }
+
+        let result = `<div class="` + className + `">`;
           for(let cnt=0;cnt<aLength;++cnt) {
             result += `<div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="` + aPrefix + '-' + aCnt + '-' + cnt + `" value="">
+            <input class="form-check-input" type="` + inputType + `"`+ name +` id="` + aPrefix + '-' + aCnt + '-' + cnt + `" value="">
             <label class="form-check-label" for="` + aPrefix + '-' + aCnt + '-' + cnt + `">` + aArray[cnt] + `</label>
           </div>`;
           }
         result += `</div>`;
+
         return result;
       }
 
@@ -1024,16 +1038,52 @@
     this.addGoalOptions(2);
     this.inputAreaElms[3].innerHTML = inputAreaHTML;
 
+    const setRadioAndCheckbox = () => {
+      const frequencyCheckboxElms = document.querySelectorAll('.js-frequencyCheckbox');
+      const youbiCheckboxDivElms = document.querySelectorAll('.js-youbiCheckbox');
+      frequencyCheckboxElms.forEach((elm, key) => {
+        let radioInputElms = elm.querySelectorAll('input');
+        radioInputElms.forEach((elm2, key2) => {
+          elm2.addEventListener('change', function() {
+            youbiCheckboxDivElms[key].classList.add('checkboxDisabled');
+            if(key2==3) {
+              youbiCheckboxDivElms[key].classList.remove('checkboxDisabled');
+            }
+            let youbiInputElms = youbiCheckboxDivElms[key].querySelectorAll('input');
+            youbiInputElms.forEach((elm3, key3) => {
+              elm3.checked = false;
+              if(key2==0) {
+                elm3.checked = true;
+              }
+              else if(key2==1 && key3!=5 && key3!=6) {
+                elm3.checked = true;
+              }
+              else if(key2==2 && key3==5 || key2==2 && key3==6) {
+                elm3.checked = true;
+              }
+            });
+          });
+        });
+      });
+    };
+
+    setRadioAndCheckbox();
+
     const that = this;
 
     const addTodoInputBtnElm = document.querySelector('.js-addTodoInputBtn');
-
     addTodoInputBtnElm.addEventListener('click', function() {
       let divElm = document.createElement('div');
       divElm.className = 'border-bottom py-3';
       divElm.innerHTML = getInputAreaHtmlSet(addInputCnt);
       that.inputAreaElms[3].appendChild(divElm);
       ++addInputCnt;
+      setRadioAndCheckbox();
+    });
+
+    const completeBtnElm = document.querySelector('.js-completeBtn');
+    completeBtnElm.addEventListener('click', function() {
+
     });
     
     this.backBtnElms[3].addEventListener('click', function() {

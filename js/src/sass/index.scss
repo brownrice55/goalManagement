@@ -13,3 +13,8 @@
     padding-bottom: 0 !important;
   }
 }
+
+.checkboxDisabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
