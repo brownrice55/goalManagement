@@ -520,21 +520,33 @@
         }
       });  
     }
-    else if(aIndex==1) {//weekly
-      let dimensionNum = this.getDimensionNum(this.currentSettingsData.monthlygoalsarray);
-      if(dimensionNum==2) {
-        for(let cnt=0,len=this.currentSettingsData.monthlygoalsarray.length;cnt<len;++cnt) {
-          this.currentSettingsData.monthlygoalsarray[cnt].forEach((val, key) => {
+    else {//aIndex 1:weekly  aIndex 2:todo
+      let data = (aIndex==1) ? this.currentSettingsData.monthlygoalsarray : this.currentSettingsData.weeklygoalsarray;
+      let dimensionNum = this.getDimensionNum(data);
+      if(dimensionNum==3) {
+        for(let cnt=0,len=data.length;cnt<len;++cnt) {
+          data[cnt].forEach(elm => {
+            elm.forEach((val, key) => {
+              if(val) {
+                goalOption += '<option value="' + cnt + '-' + key + '">' + val + '</option>';
+              }  
+            });
+          });
+        }
+      }
+      else if(dimensionNum==2) {
+        for(let cnt=0,len=data.length;cnt<len;++cnt) {
+          data[cnt].forEach((val, key) => {
             if(val) {
-              goalOption += '<option value="' + cnt + '-' + key + '">' + val + '</option>'
+              goalOption += '<option value="' + cnt + '-' + key + '">' + val + '</option>';
             }
           });
         }
       }
       else {
-        this.currentSettingsData.monthlygoalsarray.forEach((val, key) => {
+        data.forEach((val, key) => {
           if(val) {
-            goalOption += '<option value="' + key + '">' + val + '</option>'
+            goalOption += '<option value="' + key + '">' + val + '</option>';
           }
         });  
       }
@@ -975,7 +987,54 @@
 
   Settings.prototype.setEventSettings5 = function() {
 
+    this.currentSettingsData = this.settingsData.get(1); //後で消す
+    let inputAreaHTML = '';
+    const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
+    const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
+    const moveupArray = ['前倒しOK'];
+
+    const getInputAreaHtmlSet = (aCnt) => {
+      const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt) => {
+        let result = `<div class="p-2">`;
+          for(let cnt=0;cnt<aLength;++cnt) {
+            result += `<div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="` + aPrefix + '-' + aCnt + '-' + cnt + `" value="">
+            <label class="form-check-label" for="` + aPrefix + '-' + aCnt + '-' + cnt + `">` + aArray[cnt] + `</label>
+          </div>`;
+          }
+        result += `</div>`;
+        return result;
+      }
+
+      let result = `<span class="small text-danger d-none js-inputTodoAlert"></span>
+        <input class="form-control mb-2 js-inputTodo" type="text" id="inputTodo` + aCnt + `">`;
+      result += getInputAreaHtml(4, frequencyArray, 'frequency', aCnt);
+      result += getInputAreaHtml(7, youbiArray, 'youbi', aCnt);
+      result += getInputAreaHtml(1, moveupArray, 'moveup', aCnt);
+      return result;
+    };
+
+    let addInputCnt = 3;
+    for(let cnt=0;cnt<addInputCnt;++cnt) {
+      inputAreaHTML += '<div class="border-bottom py-3">';
+      inputAreaHTML += getInputAreaHtmlSet(cnt);
+      inputAreaHTML += '</div>';
+    }
+
+    this.addGoalOptions(2);
+    this.inputAreaElms[3].innerHTML = inputAreaHTML;
+
     const that = this;
+
+    const addTodoInputBtnElm = document.querySelector('.js-addTodoInputBtn');
+
+    addTodoInputBtnElm.addEventListener('click', function() {
+      let divElm = document.createElement('div');
+      divElm.className = 'border-bottom py-3';
+      divElm.innerHTML = getInputAreaHtmlSet(addInputCnt);
+      that.inputAreaElms[3].appendChild(divElm);
+      ++addInputCnt;
+    });
     
     this.backBtnElms[3].addEventListener('click', function() {
       navAndCommon.switchPage(3, that.settingsSectionElms);
@@ -988,6 +1047,7 @@
 
   Settings.prototype.run = function() {
     this.setEvent();
+    this.setEventSettings5();//後で消す
   };
 
 
