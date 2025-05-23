@@ -577,6 +577,9 @@
       if((firstMonday+6)+7*cnt<=endDate) {
         weekArray[(cnt+1)] = [firstMonday+7*cnt, (firstMonday+6)+7*cnt];
       }
+      else if((firstMonday)+7*cnt>endDate) {
+        return weekArray;
+      }
       else {
         weekArray[(cnt+1)] = [firstMonday+7*cnt, endDate];
         return weekArray;
@@ -584,14 +587,10 @@
     }
   };
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIndex, aSelectedIndex, aYear, aMonth, aDate) {
-    let array = (aIndex==1) ? this.currentSettingsData.annualgoalarray : this.currentSettingsData.monthlygoalsarray;
-    let peridoArray = (aIndex==1) ? this.currentSettingsData.goalperiodarray : this.currentSettingsData.monthlygoalsarrayperiod;
-    let length = array.length;
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIndex, aSelectedIndex, aYear, aMonth, aDate) {    
     let resultArray = [];
     let startDateArray = [];
     let value = '';
-    let length2 = 0;
     let year = 0;
     let month = 0;
     let date = aDate;
@@ -599,32 +598,32 @@
     let requiredClass = '';
 
     if(aIndex==1) {//monthly
-      let startDateLastArray = this.currentSettingsData.goalperiodarray[(length-1)][0].split('/');
-      let endDateLastArray = this.currentSettingsData.goalperiodarray[(length-1)][1].split('/');
-      let diffInMonths = (endDateLastArray[0]==startDateLastArray[0]) ? 1 : 13;
-      diffInMonths += parseInt(endDateLastArray[1]) - parseInt(startDateLastArray[1]);
+      let lastArray = this.currentSettingsData.goalperiodarray.at(-1);
+      let startDateLastNumArray = lastArray[0].split('/').map(Number);
+      let endDateLastNumArray = lastArray[1].split('/').map(Number);
+      let diffInMonths = (endDateLastNumArray[0]==startDateLastNumArray[0]) ? 1 : 13;
+      diffInMonths += endDateLastNumArray[1] - startDateLastNumArray[1];
 
-      for(let cnt=0;cnt<length;++cnt) {
-        startDateArray = this.currentSettingsData.goalperiodarray[cnt][0].split('/');
-        year = parseInt(startDateArray[0]) + cnt;
-        resultArray[cnt] = '';
-        length2 = (cnt==(length-1)) ? diffInMonths : 13;
-        for(let cnt2=0;cnt2<length2;++cnt2) {
-          month = parseInt(startDateArray[1]) + cnt2;
+      this.currentSettingsData.goalperiodarray.forEach((array, index) => {
+        startDateArray = array[0].split('/').map(Number);
+        resultArray[index] = '';
+        let length = (array==lastArray) ? diffInMonths : 13;
+        for(let cnt=0;cnt<length;++cnt) {
+          month = startDateArray[1] + cnt;
+          year = (month<=12) ? startDateArray[0] : startDateArray[0] + 1;
           month = (month>12) ? month-12 : month;
-          span = (!cnt&&!cnt2 || !cnt&&cnt2==1) ? '<span class="text-danger">※</span>' : '';
-          requiredClass = (!cnt&&!cnt2 || !cnt&&cnt2==1) ? ' js-required' : '';
-          value = (aTempInputArray) ? (aTempInputArray[cnt]) ? (aTempInputArray[cnt][cnt2]) ? aTempInputArray[cnt][cnt2].trim() : '' : '' : '';
-          resultArray[cnt] += `<div class="p-2">
-            <label for="inputMonthly${cnt}-${cnt2}">${month}月の目標${span}</label>
-            <input type="text" class="form-control my-2${requiredClass}" id="inputMonthly${cnt}-${cnt2}" value="${value}" data-period="${year},${month}">
+          span = (!index&&!cnt || !index&&cnt==1) ? '<span class="text-danger">※</span>' : '';
+          requiredClass = (!index&&!cnt || !index&&cnt==1) ? ' js-required' : '';
+          value = (aTempInputArray) ? (aTempInputArray[index]) ? (aTempInputArray[index][cnt]) ? aTempInputArray[index][cnt].trim() : '' : '' : '';
+          resultArray[index] += `<div class="p-2">
+            <label for="inputMonthly${index}-${cnt}">${year}年${month}月の目標${span}</label>
+            <input type="text" class="form-control my-2${requiredClass}" id="inputMonthly${index}-${cnt}" value="${value}" data-period="${year},${month}">
             </div>`;
         }
-      }
+      });
     }
     else {//weekly
       const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth, aDate) => {
-        let value = '';
         let result = '';
         let date = aDate;
 
@@ -648,22 +647,22 @@
         return result;
       };
 
-      for(let cnt=0;cnt<length;++cnt) {
+      this.currentSettingsData.monthlygoalsarray.forEach((array, index) => {
         year = aYear;
         month = aMonth;
         let stringYearAndMonth = `${year}/${month}/`;
         let weekArray = this.getWeekArray(year, month, date);
-        resultArray[cnt] = [];
+        resultArray[index] = [];
         if(Array.isArray(aSelectedIndex)) {
-          for(let cnt2=0,len2=this.currentSettingsData.monthlygoalsarrayperiod[cnt].length;cnt2<len2;++cnt2) {
-            resultArray[cnt][cnt2] = [];
-            resultArray[cnt][cnt2] += getResultArray(3, aTempInputArray, cnt, cnt2, weekArray, year, month, stringYearAndMonth, date);
-          }
+          array.forEach((array2, index2) => {
+            resultArray[index][index2] = [];
+            resultArray[index][index2] += getResultArray(3, aTempInputArray, index, index2, weekArray, year, month, stringYearAndMonth, date);
+          });
         }
         else {
-          resultArray[cnt] += getResultArray(2, aTempInputArray, cnt, null, weekArray, year, month, stringYearAndMonth, date);
+          resultArray[index] += getResultArray(2, aTempInputArray, index, null, weekArray, year, month, stringYearAndMonth, date);
         }
-      }
+      });
     }
     
     this.inputAreaElms[aIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
@@ -813,6 +812,7 @@
 
       that.currentSettingsData.monthlygoalsarray = (tempInputMonthlyArray[0]) ? tempInputMonthlyArray : inputArray;
       that.currentSettingsData.monthlygoalsarrayperiod = (tempInputMonthlyArrayPeriod[0]) ? tempInputMonthlyArrayPeriod : inputArrayPeriod;
+      that.currentSettingsData.status = 3;
 
       that.saveAndNextData(3);
       that.setEventSettings4();
@@ -964,6 +964,7 @@
 
       that.currentSettingsData.weeklygoalsarray = (tempInputWeeklyArray[0]) ? tempInputWeeklyArray : inputArray;
       that.currentSettingsData.weeklygoalsarrayperiod = (tempInputWeeklyArrayPeriod[0]) ? tempInputWeeklyArrayPeriod : inputArrayPeriod;
+      that.currentSettingsData.status = 4;
 
       that.saveAndNextData(4);
       that.setEventSettings5();
@@ -1088,7 +1089,7 @@
 
     const completeBtnElm = document.querySelector('.js-completeBtn');
     completeBtnElm.addEventListener('click', function() {
-
+      that.currentSettingsData.status = 'complete';
     });
     
     this.backBtnElms[3].addEventListener('click', function() {
