@@ -140,6 +140,9 @@
     this.goalListElm = this.settingsSectionElms[0].querySelector('.js-goalList');
 
     this.selectGoalsElms = document.querySelectorAll('.js-selectGoals');//monthly, weekly
+
+    this.startDateNumArray = Array(3);
+    this.endDateNumArray = Array(3);
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -161,10 +164,10 @@
     let dateM = now.getMonth() + 1;
     let dateD = now.getDate();
     if(dateM<10) {
-      dateM = '0' + dateM;
+      dateM = `0${dateM}`;
     }
     if(dateD<10) {
-      dateD = '0' + dateD;
+      dateD = `0${dateD}`;
     }
     return [dateY, dateM, dateD];
   };
@@ -246,22 +249,18 @@
     const inputElms = this.settingsSectionElms[0].querySelectorAll('.js-inputSettingsTop');
     const selectElm = this.settingsSectionElms[0].querySelector('select');
 
-    const inputRadioElm = inputElms[0];
-    const inputPeriodStartElm = inputElms[1];
-    const inputPeriodEndElm = inputElms[2];
-    const inputModalElm = inputElms[3];
+    const [inputRadioElm, inputPeriodStartElm, inputPeriodEndElm, inputModalElm] = inputElms;
 
     let diffInDays = 0;
 
     const setDate = (aDiff, aElm, aDate) => {
       let getDate = this.getDate(aDiff, aDate);
-      let dateY = getDate[0];
-      let dateM = getDate[1];
-      let dateD = getDate[2];
-      
-      aElm.value = dateY + '-' + dateM + '-' + dateD;
-      aElm.min = (aDiff) ? aElm.value : (dateY-1) + '-' + dateM + '-' + dateD;
-      aElm.max = (dateY+50) + '-' + dateM + '-' + dateD;
+
+      let [dateY, dateM, dateD] = getDate;
+
+      aElm.value = `${dateY}-${dateM}-${dateD}`;
+      aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
+      aElm.max = `${(dateY+50)}-${dateM}-${dateD}`;
     };
 
     const hideOrShowGoalList = () => {
@@ -315,6 +314,7 @@
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
       that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays, (selectElm.value=='custom') ? inputPeriodEndElm.value.split('-') : 0 ];
+      that.startDateNumArray = inputPeriodStartElm.value.split('-').map(Number);
 
       let nextPageIndex = getNextPageIndex();
       that.saveAndNextData(nextPageIndex);
@@ -415,43 +415,42 @@
     }
     let getDate = this.getDate(multiplication, this.currentSettingsData.period[0]);
     this.currentSettingsData.period[3] = getDate;
-    let dateY = getDate[0];
-    let dateM = getDate[1];
-    let dateD = getDate[2];
-    let date = dateY + '/' + dateM + '/' + dateD;
+
+    let [dateY, dateM, dateD] = getDate;
+    let date = `${dateY}/${dateM}/${dateD}`;
     return date;
   };
 
   Settings.prototype.setEventSettings2 = function() {//年間
     this.currentSettingsData = this.settingsData.get(1); //仮
 
-    let displayStartDateArray = this.currentSettingsData.period[0].split('-');
+    let displayStartDateArray = this.startDateNumArray;
     let displayStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
-    let displayEndDate = this.getYearlyOrMonthlyDate(1, false, parseInt(displayStartDateArray[0]), parseInt(displayStartDateArray[1]));
+    let displayEndDate = this.getYearlyOrMonthlyDate(1, false, this.startDateNumArray[0], this.startDateNumArray[1]);
 
     let result = `<div class="p-2">
-    <label for="inputAnnualGoal1">1年目の目標（` + displayStartDate + `から` + displayEndDate + `まで）<span class="text-danger">※</span></label>
+    <label for="inputAnnualGoal1">1年目の目標（${displayStartDate}から${displayEndDate}まで）<span class="text-danger">※</span></label>
     <input type="text" class="form-control my-2" id="inputAnnualGoal1">
     <p class="small text-secondary">例）英検１級を受験して一次試験に合格する</p>
     </div>`;
 
     let numberOfYears = (this.currentSettingsData.period[2]) ? Math.floor(this.currentSettingsData.period[2]/365) : parseInt(this.currentSettingsData.period[1]);
     let goalTitleAreaTextArray = Array(numberOfYears);
-    let goalTitleAreaText = displayStartDate + 'から';
+    let goalTitleAreaText = `${displayStartDate}から`;
     goalTitleAreaTextArray[0] = [ displayStartDate, displayEndDate];
 
     const getInputAreaHTML = (aCnt, aDisplayStartDate, aDisplayEndDate) => {
       return `<div class="p-2">
-        <label for="inputAnnualGoal` + aCnt +  `">` + aCnt + `年目の目標（` + aDisplayStartDate + `から` + aDisplayEndDate + `まで）</label>
-        <input type="text" class="form-control my-2" id="inputAnnualGoal` + aCnt + `">
+        <label for="inputAnnualGoal${aCnt}">${aCnt}年目の目標（${aDisplayStartDate}から${aDisplayEndDate}まで）</label>
+        <input type="text" class="form-control my-2" id="inputAnnualGoal${aCnt}">
         </div>`;
     };
 
     if(numberOfYears>1) {
       for(let cnt=2;cnt<=numberOfYears;++cnt) {
         displayStartDate = displayEndDate;
-        displayStartDateArray = displayStartDate.split('/');
-        displayEndDate = this.getYearlyOrMonthlyDate(cnt, false, parseInt(displayStartDateArray[0]), parseInt(displayStartDateArray[1]));
+        displayStartDateArray = displayStartDate.split('/').map(Number);
+        displayEndDate = this.getYearlyOrMonthlyDate(cnt, false, displayStartDateArray[0], displayStartDateArray[1]);
         goalTitleAreaTextArray[(cnt-1)] = [ displayStartDate, displayEndDate ];
         result += getInputAreaHTML(cnt, displayStartDate, displayEndDate);
       }  
@@ -466,7 +465,7 @@
     }
     this.inputAreaElms[0].innerHTML = result;
 
-    goalTitleAreaText += displayEndDate + 'までに達成したいこと';
+    goalTitleAreaText += `${displayEndDate}までに達成したいこと`;
     this.goalPeriodElms[0].textContent = goalTitleAreaText;
     this.inputGoalElms[1].value = this.currentSettingsData.goal;
 
@@ -516,38 +515,40 @@
     if(!aIndex) {//monthly
       this.currentSettingsData.annualgoalarray.forEach((val, key) => {
         if(val) {
-          goalOption += '<option value="' + key + '">' + (key+1) + '年目：' + val + '</option>'
+          goalOption += `<option value="${key}">${(key+1)}年目：${val}</option>`;
         }
-      });  
+      });
     }
     else {//aIndex 1:weekly  aIndex 2:todo
       let data = (aIndex==1) ? this.currentSettingsData.monthlygoalsarray : this.currentSettingsData.weeklygoalsarray;
       let dimensionNum = this.getDimensionNum(data);
-      if(dimensionNum==3) {
-        for(let cnt=0,len=data.length;cnt<len;++cnt) {
-          data[cnt].forEach(elm => {
-            elm.forEach((val, key) => {
-              if(val) {
-                goalOption += '<option value="' + cnt + '-' + key + '">' + val + '</option>';
-              }  
+
+      const getOptionData = (aVal, aArray) => {
+        if(aVal) {
+          let string = aArray.filter((array)=>array!=null).join('-');
+          return `<option value="${string}">${aVal}</option>`;
+        }
+      };
+
+      if(dimensionNum==3) {//todo
+        data.forEach((array, index) => {
+          array.forEach((array2, index2) => {
+            array2.forEach((val, index3) => {
+              goalOption += getOptionData(val, [index,index2,index3]);
             });
           });
-        }
+        });
       }
       else if(dimensionNum==2) {
-        for(let cnt=0,len=data.length;cnt<len;++cnt) {
-          data[cnt].forEach((val, key) => {
-            if(val) {
-              goalOption += '<option value="' + cnt + '-' + key + '">' + val + '</option>';
-            }
+        data.forEach((array, index) => {
+          array.forEach((val, index2) => {
+            goalOption += getOptionData(val, [index,index2,null]);
           });
-        }
+        });
       }
       else {
-        data.forEach((val, key) => {
-          if(val) {
-            goalOption += '<option value="' + key + '">' + val + '</option>';
-          }
+        data.forEach((val, index) => {
+          goalOption += getOptionData(val, [index,null,null]);
         });  
       }
     }
@@ -558,14 +559,14 @@
     let daysOfTheYear = this.getDaysOfTheYear(aYear, aMonth);
     let theNumberOfDaysInAMonth = this.getTheNumberOfDaysInAMonth(aMonth, daysOfTheYear);
 
-    const firstDayOfTheMonth = new Date(aYear + '-0' + aMonth + '-0' + aDate);
+    const firstDayOfTheMonth = new Date(`${aYear}-0${aMonth}-0${aDate}`);
     let dayIndexOfFirstDayOfTheMonth = firstDayOfTheMonth.getDay();
 
     let addendArray = [1, 7, 6, 5, 4, 3, 2];
     let firstMonday = aDate + addendArray[dayIndexOfFirstDayOfTheMonth];
 
-    let endDateArray = this.currentSettingsData.period[3];
-    let endDate = (aYear==parseInt(endDateArray[0]) && aMonth==parseInt(endDateArray[1])) ? parseInt(endDateArray[2]) : theNumberOfDaysInAMonth;
+    this.endDateNumArray = this.currentSettingsData.period[3].map(Number);
+    let endDate = (aYear==this.endDateNumArray[0] && aMonth==this.endDateNumArray[1]) ? this.endDateNumArray[2] : theNumberOfDaysInAMonth;
 
     let weekArray = [];
     if((firstMonday-1)>=endDate) {
@@ -589,7 +590,7 @@
     let peridoArray = (aIndex==1) ? this.currentSettingsData.goalperiodarray : this.currentSettingsData.monthlygoalsarrayperiod;
     let length = array.length;
     let resultArray = [];
-    let startDateArray = '';
+    let startDateArray = [];
     let value = '';
     let length2 = 0;
     let year = 0;
@@ -616,8 +617,8 @@
           requiredClass = (!cnt&&!cnt2 || !cnt&&cnt2==1) ? ' js-required' : '';
           value = (aTempInputArray) ? (aTempInputArray[cnt]) ? (aTempInputArray[cnt][cnt2]) ? aTempInputArray[cnt][cnt2].trim() : '' : '' : '';
           resultArray[cnt] += `<div class="p-2">
-            <label for="inputMonthly` + cnt + '-' + cnt2 + `">` + month + `月の目標` + span + `</label>
-            <input type="text" class="form-control my-2` + requiredClass + `" id="inputMonthly` + cnt + '-' + cnt2 + `" value="` + value + `" data-period="` + year + ',' + month + `">
+            <label for="inputMonthly${cnt}-${cnt2}">${month}月の目標${span}</label>
+            <input type="text" class="form-control my-2${requiredClass}" id="inputMonthly${cnt}-${cnt2}" value="${value}" data-period="${year},${month}">
             </div>`;
         }
       }
@@ -640,8 +641,8 @@
             requiredClass = (!aCnt && !cntWeekly || !aCnt && cntWeekly==1) ? ' js-required' : '';
           }
           result += `<div class="p-2">
-                <label for="inputWeekly` + aCnt + '-' + cntWeekly + `">` + aStringYearAndMonth + aWeekArray[cntWeekly][0] + `から` + aStringYearAndMonth + aWeekArray[cntWeekly][1] + `の目標` + span + ` </label>
-                <input type="text" class="form-control my-2` + requiredClass + `" id="inputWeekly` + aCnt + '-' + cntWeekly + `" value="` + value + `" data-period="` + aYear + ',' + aMonth + ',' + aWeekArray[cntWeekly][0] + ',' + aWeekArray[cntWeekly][1] + `">
+                <label for="inputWeekly${aCnt}-${cntWeekly}">${aStringYearAndMonth}${aWeekArray[cntWeekly][0]}から${aStringYearAndMonth}${aWeekArray[cntWeekly][1]}の目標${span}</label>
+                <input type="text" class="form-control my-2${requiredClass}" id="inputWeekly${aCnt}-${cntWeekly}" value="${value}" data-period="${aYear},${aMonth},${aWeekArray[cntWeekly][0]},${aWeekArray[cntWeekly][1]}">
                 </div>`;
         }
         return result;
@@ -650,7 +651,7 @@
       for(let cnt=0;cnt<length;++cnt) {
         year = aYear;
         month = aMonth;
-        let stringYearAndMonth = year + '/' + month + '/';
+        let stringYearAndMonth = `${year}/${month}/`;
         let weekArray = this.getWeekArray(year, month, date);
         resultArray[cnt] = [];
         if(Array.isArray(aSelectedIndex)) {
@@ -713,13 +714,12 @@
 
     if(!this.currentSettingsData.goalperiodarray) {//one year or less
       let getStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
-      let getStartDateArray = this.currentSettingsData.period[0].split('-');
-      let resultText = getStartDate + 'から';
+      let resultText = `${getStartDate}から`;
       let getEndDate = '';
 
       if(this.currentSettingsData.period[2]) { //custom
         getEndDate = this.currentSettingsData.period[1].replace(/-/g, '/');
-        resultText += getEndDate + 'までに達成したいこと';
+        resultText += `${getEndDate}までに達成したいこと`;
       }
       else {
         let periodObj = {
@@ -729,16 +729,16 @@
         };
         resultText += periodObj[this.currentSettingsData.period[1]][0] + '後' || '';
 
-        getEndDate = this.getYearlyOrMonthlyDate(periodObj[this.currentSettingsData.period[1]][1], true, parseInt(getStartDateArray[0]), parseInt(getStartDateArray[1]));
-        resultText += '（' + getEndDate + '）までに達成したいこと';
+        getEndDate = this.getYearlyOrMonthlyDate(periodObj[this.currentSettingsData.period[1]][1], true, this.startDateNumArray[0], this.startDateNumArray[1]);
+        resultText += `（${getEndDate}）までに達成したいこと`;
       }
 
       this.goalPeriodElms[1].textContent = resultText;
 
-      let monthStartCntArray = getStartDate.split('/');
-      let monthEndCntArray = getEndDate.split('/');
-      monthCnt = parseInt(monthEndCntArray[1]) - parseInt(monthStartCntArray[1]) + 1;
-      if(parseInt(monthStartCntArray[0])!=parseInt(monthEndCntArray[0])) {
+      let monthStartCntArray = getStartDate.split('/').map(Number);
+      let monthEndCntArray = getEndDate.split('/').map(Number);
+      monthCnt = monthEndCntArray[1] - monthStartCntArray[1] + 1;
+      if(monthStartCntArray[0]!=monthEndCntArray[0]) {
         monthCnt += 12; 
       }
 
@@ -753,15 +753,15 @@
         span = (!cnt || cnt==1) ? '<span class="text-danger">※</span>' : '';
         requiredClass = (!cnt || cnt==1) ? ' js-required' : '';
         result += `<div class="p-2">
-          <label for="inputMonthly` + cnt + `">` + month + `月の目標` + span + `</label>
-          <input type="text" class="form-control my-2' + requiredClass + '" id="inputMonthly` + cnt + `" data-period="` + year + ',' + month + `">
+          <label for="inputMonthly${cnt}">${month}月の目標${span}</label>
+          <input type="text" class="form-control my-2${requiredClass}" id="inputMonthly${cnt}" data-period="${year},${month}">
         </div>`;
       }
       this.inputAreaElms[1].innerHTML = result;
     }
     else {
       const getTextContent = (aStart, aEnd) => {
-        return (aStart + 'から' + aEnd + 'までに達成したいこと');
+        return `${aStart}から${aEnd}までに達成したいこと`;
       };
 
       this.goalPeriodElms[1].textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
@@ -836,27 +836,24 @@
     let tempInputWeeklyArrayPeriod = [];
     let dimensionNumPeriod = 0;
 
-    let getStartDateArray = this.currentSettingsData.period[0].split('-');
-    let startYear = parseInt(getStartDateArray[0]);
-    let startMonth = parseInt(getStartDateArray[1]);
-    let startDate = parseInt(getStartDateArray[2]);
+    let [startYear, startMonth, startDate] = this.startDateNumArray;
 
     const that = this;
 
     const getTextContent = (aYear, aMonth, aDate, aIsOneMonthOrLessCustom) => {
+      let text = `${aYear}/${aMonth}/${aDate}から`;
       if(aIsOneMonthOrLessCustom) {
-        return (aYear + '/' + aMonth + '/' + aDate + 'から' + this.currentSettingsData.period[1].replace(/-/g, '/') + 'までに達成したいこと');
+        return `${text}${this.currentSettingsData.period[1].replace(/-/g, '/')}までに達成したいこと`;
       }
       if(aDate) {
         let getEndDate = this.getYearlyOrMonthlyDate(1, true, parseInt(aYear), parseInt(aMonth));
-        return (aYear + '/' + aMonth + '/' + aDate + 'から1ヶ月後（' + getEndDate + '）まで達成したいこと');
+        return `${text}1ヶ月後（${getEndDate}）まで達成したいこと`;
       }
-      return (aYear + '年' + aMonth + '月に達成したいこと');
+      return `${aYear}年${aMonth}月に達成したいこと`;
     };
     
     if(isOneMonthOrLess) {
       this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, startDate, isOneMonthOrLessCustom);
-      let endDateArray = this.currentSettingsData.period[3];
 
       const getWeekDataResultArray = (aYear, aMonth, aDate, aIsTheLast, aMoreRequired) => {
         let year = aYear;
@@ -868,7 +865,7 @@
         let span = '';
         let requiredClass = '';
   
-        let result = '<p class="px-2">' + month + '月</p>';
+        let result = `<p class="px-2">${month}月</p>`;
         for(let cnt=0,len=weekArray.length;cnt<len;++cnt) {
           if(!aIsTheLast) {
             span = (!cnt || cnt==1) ? '<span class="text-danger">※</span>' : '';
@@ -879,8 +876,8 @@
             requiredClass = (!cnt) ? ' js-required' : '';
           }
           result += `<div class="p-2">
-          <label for="inputWeekly` + month + '-' + cnt + `">` + stringYearAndMonth + weekArray[cnt][0] + `から` + stringYearAndMonth + weekArray[cnt][1] + `の目標` + span + ` </label>
-          <input type="text" class="form-control my-2` + requiredClass + `" id="inputWeekly` + month + '-' + cnt + `" data-period="` + year + ',' + month + ',' + weekArray[cnt][0] + ',' + weekArray[cnt][1] + `">
+          <label for="inputWeekly${month}-${cnt}">${stringYearAndMonth}${weekArray[cnt][0]}から${stringYearAndMonth}${weekArray[cnt][1]}の目標${span}</label>
+          <input type="text" class="form-control my-2${requiredClass}" id="inputWeekly${month}-${cnt}" data-period="${year},${month},${weekArray[cnt][0]},${weekArray[cnt][1]}">
           </div>`;
         }
         return [result, ((weekArray.length==1)?true:false)];
@@ -894,15 +891,15 @@
 
       let getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, false, true);
       let result = getResultArray[0];
-      if((parseInt(endDateArray[1])-startMonth)==2 || (startMonth-parseInt(endDateArray[1]))==10) {
+      if((this.endDateNumArray[1]-startMonth)==2 || (startMonth-this.endDateNumArray[1])==10) {
         let nextYearAndMonth = getNextYearAndMonth(startYear, startMonth);
         startYear = nextYearAndMonth[0];
         startMonth = nextYearAndMonth[1];
         getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, true, getResultArray[1]);
         result += getResultArray[0];
       }
-      if(parseInt(endDateArray[0])!=startYear || (parseInt(endDateArray[1])!=startMonth)) {
-        getResultArray = getWeekDataResultArray(parseInt(endDateArray[0]), parseInt(endDateArray[1]), parseInt(endDateArray[2]), true, false);
+      if(this.endDateNumArray[0]!=startYear || (this.endDateNumArray[1]!=startMonth)) {
+        getResultArray = getWeekDataResultArray(this.endDateNumArray[0], this.endDateNumArray[1], this.endDateNumArray[2], true, false);
         result += getResultArray[0];
       }
 
@@ -987,7 +984,6 @@
 
   Settings.prototype.setEventSettings5 = function() {
 
-    this.currentSettingsData = this.settingsData.get(1); //後で消す
     let inputAreaHTML = '';
     const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
     const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
@@ -1011,8 +1007,8 @@
         let result = `<div class="` + className + `">`;
           for(let cnt=0;cnt<aLength;++cnt) {
             result += `<div class="form-check form-check-inline">
-            <input class="form-check-input" type="` + inputType + `"`+ name +` id="` + aPrefix + '-' + aCnt + '-' + cnt + `" value="">
-            <label class="form-check-label" for="` + aPrefix + '-' + aCnt + '-' + cnt + `">` + aArray[cnt] + `</label>
+            <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}" value="">
+            <label class="form-check-label" for="${aPrefix}-${aCnt}-${cnt}">${aArray[cnt]}</label>
           </div>`;
           }
         result += `</div>`;
@@ -1020,8 +1016,10 @@
         return result;
       }
 
-      let result = `<span class="small text-danger d-none js-inputTodoAlert"></span>
-        <input class="form-control mb-2 js-inputTodo" type="text" id="inputTodo` + aCnt + `">`;
+      let classNameAlert = (!aCnt) ? 'small text-danger d-none' : 'small text-danger d-none js-inputTodoAlertRequired';
+      let className = (!aCnt) ? 'form-control mb-2' : 'form-control mb-2 js-inputTodoRequired';
+      let result = `<span class="${classNameAlert}"></span>
+        <input class="${className}" type="text" id="inputTodo${aCnt}">`;
       result += getInputAreaHtml(4, frequencyArray, 'frequency', aCnt);
       result += getInputAreaHtml(7, youbiArray, 'youbi', aCnt);
       result += getInputAreaHtml(1, moveupArray, 'moveup', aCnt);
@@ -1081,6 +1079,25 @@
       setRadioAndCheckbox();
     });
 
+    let selectedIndex = [0, 0, 0];
+    let selectedPeriodArray = Array(4);
+    let selectedPeriodText = '';
+
+    const setSelectedPeriod = () => {
+      const [index0, index1, index2] = selectedIndex;
+      selectedPeriodArray = this.currentSettingsData.weeklygoalsarrayperiod[index0][index1][index2].split(',');
+      selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}/までに達成したいこと`;
+      this.goalPeriodElms[3].textContent = selectedPeriodText;
+    };
+    setSelectedPeriod();
+
+
+    this.selectGoalsElms[2].addEventListener('change', function() {
+      selectedIndex = this.value.split('-').map(Number);
+      setSelectedPeriod();
+    });
+
+
     const completeBtnElm = document.querySelector('.js-completeBtn');
     completeBtnElm.addEventListener('click', function() {
 
@@ -1097,7 +1114,6 @@
 
   Settings.prototype.run = function() {
     this.setEvent();
-    this.setEventSettings5();//後で消す
   };
 
 
