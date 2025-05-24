@@ -708,6 +708,8 @@
     let month = 0;
     let monthCnt = 0;
 
+    let selectedIndex = 0;
+
     let tempInputMonthlyArray = [];
     let tempInputMonthlyArrayPeriod = [];
 
@@ -766,13 +768,12 @@
 
       this.addGoalOptions(0);
       
-      let selectedIndex = 0;
       this.getInputHtmlArray(null, true, selectedIndex, null, null, null);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
 
-        let tempInputMonthlyValueArray = Array.from(inputMonthlyElms, elm => (elm.value) ? elm.value : '');
+        let tempInputMonthlyValueArray = Array.from(inputMonthlyElms, elm => (elm.value) ? elm.value : '');//←↓ループが増えているのでforEachでpush等にするか後で検討：同パターンまとめるかどうかも検討
         let tempInputMonthlyValueArrayPeriod = Array.from(inputMonthlyElms, elm => (elm.value) ? elm.dataset.period.split(',') : []);
         
         tempInputMonthlyArray[selectedIndex] = tempInputMonthlyValueArray;
@@ -805,6 +806,11 @@
       let inputArray = Array.from(inputElms, elm => elm.value);
       let inputArrayPeriod = Array.from(inputElms, elm => elm.dataset.period.split(','));
 
+      if(tempInputMonthlyArray[0]) {
+        tempInputMonthlyArray[selectedIndex] = inputArray;
+        tempInputMonthlyArrayPeriod[selectedIndex] = inputArrayPeriod;  
+      }
+
       that.currentSettingsData.monthlygoalsarray = (tempInputMonthlyArray[0]) ? tempInputMonthlyArray : inputArray;
       that.currentSettingsData.monthlygoalsarrayperiod = (tempInputMonthlyArrayPeriod[0]) ? tempInputMonthlyArrayPeriod : inputArrayPeriod;
       that.currentSettingsData.status = 3;
@@ -824,6 +830,7 @@
     let tempInputWeeklyArray = [];
     let tempInputWeeklyArrayPeriod = [];
     let dimensionNumPeriod = 0;
+    let selectedIndex = 0;
 
     let [startYear, startMonth, startDate] = this.startDateNumArray;
 
@@ -909,7 +916,7 @@
 
       this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
 
-      let selectedIndex = (dimensionNumPeriod==3) ? Array(2).fill(0) : 0;
+      selectedIndex = (dimensionNumPeriod==3) ? Array(2).fill(0) : 0;
 
       this.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, startDate);
       
@@ -950,7 +957,18 @@
       const inputElms = that.inputAreaElms[2].querySelectorAll('input');
 
       let inputArray = Array.from(inputElms, elm => elm.value);
-      let inputArrayPeriod = Array.from(inputElms, elm => elm.dataset.period.split(','));
+      let inputArrayPeriod = Array.from(inputElms, elm => elm.dataset.period);
+      
+      if(tempInputWeeklyArray[0]) {
+        if(dimensionNumPeriod==3) {
+          tempInputWeeklyArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArray;
+          tempInputWeeklyArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArrayPeriod;  
+        }
+        else {
+          tempInputWeeklyArray[selectedIndex] = inputArray;
+          tempInputWeeklyArrayPeriod[selectedIndex] = inputArrayPeriod;    
+        }
+      }
 
       that.currentSettingsData.weeklygoalsarray = (tempInputWeeklyArray[0]) ? tempInputWeeklyArray : inputArray;
       that.currentSettingsData.weeklygoalsarrayperiod = (tempInputWeeklyArrayPeriod[0]) ? tempInputWeeklyArrayPeriod : inputArrayPeriod;
