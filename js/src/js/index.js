@@ -512,9 +512,9 @@
     let goalOption = ''
     let inputHTML = '';
     if(!aIndex) {//monthly
-      this.currentSettingsData.annualgoalarray.forEach((val, key) => {
+      this.currentSettingsData.annualgoalarray.forEach((val, index) => {
         if(val) {
-          goalOption += `<option value="${key}">${(key+1)}年目：${val}</option>`;
+          goalOption += `<option value="${index}">${(index+1)}年目：${val}</option>`;
         }
       });
     }
@@ -587,7 +587,7 @@
     }
   };
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIndex, aSelectedIndex, aYear, aMonth, aDate) {    
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIsMonthly, aSelectedIndex, aYear, aMonth, aDate) {    
     let resultArray = [];
     let startDateArray = [];
     let value = '';
@@ -597,7 +597,7 @@
     let span = '';
     let requiredClass = '';
 
-    if(aIndex==1) {//monthly
+    if(aIsMonthly==1) {//monthly
       let lastArray = this.currentSettingsData.goalperiodarray.at(-1);
       let startDateLastNumArray = lastArray[0].split('/').map(Number);
       let endDateLastNumArray = lastArray[1].split('/').map(Number);
@@ -654,18 +654,18 @@
         let weekArray = this.getWeekArray(year, month, date);
         resultArray[index] = [];
         if(Array.isArray(aSelectedIndex)) {
-          array.forEach((array2, index2) => {
-            resultArray[index][index2] = [];
-            resultArray[index][index2] += getResultArray(3, aTempInputArray, index, index2, weekArray, year, month, stringYearAndMonth, date);
+          array.forEach((_, index2) => {
+            resultArray[index][index2] = getResultArray(3, aTempInputArray, index, index2, weekArray, year, month, stringYearAndMonth, date);
           });
         }
         else {
-          resultArray[index] += getResultArray(2, aTempInputArray, index, null, weekArray, year, month, stringYearAndMonth, date);
+          resultArray[index] = getResultArray(2, aTempInputArray, index, null, weekArray, year, month, stringYearAndMonth, date);
         }
       });
     }
     
-    this.inputAreaElms[aIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
+    let sectionIndex = (aIsMonthly) ? 1 : 2;
+    this.inputAreaElms[sectionIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
   };
 
   Settings.prototype.setInitialStateForEventSettings3AndEventSettings4 = function(aIndex, aConditions) {
@@ -767,18 +767,13 @@
       this.addGoalOptions(0);
       
       let selectedIndex = 0;
-      this.getInputHtmlArray(null, 1, selectedIndex, null, null, null);
+      this.getInputHtmlArray(null, true, selectedIndex, null, null, null);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
-        let tempInputMonthlyValueArray = Array(12);
-        let tempInputMonthlyValueArrayPeriod = Array(12);
-        inputMonthlyElms.forEach((elm, key) => {
-          if(elm.value) {
-            tempInputMonthlyValueArray[key] = elm.value;
-            tempInputMonthlyValueArrayPeriod[key] = elm.dataset.period.split(',');
-          }
-        });
+
+        let tempInputMonthlyValueArray = Array.from(inputMonthlyElms, elm => (elm.value) ? elm.value : '');
+        let tempInputMonthlyValueArrayPeriod = Array.from(inputMonthlyElms, elm => (elm.value) ? elm.dataset.period.split(',') : []);
         
         tempInputMonthlyArray[selectedIndex] = tempInputMonthlyValueArray;
         tempInputMonthlyArrayPeriod[selectedIndex] = tempInputMonthlyValueArrayPeriod;
@@ -786,7 +781,7 @@
         selectedIndex = parseInt(this.value);
         that.goalPeriodElms[1].textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
 
-        that.getInputHtmlArray(tempInputMonthlyArray, 1, selectedIndex, null, null, null);
+        that.getInputHtmlArray(tempInputMonthlyArray, true, selectedIndex, null, null, null);
         if(!selectedIndex) {
           that.judgeDisabledForEventSettings3AndEventSettings4(2, false);
         }
@@ -916,18 +911,13 @@
 
       let selectedIndex = (dimensionNumPeriod==3) ? Array(2).fill(0) : 0;
 
-      this.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, startDate);
+      this.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, startDate);
       
       this.selectGoalsElms[1].addEventListener('change', function() {
         let inputWeeklyElms = that.inputAreaElms[2].querySelectorAll('input');
-        let tempInputWeeklyValueArray = Array(6).fill('');
-        let tempInputWeeklyValueArrayPeriod = Array(6).fill('');
-        inputWeeklyElms.forEach((elm, key) => {
-          if(elm.value) {
-            tempInputWeeklyValueArray[key] = elm.value;
-            tempInputWeeklyValueArrayPeriod[key] = elm.dataset.period;
-          }
-        });
+        let tempInputWeeklyValueArray = Array.from(inputWeeklyElms, elm => (elm.value) ? elm.value : '');
+        let tempInputWeeklyValueArrayPeriod = Array.from(inputWeeklyElms, elm => (elm.value) ? elm.dataset.period : '');
+
         if(dimensionNumPeriod==3) {
           tempInputWeeklyArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArray;
           tempInputWeeklyArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArrayPeriod;
@@ -943,7 +933,7 @@
     
         that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
         let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
-        that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, targetStartDate);
+        that.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, targetStartDate);
         
         that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
       });
@@ -1028,24 +1018,24 @@
     const setRadioAndCheckbox = () => {
       const frequencyCheckboxElms = document.querySelectorAll('.js-frequencyCheckbox');
       const youbiCheckboxDivElms = document.querySelectorAll('.js-youbiCheckbox');
-      frequencyCheckboxElms.forEach((elm, key) => {
+      frequencyCheckboxElms.forEach((elm, index) => {
         let radioInputElms = elm.querySelectorAll('input');
-        radioInputElms.forEach((elm2, key2) => {
+        radioInputElms.forEach((elm2, index2) => {
           elm2.addEventListener('change', function() {
-            youbiCheckboxDivElms[key].classList.add('checkboxDisabled');
-            if(key2==3) {
-              youbiCheckboxDivElms[key].classList.remove('checkboxDisabled');
+            youbiCheckboxDivElms[index].classList.add('checkboxDisabled');
+            if(index2==3) {
+              youbiCheckboxDivElms[index].classList.remove('checkboxDisabled');
             }
-            let youbiInputElms = youbiCheckboxDivElms[key].querySelectorAll('input');
-            youbiInputElms.forEach((elm3, key3) => {
+            let youbiInputElms = youbiCheckboxDivElms[index].querySelectorAll('input');
+            youbiInputElms.forEach((elm3, index3) => {
               elm3.checked = false;
-              if(key2==0) {
+              if(index2==0) {
                 elm3.checked = true;
               }
-              else if(key2==1 && key3!=5 && key3!=6) {
+              else if(index2==1 && index3!=5 && index3!=6) {
                 elm3.checked = true;
               }
-              else if(key2==2 && key3==5 || key2==2 && key3==6) {
+              else if(index2==2 && index3==5 || index2==2 && index3==6) {
                 elm3.checked = true;
               }
             });
