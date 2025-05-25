@@ -587,7 +587,7 @@
     }
   };
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIsMonthly, aSelectedIndex, aYear, aMonth, aDate) {    
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIsMonthly, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek) {    
     let resultArray = [];
     let startDateArray = [];
     let value = '';
@@ -626,17 +626,29 @@
       const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth, aDate) => {
         let result = '';
         let date = aDate;
-
+        
         aWeekArray.forEach((array, index) => {
           if(aDimension==3) {
             value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][index]!=null) ? String(aTempInputArray[aCnt][aCnt2][index]).trim() : '';
-            span = (!aCnt && !aCnt2 && !index || !aCnt && !aCnt2 && index==1) ? '<span class="text-danger">※</span>' : '';
-            requiredClass = (!aCnt && !aCnt2 && !index || !aCnt && !aCnt2 && index==1) ? ' js-required' : '';
+            if(aIsOnlyOneWeek) {
+              span = (!aCnt && !aCnt2 && !index) ? '<span class="text-danger">※</span>' : '';
+              requiredClass = (!aCnt && !aCnt2 && !index) ? ' js-required' : '';  
+            }
+            else {
+              span = (!aCnt && !aCnt2 && !index || !aCnt && !aCnt2 && index==1) ? '<span class="text-danger">※</span>' : '';
+              requiredClass = (!aCnt && !aCnt2 && !index || !aCnt && !aCnt2 && index==1) ? ' js-required' : '';  
+            }
           }
           else {
             value = (aTempInputArray[aCnt] && aTempInputArray[aCnt][index]!=null) ? String(aTempInputArray[aCnt][index]).trim() : '';
-            span = (!aCnt && !index || !aCnt && index==1) ? '<span class="text-danger">※</span>' : '';
-            requiredClass = (!aCnt && !index || !aCnt && index==1) ? ' js-required' : '';
+            if(aIsOnlyOneWeek) {
+              span = (!aCnt && !index) ? '<span class="text-danger">※</span>' : '';
+              requiredClass = (!aCnt && !index) ? ' js-required' : '';  
+            }
+            else {
+              span = (!aCnt && !index || !aCnt && index==1) ? '<span class="text-danger">※</span>' : '';
+              requiredClass = (!aCnt && !index || !aCnt && index==1) ? ' js-required' : '';  
+            }
           }
           result += `<div class="p-2">
             <label for="inputWeekly${aCnt}-${index}">${aStringYearAndMonth}${array[0]}から${aStringYearAndMonth}${array[1]}の目標${span}</label>
@@ -647,19 +659,21 @@
         return result;
       };
 
-      this.currentSettingsData.monthlygoalsarray.forEach((array, index) => {
+      this.currentSettingsData.monthlygoalsarray.forEach((arrayOrVal, index) => {
         year = aYear;
         month = aMonth;
         let stringYearAndMonth = `${year}/${month}/`;
         let weekArray = this.getWeekArray(year, month, date);
         resultArray[index] = [];
-        if(Array.isArray(aSelectedIndex)) {
-          array.forEach((_, index2) => {
-            resultArray[index][index2] = getResultArray(3, aTempInputArray, index, index2, weekArray, year, month, stringYearAndMonth, date);
+        if(Array.isArray(arrayOrVal)) {
+          let array = arrayOrVal;
+          array.forEach((val, index2) => {
+            resultArray[index][index2] = (val) ? getResultArray(3, aTempInputArray, index, index2, weekArray, year, month, stringYearAndMonth, date) : '';
           });
         }
         else {
-          resultArray[index] = getResultArray(2, aTempInputArray, index, null, weekArray, year, month, stringYearAndMonth, date);
+          let val = arrayOrVal;
+          resultArray[index] = (val) ? getResultArray(2, aTempInputArray, index, null, weekArray, year, month, stringYearAndMonth, date) : '';
         }
       });
     }
@@ -691,7 +705,13 @@
     else {
       inputElms.forEach(elm=> {
         elm.addEventListener('keyup', function() {
-          that.saveAndNextBtnElms[aIndex].disabled = (String(inputElms[0].value).trim() && String(inputElms[1].value).trim()) ? false : true;
+          let isDisabled = 0;
+          inputElms.forEach(elm=> {
+            if(String(elm.value.trim())) {
+              ++isDisabled;
+            }
+          })
+          that.saveAndNextBtnElms[aIndex].disabled = (isDisabled==inputElms.length) ? false : true;
         });
       });  
     }
@@ -768,7 +788,7 @@
 
       this.addGoalOptions(0);
       
-      this.getInputHtmlArray(null, true, selectedIndex, null, null, null);
+      this.getInputHtmlArray(null, true, selectedIndex, null, null, null, false);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
@@ -782,7 +802,7 @@
         selectedIndex = parseInt(this.value);
         that.goalPeriodElms[1].textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
 
-        that.getInputHtmlArray(tempInputMonthlyArray, true, selectedIndex, null, null, null);
+        that.getInputHtmlArray(tempInputMonthlyArray, true, selectedIndex, null, null, null, false);
         if(!selectedIndex) {
           that.judgeDisabledForEventSettings3AndEventSettings4(2, false);
         }
@@ -847,7 +867,9 @@
       }
       return `${aYear}年${aMonth}月に達成したいこと`;
     };
-    
+
+    let isOnlyOneWeek = false;
+
     if(isOneMonthOrLess) {
       this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, startDate, isOneMonthOrLessCustom);
 
@@ -918,29 +940,31 @@
 
       selectedIndex = (dimensionNumPeriod==3) ? Array(2).fill(0) : 0;
 
-      this.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, startDate);
-      
+      let firstWeek = that.getWeekArray(that.startDateNumArray[0], that.startDateNumArray[1], that.startDateNumArray[2]);
+      isOnlyOneWeek = (selectedIndex[0]==0 && selectedIndex[1]==0 && firstWeek.length==1) ? true : false;
+      this.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, startDate, isOnlyOneWeek);
+
       this.selectGoalsElms[1].addEventListener('change', function() {
         let inputWeeklyElms = that.inputAreaElms[2].querySelectorAll('input');
         let tempInputWeeklyValueArray = Array.from(inputWeeklyElms, elm => (elm.value) ? elm.value : '');
         let tempInputWeeklyValueArrayPeriod = Array.from(inputWeeklyElms, elm => (elm.value) ? elm.dataset.period : '');
 
         if(dimensionNumPeriod==3) {
-          tempInputWeeklyArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArray;
-          tempInputWeeklyArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = tempInputWeeklyValueArrayPeriod;
+          tempInputWeeklyArray[selectedIndex[0]][selectedIndex[1]] = tempInputWeeklyValueArray;
+          tempInputWeeklyArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputWeeklyValueArrayPeriod;
         }
         else {
           tempInputWeeklyArray[selectedIndex] = tempInputWeeklyValueArray;
           tempInputWeeklyArrayPeriod[selectedIndex] = tempInputWeeklyValueArrayPeriod;
         }
-  
-        selectedIndex = (dimensionNumPeriod==3) ? this.value.split('-') : parseInt(this.value);
-        startYear = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][0] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][0];
-        startMonth = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])][1] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][1];
-    
+
+        selectedIndex = (dimensionNumPeriod==3) ? this.value.split('-').map(Number) : parseInt(this.value);
+        startYear = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex[0]][selectedIndex[1]][0] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][0];
+        startMonth = (dimensionNumPeriod==3) ? that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex[0]][selectedIndex[1]][1] : that.currentSettingsData.monthlygoalsarrayperiod[selectedIndex][1];
+
         that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
         let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
-        that.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, targetStartDate);
+        that.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, targetStartDate, isOnlyOneWeek);
         
         that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
       });
