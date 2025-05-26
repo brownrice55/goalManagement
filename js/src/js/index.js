@@ -239,7 +239,13 @@
     else if(aIndex==2 || aIndex==3) {
       aInputElm.forEach(elm=> {
         elm.addEventListener('keyup', function() {
-          isOkForInput = (aInputElm[0].value.trim() && aInputElm[1].value.trim()) ? true : false;
+          let isDisabled = 0;
+          aInputElm.forEach(elm=> {
+            if(String(elm.value.trim())) {
+              ++isDisabled;
+            }
+          });
+          isOkForInput = ((isDisabled==aInputElm.length)) ? true : false;
           that.saveAndNextBtnElms[aIndex].disabled = (isOkForGoal && isOkForInput) ? false : true;
         });
       });
@@ -873,25 +879,27 @@
     if(isOneMonthOrLess) {
       this.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, startDate, isOneMonthOrLessCustom);
 
-      const getWeekDataResultArray = (aYear, aMonth, aDate, aIsTheLast, aMoreRequired) => {
+      const getWeekDataResultArray = (aYear, aMonth, aDate, aIsTheFirst, aMoreRequired) => {
         let year = aYear;
         let month = aMonth;
-        let date = (aIsTheLast) ? 1 : aDate;
+        let date = (aIsTheFirst) ? aDate : 1;
 
         let weekArray = this.getWeekArray(year, month, date);
         let stringYearAndMonth = year + '/' + month + '/';
         let span = '';
         let requiredClass = '';
-  
+
         let result = `<p class="px-2">${month}月</p>`;
         weekArray.forEach((array, index) => {
-          if(!aIsTheLast) {
-            span = (!index || index==1) ? '<span class="text-danger">※</span>' : '';
-            requiredClass = (!index || index==1) ? ' js-required' : '';
-          }
-          else if(aMoreRequired) {
-            span = (!index) ? '<span class="text-danger">※</span>' : '';
-            requiredClass = (!index) ? ' js-required' : '';
+          if(aIsTheFirst) {
+            if(weekArray>1) {
+              span = (!index || index==1) ? '<span class="text-danger">※</span>' : '';
+              requiredClass = (!index || index==1) ? ' js-required' : '';  
+            }
+            else {
+              span = (!index) ? '<span class="text-danger">※</span>' : '';
+              requiredClass = (!index) ? ' js-required' : '';  
+            }
           }
           result += `<div class="p-2">
           <label for="inputWeekly${month}-${index}">${stringYearAndMonth}${array[0]}から${stringYearAndMonth}${array[1]}の目標${span}</label>
@@ -907,17 +915,17 @@
         return [newYear, newMonth];
       };
 
-      let getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, false, true);
+      let getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, true, true);
       let result = getResultArray[0];
       if((this.endDateNumArray[1]-startMonth)==2 || (startMonth-this.endDateNumArray[1])==10) {
         let nextYearAndMonth = getNextYearAndMonth(startYear, startMonth);
         startYear = nextYearAndMonth[0];
         startMonth = nextYearAndMonth[1];
-        getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, true, getResultArray[1]);
+        getResultArray = getWeekDataResultArray(startYear, startMonth, startDate, false, getResultArray[1]);
         result += getResultArray[0];
       }
       if(this.endDateNumArray[0]!=startYear || (this.endDateNumArray[1]!=startMonth)) {
-        getResultArray = getWeekDataResultArray(this.endDateNumArray[0], this.endDateNumArray[1], this.endDateNumArray[2], true, false);
+        getResultArray = getWeekDataResultArray(this.endDateNumArray[0], this.endDateNumArray[1], this.endDateNumArray[2], false, false);
         result += getResultArray[0];
       }
 
@@ -978,6 +986,10 @@
     });
 
     this.saveAndNextBtnElms[3].addEventListener('click', function() {
+      if(that.inputGoalElms[3].value.trim() && that.currentSettingsData.goal!=that.inputGoalElms[3].value.trim()) {
+        that.currentSettingsData.goal = that.inputGoalElms[3].value.trim();
+      }
+
       const inputElms = that.inputAreaElms[2].querySelectorAll('input');
 
       let inputArray = Array.from(inputElms, elm => elm.value);
@@ -1100,30 +1112,31 @@
       setRadioAndCheckbox();
     });
 
-    let selectedIndex = Array(3).fill(0);
-    let selectedPeriodArray = Array(4).fill('');
+    let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
+
+    let selectedIndex = Array(dimensionNum).fill(0);
+    let selectedPeriodArray = Array(dimensionNum).fill('');
     let selectedPeriodText = '';
 
-    const setSelectedPeriod = () => {
-      const [index0, index1, index2] = selectedIndex;
-      selectedPeriodArray = this.currentSettingsData.weeklygoalsarrayperiod[index0][index1][index2].split(',');
+    const setSelectedPeriod = (aSelectedIndex) => {
+      let selectedPeriodValue = aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod);
+      selectedPeriodArray = selectedPeriodValue.split(',');
+
       selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}/までに達成したいこと`;
       this.goalPeriodElms[3].textContent = selectedPeriodText;
     };
-    setSelectedPeriod();
-
+    setSelectedPeriod(selectedIndex);
 
     this.selectGoalsElms[2].addEventListener('change', function() {
       selectedIndex = this.value.split('-').map(Number);
-      setSelectedPeriod();
+      setSelectedPeriod(selectedIndex);
     });
-
 
     const completeBtnElm = document.querySelector('.js-completeBtn');
     completeBtnElm.addEventListener('click', function() {
       that.currentSettingsData.status = 'complete';
     });
-    
+
     this.backBtnElms[3].addEventListener('click', function() {
       navAndCommon.switchPage(3, that.settingsSectionElms);
     });
