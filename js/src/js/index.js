@@ -593,7 +593,49 @@
     }
   };
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aIsMonthly, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek) {    
+
+  Settings.prototype.getInputAreaHtmlSet = function(aCnt, aValue) {
+    const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
+    const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
+    const moveupArray = ['前倒しOK'];
+
+    const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt, aValue) => {
+      let name = '';
+      let inputType = 'checkbox';
+      let className = 'p-2';
+      if(aPrefix=='frequency') {
+        name = ' name="frequency-' + aCnt + '"';
+        inputType = 'radio';
+        className = 'p-2 js-frequencyCheckbox';
+      }
+      else if(aPrefix=='youbi') {
+        className = 'px-2 checkboxDisabled js-youbiCheckbox';
+      }
+
+      let result = `<div class="` + className + `">`;
+        for(let cnt=0;cnt<aLength;++cnt) {
+          result += `<div class="form-check form-check-inline">
+          <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}" value="">
+          <label class="form-check-label" for="${aPrefix}-${aCnt}-${cnt}">${aArray[cnt]}</label>
+        </div>`;
+        }
+      result += `</div>`;
+
+      return result;
+    }
+
+    let classNameAlert = (!aCnt) ? 'small text-danger d-none' : 'small text-danger d-none js-inputTodoAlertRequired';
+    let className = (!aCnt) ? 'form-control mb-2 js-inputTodo' : 'form-control mb-2 js-inputTodo js-inputTodoRequired';
+    let result = `<span class="${classNameAlert}"></span>
+      <input class="${className}" type="text" id="inputTodo${aCnt}" value="${(aValue)?aValue:''}">`;
+    result += getInputAreaHtml(4, frequencyArray, 'frequency', aCnt, aValue);
+    result += getInputAreaHtml(7, youbiArray, 'youbi', aCnt, aValue);
+    result += getInputAreaHtml(1, moveupArray, 'moveup', aCnt, aValue);
+    return result;
+  };
+
+
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aSectionIndex, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek, aLength) {    
     let resultArray = [];
     let startDateArray = [];
     let value = '';
@@ -603,7 +645,7 @@
     let span = '';
     let requiredClass = '';
 
-    if(aIsMonthly==1) {//monthly
+    if(aSectionIndex==1) {//monthly
       let lastArray = this.currentSettingsData.goalperiodarray.at(-1);
       let startDateLastNumArray = lastArray[0].split('/').map(Number);
       let endDateLastNumArray = lastArray[1].split('/').map(Number);
@@ -628,7 +670,7 @@
         }
       });
     }
-    else {//weekly
+    else if(aSectionIndex==2) {//weekly
       const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aWeekArray, aYear, aMonth, aStringYearAndMonth, aDate) => {
         let result = '';
         let date = aDate;
@@ -683,9 +725,46 @@
         }
       });
     }
+    else { // todo
+
+      const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aYear, aMonth, aDate) => {
+        let result = '';
+        let date = aDate;
+
+        for(let cnt=0;cnt<aLength;++cnt) {
+          if(aDimension==3) {
+            value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][cnt]).trim() : '';
+          }
+          else {
+            value = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? String(aTempInputArray[aCnt][cnt]).trim() : '';
+          }
+          result += '<div class="border-bottom py-3">';
+          result += this.getInputAreaHtmlSet(cnt, value);
+          result += '</div>';
+        }
+
+        return result;
+      };
+
+      this.currentSettingsData.weeklygoalsarray.forEach((arrayOrVal, index) => {
+        year = aYear;
+        month = aMonth;
+        resultArray[index] = [];
+        if(Array.isArray(arrayOrVal)) {
+          let array = arrayOrVal;
+          array.forEach((val, index2) => {
+            resultArray[index][index2] = (val) ? getResultArray(3, aTempInputArray, index, index2, year, month, date) : '';
+          });
+        }
+        else {
+          let val = arrayOrVal;
+          resultArray[index] = (val) ? getResultArray(2, aTempInputArray, index, null, year, month, date) : '';
+        }
+      });
+    }
     
-    let sectionIndex = (aIsMonthly) ? 1 : 2;
-    this.inputAreaElms[sectionIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
+    this.inputAreaElms[aSectionIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
+
   };
 
   Settings.prototype.setInitialStateForEventSettings3AndEventSettings4 = function(aIndex, aConditions) {
@@ -794,7 +873,7 @@
 
       this.addGoalOptions(0);
       
-      this.getInputHtmlArray(null, true, selectedIndex, null, null, null, false);
+      this.getInputHtmlArray(null, 1, selectedIndex, null, null, null, false);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
         let inputMonthlyElms = that.inputAreaElms[1].querySelectorAll('input');
@@ -808,7 +887,7 @@
         selectedIndex = parseInt(this.value);
         that.goalPeriodElms[1].textContent = getTextContent(that.currentSettingsData.goalperiodarray[selectedIndex][0], that.currentSettingsData.goalperiodarray[selectedIndex][1]);
 
-        that.getInputHtmlArray(tempInputMonthlyArray, true, selectedIndex, null, null, null, false);
+        that.getInputHtmlArray(tempInputMonthlyArray, 1, selectedIndex, null, null, null, false);
         if(!selectedIndex) {
           that.judgeDisabledForEventSettings3AndEventSettings4(2, false);
         }
@@ -950,7 +1029,7 @@
 
       let firstWeek = that.getWeekArray(that.startDateNumArray[0], that.startDateNumArray[1], that.startDateNumArray[2]);
       isOnlyOneWeek = (selectedIndex[0]==0 && selectedIndex[1]==0 && firstWeek.length==1) ? true : false;
-      this.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, startDate, isOnlyOneWeek);
+      this.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, startDate, isOnlyOneWeek);
 
       this.selectGoalsElms[1].addEventListener('change', function() {
         let inputWeeklyElms = that.inputAreaElms[2].querySelectorAll('input');
@@ -972,7 +1051,7 @@
 
         that.goalPeriodElms[2].textContent = getTextContent(startYear, startMonth, null);
         let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
-        that.getInputHtmlArray(tempInputWeeklyArray, false, selectedIndex, startYear, startMonth, targetStartDate, isOnlyOneWeek);
+        that.getInputHtmlArray(tempInputWeeklyArray, 2, selectedIndex, startYear, startMonth, targetStartDate, isOnlyOneWeek);
         
         that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
       });
@@ -1015,59 +1094,44 @@
     });
   };
 
-  Settings.prototype.setEventSettings5 = function() {
 
-    let inputAreaHTML = '';
-    const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
-    const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
-    const moveupArray = ['前倒しOK'];
+  Settings.prototype.setEventSettings5 = function() {//todo
+    
+    let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
+    
+    let selectedIndex = Array(dimensionNum).fill(0);
+    let selectedPeriodArray = Array(dimensionNum).fill('');
+    let selectedPeriodText = '';
+  
+    const setSelectedPeriod = (aSelectedIndex) => {
+      let selectedPeriodValue = aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod);
+      selectedPeriodArray = selectedPeriodValue.split(',');
 
-    const getInputAreaHtmlSet = (aCnt) => {
-      const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt) => {
-        let name = '';
-        let inputType = 'checkbox';
-        let className = 'p-2';
-
-        if(aPrefix=='frequency') {
-          name = ' name="frequency-' + aCnt + '"';
-          inputType = 'radio';
-          className = 'p-2 js-frequencyCheckbox';
-        }
-        else if(aPrefix=='youbi') {
-          className = 'px-2 checkboxDisabled js-youbiCheckbox';
-        }
-
-        let result = `<div class="` + className + `">`;
-          for(let cnt=0;cnt<aLength;++cnt) {
-            result += `<div class="form-check form-check-inline">
-            <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}" value="">
-            <label class="form-check-label" for="${aPrefix}-${aCnt}-${cnt}">${aArray[cnt]}</label>
-          </div>`;
-          }
-        result += `</div>`;
-
-        return result;
-      }
-
-      let classNameAlert = (!aCnt) ? 'small text-danger d-none' : 'small text-danger d-none js-inputTodoAlertRequired';
-      let className = (!aCnt) ? 'form-control mb-2' : 'form-control mb-2 js-inputTodoRequired';
-      let result = `<span class="${classNameAlert}"></span>
-        <input class="${className}" type="text" id="inputTodo${aCnt}">`;
-      result += getInputAreaHtml(4, frequencyArray, 'frequency', aCnt);
-      result += getInputAreaHtml(7, youbiArray, 'youbi', aCnt);
-      result += getInputAreaHtml(1, moveupArray, 'moveup', aCnt);
-      return result;
+      selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}までに達成したいこと`;
+      this.goalPeriodElms[3].textContent = selectedPeriodText;
     };
+    setSelectedPeriod(selectedIndex);
 
-    let addInputCnt = 3;
-    for(let cnt=0;cnt<addInputCnt;++cnt) {
-      inputAreaHTML += '<div class="border-bottom py-3">';
-      inputAreaHTML += getInputAreaHtmlSet(cnt);
-      inputAreaHTML += '</div>';
-    }
+    let tempInputTodoArray = [];
+    let tempInputTodoArrayPeriod = [];
+
+    let [startYear, startMonth, startDate] = this.startDateNumArray;
+  
+    const that = this;
 
     this.addGoalOptions(2);
-    this.inputAreaElms[3].innerHTML = inputAreaHTML;
+
+    if(dimensionNum>1) {
+      tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
+      tempInputTodoArrayPeriod = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
+    }
+
+    startYear = (dimensionNum==3) ? this.currentSettingsData.weeklygoalsarrayperiod[0][0][0] : this.currentSettingsData.weeklygoalsarrayperiod[0][0];
+    startMonth = (dimensionNum==3) ? this.currentSettingsData.weeklygoalsarrayperiod[0][0][1] : this.currentSettingsData.weeklygoalsarrayperiod[0][1];
+
+    selectedIndex = (dimensionNum==3) ? Array(dimensionNum).fill(0) : 0;
+    
+    this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3);
 
     const setRadioAndCheckbox = () => {
       const frequencyCheckboxElms = document.querySelectorAll('.js-frequencyCheckbox');
@@ -1099,48 +1163,79 @@
     };
 
     setRadioAndCheckbox();
-
-    const that = this;
-
+    let addInputCnt = 3;
     const addTodoInputBtnElm = document.querySelector('.js-addTodoInputBtn');
     addTodoInputBtnElm.addEventListener('click', function() {
       let divElm = document.createElement('div');
       divElm.className = 'border-bottom py-3';
-      divElm.innerHTML = getInputAreaHtmlSet(addInputCnt);
+      divElm.innerHTML = that.getInputAreaHtmlSet(addInputCnt);
       that.inputAreaElms[3].appendChild(divElm);
       ++addInputCnt;
       setRadioAndCheckbox();
     });
 
-    let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
-
-    let selectedIndex = Array(dimensionNum).fill(0);
-    let selectedPeriodArray = Array(dimensionNum).fill('');
-    let selectedPeriodText = '';
-
-    const setSelectedPeriod = (aSelectedIndex) => {
-      let selectedPeriodValue = aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod);
-      selectedPeriodArray = selectedPeriodValue.split(',');
-
-      selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}/までに達成したいこと`;
-      this.goalPeriodElms[3].textContent = selectedPeriodText;
-    };
-    setSelectedPeriod(selectedIndex);
 
     this.selectGoalsElms[2].addEventListener('change', function() {
-      selectedIndex = this.value.split('-').map(Number);
+      let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
+      
+      let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
+      let tempInputTodoValueArrayPeriod = Array.from(inputTodoElms, elm => (elm.value) ? elm.dataset.period : '');
+
+      if(dimensionNum==3) {
+        tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
+        tempInputTodoArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArrayPeriod;
+      }
+      else {
+        tempInputTodoArray[selectedIndex] = tempInputTodoValueArray;
+        tempInputTodoArrayPeriod[selectedIndex] = tempInputTodoValueArrayPeriod;
+      }
+
+      selectedIndex = (dimensionNum==3) ? this.value.split('-').map(Number) : parseInt(this.value);
+      startYear = (dimensionNum==3) ? that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex[0]][selectedIndex[1]][0] : that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex][0];
+      startMonth = (dimensionNum==3) ? that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex[0]][selectedIndex[1]][1] : that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex][1];
+
       setSelectedPeriod(selectedIndex);
+      let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
+      that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length);
+
+      setRadioAndCheckbox();
+      
+      that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
     });
 
-    const completeBtnElm = document.querySelector('.js-completeBtn');
-    completeBtnElm.addEventListener('click', function() {
-      that.currentSettingsData.status = 'complete';
-    });
-
+    this.judgeDisabledForEventSettings3AndEventSettings4(3, false);
+  
     this.backBtnElms[3].addEventListener('click', function() {
       navAndCommon.switchPage(3, that.settingsSectionElms);
     });
+  
+    document.querySelector('.js-completeBtn').addEventListener('click', function() {
+  
+      const inputElms = that.inputAreaElms[3].querySelectorAll('js-inputTodo');
+  
+      let inputArray = Array.from(inputElms, elm => elm.value);
+      let inputArrayPeriod = Array.from(inputElms, elm => elm.dataset.period);
+      
+      if(tempInputTodoArray[0]) {
+        if(dimensionNum==3) {
+          tempInputTodoArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArray;
+          tempInputTodoArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArrayPeriod;  
+        }
+        else {
+          tempInputTodoArray[selectedIndex] = inputArray;
+          tempInputTodoArrayPeriod[selectedIndex] = inputArrayPeriod;    
+        }
+      }
+  
+      that.currentSettingsData.weeklygoalsarray = (tempInputTodoArray[0]) ? tempInputTodoArray : inputArray;
+      that.currentSettingsData.weeklygoalsarrayperiod = (tempInputTodoArrayPeriod[0]) ? tempInputTodoArrayPeriod : inputArrayPeriod;
+      that.currentSettingsData.status = 5;
+  
+      that.saveAndNextData(5);
+      // that.setEventSettings6();
+    });
   };
+
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
