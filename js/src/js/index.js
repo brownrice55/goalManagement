@@ -1098,17 +1098,17 @@
   Settings.prototype.setEventSettings5 = function() {//todo
     
     let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
-    
-    let selectedIndex = Array(dimensionNum).fill(0);
+    let selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
     let selectedPeriodArray = Array(dimensionNum).fill('');
     let selectedPeriodText = '';
-  
+
     const setSelectedPeriod = (aSelectedIndex) => {
-      let selectedPeriodValue = aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod);
+      let selectedPeriodValue = (Array.isArray(aSelectedIndex)) ? aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod) : this.currentSettingsData.weeklygoalsarrayperiod[aSelectedIndex];
       selectedPeriodArray = selectedPeriodValue.split(',');
 
       selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}までに達成したいこと`;
       this.goalPeriodElms[3].textContent = selectedPeriodText;
+      return selectedPeriodArray;
     };
     setSelectedPeriod(selectedIndex);
 
@@ -1126,11 +1126,6 @@
       tempInputTodoArrayPeriod = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
     }
 
-    startYear = (dimensionNum==3) ? this.currentSettingsData.weeklygoalsarrayperiod[0][0][0] : this.currentSettingsData.weeklygoalsarrayperiod[0][0];
-    startMonth = (dimensionNum==3) ? this.currentSettingsData.weeklygoalsarrayperiod[0][0][1] : this.currentSettingsData.weeklygoalsarrayperiod[0][1];
-
-    selectedIndex = (dimensionNum==3) ? Array(dimensionNum).fill(0) : 0;
-    
     this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3);
 
     const setRadioAndCheckbox = () => {
@@ -1174,14 +1169,13 @@
       setRadioAndCheckbox();
     });
 
-
     this.selectGoalsElms[2].addEventListener('change', function() {
       let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
       
       let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
       let tempInputTodoValueArrayPeriod = Array.from(inputTodoElms, elm => (elm.value) ? elm.dataset.period : '');
 
-      if(dimensionNum==3) {
+      if(dimensionNum>1) {
         tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
         tempInputTodoArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArrayPeriod;
       }
@@ -1190,11 +1184,12 @@
         tempInputTodoArrayPeriod[selectedIndex] = tempInputTodoValueArrayPeriod;
       }
 
-      selectedIndex = (dimensionNum==3) ? this.value.split('-').map(Number) : parseInt(this.value);
-      startYear = (dimensionNum==3) ? that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex[0]][selectedIndex[1]][0] : that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex][0];
-      startMonth = (dimensionNum==3) ? that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex[0]][selectedIndex[1]][1] : that.currentSettingsData.weeklygoalsarrayperiod[selectedIndex][1];
+      selectedIndex = (dimensionNum>1) ? this.value.split('-').map(Number) : parseInt(this.value);
+      let startYearAndMonth = setSelectedPeriod(selectedIndex);
 
-      setSelectedPeriod(selectedIndex);
+      startYear = startYearAndMonth[0];
+      startMonth = startYearAndMonth[1];
+
       let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
       that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length);
 
