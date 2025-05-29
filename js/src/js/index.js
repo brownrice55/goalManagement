@@ -335,6 +335,9 @@
       else if(nextPageIndex==3) {
         that.setEventSettings4();
       }
+      else if(nextPageIndex==4) {
+        that.setEventSettings5();
+      }
     });
 
     this.setFormValidationForInput(0, null);
@@ -1096,37 +1099,10 @@
 
 
   Settings.prototype.setEventSettings5 = function() {//todo
-    
-    let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
-    let selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
-    let selectedPeriodArray = Array(dimensionNum).fill('');
-    let selectedPeriodText = '';
 
-    const setSelectedPeriod = (aSelectedIndex) => {
-      let selectedPeriodValue = (Array.isArray(aSelectedIndex)) ? aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod) : this.currentSettingsData.weeklygoalsarrayperiod[aSelectedIndex];
-      selectedPeriodArray = selectedPeriodValue.split(',');
-
-      selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}までに達成したいこと`;
-      this.goalPeriodElms[3].textContent = selectedPeriodText;
-      return selectedPeriodArray;
-    };
-    setSelectedPeriod(selectedIndex);
-
-    let tempInputTodoArray = [];
-    let tempInputTodoArrayPeriod = [];
-
-    let [startYear, startMonth, startDate] = this.startDateNumArray;
-  
-    const that = this;
-
-    this.addGoalOptions(2);
-
-    if(dimensionNum>1) {
-      tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
-      tempInputTodoArrayPeriod = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
-    }
-
-    this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3);
+    const completeBtnElm = document.querySelector('.js-completeBtn');
+    let isInputOk = false;
+    let isYoubiOk = false;
 
     const setRadioAndCheckbox = () => {
       const frequencyCheckboxElms = document.querySelectorAll('.js-frequencyCheckbox');
@@ -1144,20 +1120,146 @@
               elm3.checked = false;
               if(index2==0) {
                 elm3.checked = true;
+                isYoubiOk = true;
               }
               else if(index2==1 && index3!=5 && index3!=6) {
                 elm3.checked = true;
+                isYoubiOk = true;
               }
               else if(index2==2 && index3==5 || index2==2 && index3==6) {
                 elm3.checked = true;
+                isYoubiOk = true;
               }
             });
+            completeBtnElm.disabled = (isInputOk && isYoubiOk) ? false : true;
           });
         });
       });
     };
 
+    const setEventForCompleteBtn = () => {
+      const inputTodoElms = this.inputAreaElms[3].querySelectorAll('.js-inputTodo');
+      const youbiCheckboxElms = this.inputAreaElms[3].querySelectorAll('.js-youbiCheckbox');
+      const frequencyCheckboxElms = this.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
+
+      let isInputOkArray = Array(inputTodoElms.length).fill(false);
+
+      const judgeDisabled = (aIndex) => {
+        isInputOkArray = [...inputTodoElms].map(input => {
+          return (String(input.value).trim() ? true : false);
+        });
+
+        isInputOk = isInputOkArray.some(input => input);
+        if(isInputOk) {
+          isInputOkArray.forEach(val => {
+            if(val) {
+              let youbiCheckboxInputElms = youbiCheckboxElms[aIndex].querySelectorAll('input');
+              isYoubiOk = [...youbiCheckboxInputElms].some(input=>input.checked);
+            }
+          });
+        }
+
+        completeBtnElm.disabled = (isInputOk && isYoubiOk) ? false : true;
+
+      };
+
+      inputTodoElms.forEach((elm, index) => {
+        elm.addEventListener('keyup', function() {
+          judgeDisabled(index);
+        });
+      });
+
+      youbiCheckboxElms.forEach((elm, index) => {
+        let youbiCheckboxInputElms = elm.querySelectorAll('input');
+        youbiCheckboxInputElms.forEach(elm2 => {
+          elm2.addEventListener('click', function() {
+            judgeDisabled(index);
+          });
+        });
+      });
+    };
+
+    if(!this.currentSettingsData.weeklygoalsarrayperiod) {//期間なし
+
+      this.selectGoalsElms[2].innerHTML = `<option value="${this.currentSettingsData.goal}">${this.currentSettingsData.goal}</option>`;
+
+      let result = '';
+      for(let cnt=0;cnt<3;++cnt) {
+        result += '<div class="border-bottom py-3">';
+        result += this.getInputAreaHtmlSet(cnt, '');
+        result += '</div>';  
+      }
+      this.inputAreaElms[3].innerHTML = result;
+
+      setEventForCompleteBtn();
+
+    }
+    else {
+
+      let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
+      let selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
+      let selectedPeriodArray = Array(dimensionNum).fill('');
+      let selectedPeriodText = '';
+
+      const setSelectedPeriod = (aSelectedIndex) => {
+        let selectedPeriodValue = (Array.isArray(aSelectedIndex)) ? aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod) : this.currentSettingsData.weeklygoalsarrayperiod[aSelectedIndex];
+        selectedPeriodArray = selectedPeriodValue.split(',');
+  
+        selectedPeriodText = `${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[2]}から${selectedPeriodArray[0]}/${selectedPeriodArray[1]}/${selectedPeriodArray[3]}までに達成したいこと`;
+        this.goalPeriodElms[3].textContent = selectedPeriodText;
+        return selectedPeriodArray;
+      };
+      setSelectedPeriod(selectedIndex);
+  
+      let tempInputTodoArray = [];
+      let tempInputTodoArrayPeriod = [];
+  
+      let [startYear, startMonth, startDate] = this.startDateNumArray;
+    
+      const that = this;
+  
+      this.addGoalOptions(2);
+  
+      if(dimensionNum>1) {
+        tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
+        tempInputTodoArrayPeriod = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
+      }
+  
+      this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3);
+  
+      this.selectGoalsElms[2].addEventListener('change', function() {
+        let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
+        
+        let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
+        let tempInputTodoValueArrayPeriod = Array.from(inputTodoElms, elm => (elm.value) ? elm.dataset.period : '');
+  
+        if(dimensionNum>1) {
+          tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
+          tempInputTodoArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArrayPeriod;
+        }
+        else {
+          tempInputTodoArray[selectedIndex] = tempInputTodoValueArray;
+          tempInputTodoArrayPeriod[selectedIndex] = tempInputTodoValueArrayPeriod;
+        }
+  
+        selectedIndex = (dimensionNum>1) ? this.value.split('-').map(Number) : parseInt(this.value);
+        let startYearAndMonth = setSelectedPeriod(selectedIndex);
+  
+        startYear = startYearAndMonth[0];
+        startMonth = startYearAndMonth[1];
+  
+        let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
+        that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length);
+  
+        setRadioAndCheckbox();
+        
+        that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
+      });
+    }
+
     setRadioAndCheckbox();
+
+    const that = this;
     let addInputCnt = 3;
     const addTodoInputBtnElm = document.querySelector('.js-addTodoInputBtn');
     addTodoInputBtnElm.addEventListener('click', function() {
@@ -1169,42 +1271,13 @@
       setRadioAndCheckbox();
     });
 
-    this.selectGoalsElms[2].addEventListener('change', function() {
-      let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
-      
-      let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
-      let tempInputTodoValueArrayPeriod = Array.from(inputTodoElms, elm => (elm.value) ? elm.dataset.period : '');
-
-      if(dimensionNum>1) {
-        tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
-        tempInputTodoArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArrayPeriod;
-      }
-      else {
-        tempInputTodoArray[selectedIndex] = tempInputTodoValueArray;
-        tempInputTodoArrayPeriod[selectedIndex] = tempInputTodoValueArrayPeriod;
-      }
-
-      selectedIndex = (dimensionNum>1) ? this.value.split('-').map(Number) : parseInt(this.value);
-      let startYearAndMonth = setSelectedPeriod(selectedIndex);
-
-      startYear = startYearAndMonth[0];
-      startMonth = startYearAndMonth[1];
-
-      let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
-      that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length);
-
-      setRadioAndCheckbox();
-      
-      that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
-    });
-
     this.judgeDisabledForEventSettings3AndEventSettings4(3, false);
   
     this.backBtnElms[3].addEventListener('click', function() {
       navAndCommon.switchPage(3, that.settingsSectionElms);
     });
   
-    document.querySelector('.js-completeBtn').addEventListener('click', function() {
+    completeBtnElm.addEventListener('click', function() {
   
       const inputElms = that.inputAreaElms[3].querySelectorAll('js-inputTodo');
   
