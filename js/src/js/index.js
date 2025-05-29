@@ -597,28 +597,31 @@
   };
 
 
-  Settings.prototype.getInputAreaHtmlSet = function(aCnt, aValue) {
+  Settings.prototype.getInputAreaHtmlSet = function(aCnt, aValue, aRadioCheckedArray, aCheckboxCheckedArray) {
     const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
     const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
     const moveupArray = ['前倒しOK'];
-
     const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt, aValue) => {
+      
       let name = '';
       let inputType = 'checkbox';
       let className = 'p-2';
+      let checkedArray = [];
       if(aPrefix=='frequency') {
         name = ' name="frequency-' + aCnt + '"';
         inputType = 'radio';
         className = 'p-2 js-frequencyCheckbox';
+        checkedArray = aRadioCheckedArray;
       }
       else if(aPrefix=='youbi') {
         className = 'px-2 checkboxDisabled js-youbiCheckbox';
+        checkedArray = aCheckboxCheckedArray;
       }
 
       let result = `<div class="` + className + `">`;
         for(let cnt=0;cnt<aLength;++cnt) {
           result += `<div class="form-check form-check-inline">
-          <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}" value="">
+          <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}"${(checkedArray[cnt])?' checked':''}>
           <label class="form-check-label" for="${aPrefix}-${aCnt}-${cnt}">${aArray[cnt]}</label>
         </div>`;
         }
@@ -638,7 +641,7 @@
   };
 
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aSectionIndex, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek, aLength) {    
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aSectionIndex, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek, aLength, aTempRadioTodoArray, aTempCheckboxTodoArray) {    
     let resultArray = [];
     let startDateArray = [];
     let value = '';
@@ -733,16 +736,22 @@
       const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aYear, aMonth, aDate) => {
         let result = '';
         let date = aDate;
-
+        let radioCheckedArray = [];
+        let checkboxCheckedArray = [];
+        
         for(let cnt=0;cnt<aLength;++cnt) {
           if(aDimension==3) {
             value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][cnt]).trim() : '';
+            radioCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][cnt] : [false,false,false,false];
+            checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][cnt] : [false,false,false,false,false,false,false];
           }
           else {
             value = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? String(aTempInputArray[aCnt][cnt]).trim() : '';
+            radioCheckedArray = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempRadioTodoArray[aCnt][cnt] : [false,false,false,false];
+            checkboxCheckedArray = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][cnt] : [false,false,false,false,false,false,false];
           }
           result += '<div class="border-bottom py-3">';
-          result += this.getInputAreaHtmlSet(cnt, value);
+          result += this.getInputAreaHtmlSet(cnt, value, radioCheckedArray, checkboxCheckedArray);
           result += '</div>';
         }
 
@@ -1189,7 +1198,7 @@
       let result = '';
       for(let cnt=0;cnt<3;++cnt) {
         result += '<div class="border-bottom py-3">';
-        result += this.getInputAreaHtmlSet(cnt, '');
+        result += this.getInputAreaHtmlSet(cnt, '', [false,false,false,false], [false,false,false,false,false,false,false]);
         result += '</div>';  
       }
       this.inputAreaElms[3].innerHTML = result;
@@ -1216,6 +1225,8 @@
   
       let tempInputTodoArray = [];
       let tempInputTodoArrayPeriod = [];
+      let tempRadioTodoArray = [];
+      let tempCheckboxTodoArray = [];
   
       let [startYear, startMonth, startDate] = this.startDateNumArray;
     
@@ -1226,23 +1237,43 @@
       if(dimensionNum>1) {
         tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
         tempInputTodoArrayPeriod = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
+        tempRadioTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false]);
+        tempCheckboxTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false,false,false,false]);
       }
-  
-      this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3);
+
+    this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3, tempRadioTodoArray, tempCheckboxTodoArray);
   
       this.selectGoalsElms[2].addEventListener('change', function() {
         let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
+        let radioTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
+        let checkboxTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-youbiCheckbox');
         
         let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
         let tempInputTodoValueArrayPeriod = Array.from(inputTodoElms, elm => (elm.value) ? elm.dataset.period : '');
-  
+
+        let tempRadioTodoCheckedArray = Array(radioTodoDivElms.length);
+        radioTodoDivElms.forEach((elm, index) => {
+          let radioTodoElms = elm.querySelectorAll('input');
+          tempRadioTodoCheckedArray[index] = [...radioTodoElms].map(radio => radio.checked ? true : false);
+        });
+
+        let tempCheckboxTodoCheckedArray = Array(checkboxTodoDivElms.length);
+        checkboxTodoDivElms.forEach((elm, index) => {
+          let checkboxTodoElms = elm.querySelectorAll('input');
+          tempCheckboxTodoCheckedArray[index] = [...checkboxTodoElms].map(checkbox => checkbox.checked ? true : false);
+        });
+
         if(dimensionNum>1) {
           tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
           tempInputTodoArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArrayPeriod;
+          tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempRadioTodoCheckedArray;
+          tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempCheckboxTodoCheckedArray;
         }
         else {
           tempInputTodoArray[selectedIndex] = tempInputTodoValueArray;
           tempInputTodoArrayPeriod[selectedIndex] = tempInputTodoValueArrayPeriod;
+          tempRadioTodoArray[selectedIndex] = tempRadioTodoCheckedArray;
+          tempCheckboxTodoArray[selectedIndex] = tempCheckboxTodoCheckedArray;
         }
   
         selectedIndex = (dimensionNum>1) ? this.value.split('-').map(Number) : parseInt(this.value);
@@ -1250,9 +1281,9 @@
   
         startYear = startYearAndMonth[0];
         startMonth = startYearAndMonth[1];
-  
+
         let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
-        that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length);
+        that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length, tempRadioTodoArray, tempCheckboxTodoArray);
   
         setRadioAndCheckbox();
 
