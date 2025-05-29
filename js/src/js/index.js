@@ -1213,8 +1213,6 @@
       }
       this.inputAreaElms[3].innerHTML = result;
 
-      setEventForCompleteBtn();
-
     }
     else {
 
@@ -1253,8 +1251,8 @@
         tempCheckboxTodoArray2 = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false]);
       }
 
-    this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2);
-  
+      this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2);
+
       this.selectGoalsElms[2].addEventListener('change', function() {
         let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
         let radioTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
@@ -1301,11 +1299,15 @@
         let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
         that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2);
 
+        if(selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') {
+          setEventForCompleteBtn();
+        }
         setRadioAndCheckbox();
 
       });
     }
 
+    setEventForCompleteBtn();
     setRadioAndCheckbox();
 
     const that = this;
@@ -1314,7 +1316,7 @@
     addTodoInputBtnElm.addEventListener('click', function() {
       let divElm = document.createElement('div');
       divElm.className = 'border-bottom py-3';
-      divElm.innerHTML = that.getInputAreaHtmlSet(addInputCnt);
+      divElm.innerHTML = that.getInputAreaHtmlSet(addInputCnt, '', [false,false,false,false], [false,false,false,false,false,false,false], [false]);
       that.inputAreaElms[3].appendChild(divElm);
       ++addInputCnt;
       setRadioAndCheckbox();
