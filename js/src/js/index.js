@@ -1130,6 +1130,9 @@
                 elm3.checked = true;
                 isYoubiOk = true;
               }
+              else if(index2==3) {
+                isYoubiOk = false;
+              }
             });
             completeBtnElm.disabled = (isInputOk && isYoubiOk) ? false : true;
           });
@@ -1252,8 +1255,7 @@
         that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length);
   
         setRadioAndCheckbox();
-        
-        that.judgeDisabledForEventSettings3AndEventSettings4(3, false);
+
       });
     }
 
@@ -1269,9 +1271,8 @@
       that.inputAreaElms[3].appendChild(divElm);
       ++addInputCnt;
       setRadioAndCheckbox();
+      setEventForCompleteBtn();
     });
-
-    this.judgeDisabledForEventSettings3AndEventSettings4(3, false);
   
     this.backBtnElms[3].addEventListener('click', function() {
       navAndCommon.switchPage(3, that.settingsSectionElms);
