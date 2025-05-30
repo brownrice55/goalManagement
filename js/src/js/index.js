@@ -152,7 +152,7 @@
 
     navAndCommon.switchPage(aIndex, this.settingsSectionElms);
     this.displayGoalList();
-    if(aIndex!=4) {
+    if(aIndex<4) {
       this.saveAndNextBtnElms[aIndex].disabled = true;
     }
   };
@@ -1201,6 +1201,12 @@
       });
     };
 
+    let tempInputTodoArray = [];
+    let tempInputTodoArrayPeriod = [];
+    let tempRadioTodoArray = [];
+    let tempCheckboxTodoArray = [];
+    let tempCheckboxTodoArray2 = [];
+
     if(!this.currentSettingsData.weeklygoalsarrayperiod) {//期間なし
 
       this.selectGoalsElms[2].innerHTML = `<option value="${this.currentSettingsData.goal}">${this.currentSettingsData.goal}</option>`;
@@ -1231,12 +1237,6 @@
       };
       setSelectedPeriod(selectedIndex);
   
-      let tempInputTodoArray = [];
-      let tempInputTodoArrayPeriod = [];
-      let tempRadioTodoArray = [];
-      let tempCheckboxTodoArray = [];
-      let tempCheckboxTodoArray2 = [];
-  
       let [startYear, startMonth, startDate] = this.startDateNumArray;
     
       const that = this;
@@ -1260,7 +1260,6 @@
         let checkboxTodoDivElms2 = that.inputAreaElms[3].querySelectorAll('.js-othersCheckbox');
         
         let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
-        let tempInputTodoValueArrayPeriod = Array.from(inputTodoElms, elm => (elm.value) ? elm.dataset.period : '');
 
         const getTempDataArray = (aDivElms) => {
           let tempDataArray = Array(aDivElms.length);
@@ -1277,14 +1276,12 @@
 
         if(dimensionNum>1) {
           tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
-          tempInputTodoArrayPeriod[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArrayPeriod;
           tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempRadioTodoCheckedArray;
           tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempCheckboxTodoCheckedArray;
           tempCheckboxTodoArray2[selectedIndex[0]][selectedIndex[1]] = tempCheckboxTodoCheckedArray2;
         }
         else {
           tempInputTodoArray[selectedIndex] = tempInputTodoValueArray;
-          tempInputTodoArrayPeriod[selectedIndex] = tempInputTodoValueArrayPeriod;
           tempRadioTodoArray[selectedIndex] = tempRadioTodoCheckedArray;
           tempCheckboxTodoArray[selectedIndex] = tempCheckboxTodoCheckedArray;
           tempCheckboxTodoArray2[selectedIndex] = tempCheckboxTodoCheckedArray2;
@@ -1326,27 +1323,26 @@
     this.backBtnElms[3].addEventListener('click', function() {
       navAndCommon.switchPage(3, that.settingsSectionElms);
     });
-  
+
     completeBtnElm.addEventListener('click', function() {
+
+      let inputArrays = [];
+      tempInputTodoArray.forEach((array, index) => {
+        array.forEach((val, index2) => {
+          if(val && tempCheckboxTodoArray[index][index2]) {
+            let todoData = {
+              period: that.currentSettingsData.weeklygoalsarrayperiod[index],
+              todo: val,
+              frequency: tempRadioTodoArray[index][index2],
+              youbi: tempCheckboxTodoArray[index][index2],
+              others: tempCheckboxTodoArray2[index][index2]
+            };
+            inputArrays.push(todoData);
+          }
+        });
+      });
   
-      const inputElms = that.inputAreaElms[3].querySelectorAll('js-inputTodo');
-  
-      let inputArray = Array.from(inputElms, elm => elm.value);
-      let inputArrayPeriod = Array.from(inputElms, elm => elm.dataset.period);
-      
-      if(tempInputTodoArray[0]) {
-        if(dimensionNum==3) {
-          tempInputTodoArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArray;
-          tempInputTodoArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArrayPeriod;  
-        }
-        else {
-          tempInputTodoArray[selectedIndex] = inputArray;
-          tempInputTodoArrayPeriod[selectedIndex] = inputArrayPeriod;    
-        }
-      }
-  
-      that.currentSettingsData.weeklygoalsarray = (tempInputTodoArray[0]) ? tempInputTodoArray : inputArray;
-      that.currentSettingsData.weeklygoalsarrayperiod = (tempInputTodoArrayPeriod[0]) ? tempInputTodoArrayPeriod : inputArrayPeriod;
+      that.currentSettingsData.todoarray = (!that.currentSettingsData.weeklygoalsarrayperiod) ? '後で' : inputArrays;
       that.currentSettingsData.status = 5;
   
       that.saveAndNextData(5);
