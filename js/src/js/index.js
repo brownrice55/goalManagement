@@ -315,7 +315,7 @@
         diffInDays = Math.floor(diffInMs/(1000*60*60*24));  
       }
 
-      that.id = 1; //仮
+      that.id = that.settingsData.size + 1;
       that.currentSettingsData = new Map();
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
@@ -432,7 +432,7 @@
   };
 
   Settings.prototype.setEventSettings2 = function() {//年間
-    this.currentSettingsData = this.settingsData.get(1); //仮
+    this.currentSettingsData = this.settingsData.get(this.id);
 
     let displayStartDateArray = this.startDateNumArray;
     let displayStartDate = this.currentSettingsData.period[0].replace(/-/g, '/');
@@ -488,7 +488,6 @@
 
       let annualGoalArray = Array.from(inputElms, elm => elm.value);
 
-      that.id = 1; //仮
       if(that.currentSettingsData.goal!=that.inputGoalElms[1].value.trim()) {
         that.currentSettingsData.goal = that.inputGoalElms[1].value.trim();
       }
@@ -1421,10 +1420,14 @@
       that.currentSettingsData.status = 5;
   
       that.saveAndNextData(5);
-      // that.setEventSettings6();
+      that.setEventSettings6();
     });
   };
 
+
+  Settings.prototype.setEventSettings6 = function() {//ご褒美
+
+  };
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
