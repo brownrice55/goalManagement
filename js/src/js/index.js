@@ -1122,6 +1122,8 @@
     const completeBtnElm = document.querySelector('.js-completeBtn');
     let isInputOk = false;
     let isYoubiOk = false;
+    let dimensionNum = 0;
+    let selectedIndex = 0;
 
     const setRadioAndCheckbox = () => {
       const frequencyCheckboxElms = document.querySelectorAll('.js-frequencyCheckbox');
@@ -1202,10 +1204,28 @@
     };
 
     let tempInputTodoArray = [];
-    let tempInputTodoArrayPeriod = [];
     let tempRadioTodoArray = [];
     let tempCheckboxTodoArray = [];
     let tempCheckboxTodoArray2 = [];
+
+    const getTempData = (aInputTodoElms, aRadioTodoDivElms, aCheckboxTodoDivElms, aCheckboxTodoDivElms2) => {
+      let tempInputTodoValueArray = Array.from(aInputTodoElms, elm => (elm.value) ? elm.value : '');
+
+      const getTempDataArray = (aDivElms) => {
+        let tempDataArray = Array(aDivElms.length);
+        aDivElms.forEach((elm, index) => {
+          let elms = elm.querySelectorAll('input');
+          tempDataArray[index] = [...elms].map(input => input.checked ? true : false);
+        });
+        return tempDataArray;
+      };
+
+      let tempRadioTodoCheckedArray =  getTempDataArray(aRadioTodoDivElms);
+      let tempCheckboxTodoCheckedArray =  getTempDataArray(aCheckboxTodoDivElms);
+      let tempCheckboxTodoCheckedArray2 =  getTempDataArray(aCheckboxTodoDivElms2);
+
+      return [tempInputTodoValueArray, tempRadioTodoCheckedArray, tempCheckboxTodoCheckedArray, tempCheckboxTodoCheckedArray2]
+    };
 
     if(!this.currentSettingsData.weeklygoalsarrayperiod) {//期間なし
 
@@ -1222,8 +1242,8 @@
     }
     else {
 
-      let dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
-      let selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
+      dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
+      selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
       let selectedPeriodArray = Array(dimensionNum).fill('');
       let selectedPeriodText = '';
 
@@ -1245,7 +1265,6 @@
   
       if(dimensionNum>1) {
         tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
-        tempInputTodoArrayPeriod = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
         tempRadioTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false]);
         tempCheckboxTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false,false,false,false]);
         tempCheckboxTodoArray2 = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false]);
@@ -1258,33 +1277,20 @@
         let radioTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
         let checkboxTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-youbiCheckbox');
         let checkboxTodoDivElms2 = that.inputAreaElms[3].querySelectorAll('.js-othersCheckbox');
-        
-        let tempInputTodoValueArray = Array.from(inputTodoElms, elm => (elm.value) ? elm.value : '');
 
-        const getTempDataArray = (aDivElms) => {
-          let tempDataArray = Array(aDivElms.length);
-          aDivElms.forEach((elm, index) => {
-            let elms = elm.querySelectorAll('input');
-            tempDataArray[index] = [...elms].map(input => input.checked ? true : false);
-          });
-          return tempDataArray;
-        };
-
-        let tempRadioTodoCheckedArray =  getTempDataArray(radioTodoDivElms);
-        let tempCheckboxTodoCheckedArray =  getTempDataArray(checkboxTodoDivElms);
-        let tempCheckboxTodoCheckedArray2 =  getTempDataArray(checkboxTodoDivElms2);
+        const tempData = getTempData(inputTodoElms, radioTodoDivElms, checkboxTodoDivElms, checkboxTodoDivElms2);
 
         if(dimensionNum>1) {
-          tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempInputTodoValueArray;
-          tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempRadioTodoCheckedArray;
-          tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempCheckboxTodoCheckedArray;
-          tempCheckboxTodoArray2[selectedIndex[0]][selectedIndex[1]] = tempCheckboxTodoCheckedArray2;
+          tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[0];
+          tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[1];
+          tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[2];
+          tempCheckboxTodoArray2[selectedIndex[0]][selectedIndex[1]] = tempData[3];
         }
         else {
-          tempInputTodoArray[selectedIndex] = tempInputTodoValueArray;
-          tempRadioTodoArray[selectedIndex] = tempRadioTodoCheckedArray;
-          tempCheckboxTodoArray[selectedIndex] = tempCheckboxTodoCheckedArray;
-          tempCheckboxTodoArray2[selectedIndex] = tempCheckboxTodoCheckedArray2;
+          tempInputTodoArray[selectedIndex] = tempData[0];
+          tempRadioTodoArray[selectedIndex] = tempData[1];
+          tempCheckboxTodoArray[selectedIndex] = tempData[2];
+          tempCheckboxTodoArray2[selectedIndex] = tempData[3];
         }
   
         selectedIndex = (dimensionNum>1) ? this.value.split('-').map(Number) : parseInt(this.value);
@@ -1326,23 +1332,91 @@
 
     completeBtnElm.addEventListener('click', function() {
 
+      selectedIndex = (dimensionNum>1) ? that.selectGoalsElms[2].value.split('-').map(Number) : parseInt(that.selectGoalsElms[2].value);
+
+      let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
+      let radioTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
+      let checkboxTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-youbiCheckbox');
+      let checkboxTodoDivElms2 = that.inputAreaElms[3].querySelectorAll('.js-othersCheckbox');
+
+      const tempData = getTempData(inputTodoElms, radioTodoDivElms, checkboxTodoDivElms, checkboxTodoDivElms2);
+
+      if(!that.currentSettingsData.weeklygoalsarrayperiod) {
+        tempInputTodoArray = tempData[0];
+        tempRadioTodoArray = tempData[1];
+        tempCheckboxTodoArray = tempData[2];
+        tempCheckboxTodoArray2 = tempData[3];
+      }
+      else {
+        if(dimensionNum>1) {
+          tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[0];
+          tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[1];
+          tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[2];
+          tempCheckboxTodoArray2[selectedIndex[0]][selectedIndex[1]] = tempData[3];
+        }
+        else {
+          tempInputTodoArray[selectedIndex] = tempData[0];
+          tempRadioTodoArray[selectedIndex] = tempData[1];
+          tempCheckboxTodoArray[selectedIndex] = tempData[2];
+          tempCheckboxTodoArray2[selectedIndex] = tempData[3];
+        }  
+      }
+
       let inputArrays = [];
-      tempInputTodoArray.forEach((array, index) => {
-        array.forEach((val, index2) => {
-          if(val && tempCheckboxTodoArray[index][index2]) {
+      
+      if(!that.currentSettingsData.weeklygoalsarrayperiod) {
+        tempInputTodoArray.forEach((val, index) => {
+          if(val && tempCheckboxTodoArray[index]) {
             let todoData = {
-              period: that.currentSettingsData.weeklygoalsarrayperiod[index],
+              period: 'indefinite',
               todo: val,
-              frequency: tempRadioTodoArray[index][index2],
-              youbi: tempCheckboxTodoArray[index][index2],
-              others: tempCheckboxTodoArray2[index][index2]
+              frequency: tempRadioTodoArray[index],
+              youbi: tempCheckboxTodoArray[index],
+              others: tempCheckboxTodoArray2[index]
             };
             inputArrays.push(todoData);
           }
         });
-      });
-  
-      that.currentSettingsData.todoarray = (!that.currentSettingsData.weeklygoalsarrayperiod) ? '後で' : inputArrays;
+      }
+      else {
+        if(dimensionNum>1) {
+          tempInputTodoArray.forEach((array, index) => {
+            array.forEach((array2, index2) => {
+              array2.forEach((val, index3) => {
+                if(val && tempCheckboxTodoArray[index][index2][index3]) {
+                  let todoData = {
+                    period: that.currentSettingsData.weeklygoalsarrayperiod[index][index2][index3],
+                    todo: val,
+                    frequency: tempRadioTodoArray[index][index2][index3],
+                    youbi: tempCheckboxTodoArray[index][index2][index3],
+                    others: tempCheckboxTodoArray2[index][index2][index3]
+                  };
+                  inputArrays.push(todoData);
+                }
+              });
+            });
+          });
+        }
+        else {
+          tempInputTodoArray.forEach((array, index) => {
+            array.forEach((val, index2) => {
+              if(val && tempCheckboxTodoArray[index][index2]) {
+                let todoData = {
+                  period: that.currentSettingsData.weeklygoalsarrayperiod[index],
+                  todo: val,
+                  frequency: tempRadioTodoArray[index][index2],
+                  youbi: tempCheckboxTodoArray[index][index2],
+                  others: tempCheckboxTodoArray2[index][index2]
+                };
+                inputArrays.push(todoData);
+              }
+            });
+          });
+        }
+      }
+
+
+      that.currentSettingsData.todoarray = inputArrays;
       that.currentSettingsData.status = 5;
   
       that.saveAndNextData(5);
