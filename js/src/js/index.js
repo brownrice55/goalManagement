@@ -1327,7 +1327,8 @@
     });
 
     this.backBtnElms[3].addEventListener('click', function() {
-      navAndCommon.switchPage(3, that.settingsSectionElms);
+      let index = (!that.currentSettingsData.weeklygoalsarrayperiod) ? 0 : 3;
+      navAndCommon.switchPage(index, that.settingsSectionElms);
     });
 
     completeBtnElm.addEventListener('click', function() {
@@ -1385,7 +1386,7 @@
               array2.forEach((val, index3) => {
                 if(val && tempCheckboxTodoArray[index][index2][index3]) {
                   let todoData = {
-                    period: that.currentSettingsData.weeklygoalsarrayperiod[index][index2][index3],
+                    period: (dimensionNum==3) ? that.currentSettingsData.weeklygoalsarrayperiod[index][index2][index3] : that.currentSettingsData.weeklygoalsarrayperiod[index][index2],
                     todo: val,
                     frequency: tempRadioTodoArray[index][index2][index3],
                     youbi: tempCheckboxTodoArray[index][index2][index3],
