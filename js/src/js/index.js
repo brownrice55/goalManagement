@@ -1432,8 +1432,8 @@
     const selectRewardsElm = document.querySelector('.js-selectRewards');
     const formAreaRewardsElm = document.querySelector('.js-formAreaRewards');
 
-    const getFormHTML = (aPeriodData, aIndex) => {
-      
+    const getFormHTML = (aPeriodData, aIndex, aIsIndefinite) => {
+
       const getOptionHTML = (aArrayOrVal) => {
         let dimensionNum = this.getDimensionNum(aArrayOrVal);
         let newVal = '';
@@ -1444,9 +1444,14 @@
         }
         else if(dimensionNum==1) {
           if(!aIndex) {//年
-            let start = (aArrayOrVal[0]) ? aArrayOrVal[0].replace('/','年').replace('/','月') : '';
-            let end = (aArrayOrVal[1]) ? aArrayOrVal[1].replace('/','年').replace('/','月') : '';
-            newVal = (start && end) ? `<option>${start}日〜${end}日</option>` : '';
+            if(aIsIndefinite) {
+              newVal = (aArrayOrVal) ? `<option>${aArrayOrVal[0].substring(0, 4)}年</option>` : '';
+            }
+            else {
+              let start = (aArrayOrVal[0]) ? aArrayOrVal[0].replace('/','年').replace('/','月') : '';
+              let end = (aArrayOrVal[1]) ? aArrayOrVal[1].replace('/','年').replace('/','月') : '';
+              newVal = (start && end) ? `<option>${start}日〜${end}日</option>` : '';
+            }
             return newVal;
           }
           else if(aIndex==1) {//月
@@ -1458,37 +1463,44 @@
       };
 
       let optionHTML = getOptionHTML(aPeriodData);
-      
-      let result = `<div class="row mt-4 d-flex align-items-center">
+
+      let result = `<div class="border-bottom mt-5 mb-3 pb-3">
+        <div class="row d-flex align-items-center">
           <div class="col-8">
-            <select name="" id="" class="form-select">${optionHTML}</select>
+            <select name="" id="period-${aIndex}" class="form-select">${optionHTML}</select>
           </div>
           <div class="col-4">のご褒美</div>
         </div>
-        <div class="row my-3 p-3">
-          <textarea name="" id="" class="form-control" rows="5"></textarea>
+        <div class="row my-2 p-3">
+          <textarea name="" id="rewards-${aIndex}" class="form-control" rows="5"></textarea>
         </div>
-        <div class="row my-3 d-flex align-items-center">
+        <div class="row my-2 d-flex align-items-center">
           <div class="col">
             todo達成率
           </div>
           <div class="col">
-            <input type="text" name="" id="" class="form-control">
+            <input type="text" name="" id="percent-${aIndex}" class="form-control">
           </div>
           <div class="col">
             %以上でご褒美獲得
           </div>
-        </div>`;
+        </div></div>`;
         return result;
     };
+
+    let annualPeriodArray = [["2025/05/31", "2025/12/31"],["2026/01/01", "2026/12/31"]];//仮
+    let monthlyPeriodArray = [[["2025", "5"], ["2025", "6"]],[["2026", "5"], ["2026", "6"],]];//仮
+    let weeklyPeriodArray = [['2025,5,31,31'],['2025,6,1,1']];//仮
+    let periodArrayForIndefinite = [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
 
     if(!this.rewardsData.size) {
       this.settingsData.forEach((val, key) => {
         let newData = new Map();
         newData.goal = val.goal;
-        newData.annualperiod = val.goalperiodarray;
-        newData.monthlyperiod = val.monthlygoalsarrayperiod;
-        newData.weeklyperiod = val.weeklygoalsarrayperiod;
+        newData.period = val.period;
+        newData.annualperiod = (newData.period=='indefinite') ? annualPeriodArray : val.goalperiodarray;
+        newData.monthlyperiod = (newData.period=='indefinite') ? monthlyPeriodArray : val.monthlygoalsarrayperiod;
+        newData.weeklyperiod = (newData.period=='indefinite') ? weeklyPeriodArray : val.weeklygoalsarrayperiod;
         this.rewardsData.set(key, newData);
       });
     }
@@ -1499,23 +1511,31 @@
     });
     selectRewardsElm.innerHTML = optionHTML;
 
+    const getResultHTML = (aPeriodArray, aIsIndefinite) => {
+      let result = '';
+      aPeriodArray.forEach((val, index) => {
+        if(val) {
+          result += getFormHTML(val, index, aIsIndefinite);
+        }
+      });
+      return result;
+    };
+    formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);
+
     const that = this;
     selectRewardsElm.addEventListener('change', function() {
       let currentId = parseInt(this.value);
+      let result = '';
       if(!currentId) {
-        formAreaRewardsElm.innerHTML = '後で';
+        result = getResultHTML(periodArrayForIndefinite, true);
       }
       else {
         let currentRewardsData = that.rewardsData.get(currentId);
-        let result = '';
+        let isIndefinite = (currentRewardsData.period=='indefinite') ? true : false;
         let periodArray = [currentRewardsData.annualperiod, currentRewardsData.monthlyperiod, currentRewardsData.weeklyperiod];
-        periodArray.forEach((val, index) => {
-          if(val) {
-            result += getFormHTML(val, index);
-          }
-        });
-        formAreaRewardsElm.innerHTML = result;  
+        result = getResultHTML(periodArray, isIndefinite);
       }
+      formAreaRewardsElm.innerHTML = result;
     });
 
   };
