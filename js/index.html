@@ -39,7 +39,7 @@
       毎日のtodo
     </section>
     <section class="js-section">
-      <div class="js-settingsSection">
+      <div class="d-none js-settingsSection">
         <div class="mt-5">
           <p>あなたが達成したいことは何ですか？</p>
           <span class="small text-danger d-none js-inputAlert"></span>
@@ -185,30 +185,14 @@
           <button class="btn btn-primary px-5 py-3 mx-2 js-completeBtn" disabled>完了する</button>
         </div>
       </div>
-      <div class="d-none js-settingsSection">
+      <div class="js-settingsSection">
         <p>ご褒美を設定する目標</p>
         <div>
-          <select name="selectPeriod6" id="selectPeriod6" class="form-select js-selectGoals"></select>
+          <select name="selectPeriod6" id="selectPeriod6" class="form-select js-selectRewards"></select>
         </div>
-        <div class="row my-4 d-flex align-items-center">
-          <div class="col-8">
-            <select name="" id="" class="form-select"></select>
-          </div>
-          <div class="col-4">のご褒美</div>
-        </div>
-        <div class="row my-4 p-3">
-          <textarea name="" id="" class="form-control" rows="5"></textarea>
-        </div>
-        <div class="row my-4 d-flex align-items-center">
-          <div class="col">
-            todo達成率
-          </div>
-          <div class="col">
-            <input type="text" name="" id="" class="form-control">
-          </div>
-          <div class="col">
-            %以上でご褒美獲得
-          </div>
+        <div class="js-formAreaRewards"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 js-saveRewardsBtn" disabled>設定する</button>
         </div>
       </div>
     </section>

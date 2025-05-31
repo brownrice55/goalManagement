@@ -12,25 +12,27 @@
     this.settingsData = commonElms[0];
     this.sectionElms = commonElms[1];
     this.settingsSectionElms = commonElms[2];
+    this.rewardsData = commonElms[3];
 
     this.headerElm = document.querySelector('.js-header');
   };
 
   NavAndCommon.prototype.commonElmsAndData = function() {
-    const getSettingsDataFromLocalStorage = () => {
-      let settingsData = new Map();
-      let settingsDataFromLocalStorage = localStorage.getItem('goalManagementSettingsData');
-      if(settingsDataFromLocalStorage!=='undefined') {
-        const dataJson = JSON.parse(settingsDataFromLocalStorage);
-        settingsData = new Map(dataJson);
+    const getDataFromLocalStorage = (aName) => {
+      let data = new Map();
+      let dataFromLocalStorage = localStorage.getItem(aName);
+      if(dataFromLocalStorage!=='undefined') {
+        const dataJson = JSON.parse(dataFromLocalStorage);
+        data = new Map(dataJson);
       }
-      return settingsData;
+      return data;
     };
 
-    let settingsData = getSettingsDataFromLocalStorage();
+    let settingsData = getDataFromLocalStorage('goalManagementSettingsData');
     let sectionElms = document.querySelectorAll('.js-section');
     let settingsSectionElms = document.querySelectorAll('.js-settingsSection');
-    return [settingsData, sectionElms, settingsSectionElms];
+    let rewardsData = getDataFromLocalStorage('goalManagementRewardsData');
+    return [settingsData, sectionElms, settingsSectionElms, rewardsData];
   };
 
   NavAndCommon.prototype.switchPage = function(aIndex, aSectionElms) { //common
@@ -129,6 +131,7 @@
     this.settingsData = commonElms[0];
     this.sectionElms = commonElms[1];
     this.settingsSectionElms = commonElms[2];
+    this.rewardsData = commonElms[3];
     
     this.saveAndNextBtnElms = document.querySelectorAll('.js-saveAndNextBtn');
     this.inputGoalElms = document.querySelectorAll('.js-inputGoal');
@@ -1415,7 +1418,6 @@
         }
       }
 
-
       that.currentSettingsData.todoarray = inputArrays;
       that.currentSettingsData.status = 5;
   
@@ -1427,10 +1429,100 @@
 
   Settings.prototype.setEventSettings6 = function() {//ご褒美
 
+    const selectRewardsElm = document.querySelector('.js-selectRewards');
+    const formAreaRewardsElm = document.querySelector('.js-formAreaRewards');
+
+    const getFormHTML = (aPeriodData, aIndex) => {
+      
+      const getOptionHTML = (aArrayOrVal) => {
+        let dimensionNum = this.getDimensionNum(aArrayOrVal);
+        let newVal = '';
+        if(aIndex==2 && !Array.isArray(aArrayOrVal)) {//週
+          let val = (aArrayOrVal) ? aArrayOrVal.replace(',','年').replace(',','月').replace(',','日〜') : '';
+          newVal = (val) ? `<option>${val}日</option>` : '';
+          return newVal;
+        }
+        else if(dimensionNum==1) {
+          if(!aIndex) {//年
+            let start = (aArrayOrVal[0]) ? aArrayOrVal[0].replace('/','年').replace('/','月') : '';
+            let end = (aArrayOrVal[1]) ? aArrayOrVal[1].replace('/','年').replace('/','月') : '';
+            newVal = (start && end) ? `<option>${start}日〜${end}日</option>` : '';
+            return newVal;
+          }
+          else if(aIndex==1) {//月
+            newVal = (aArrayOrVal[0] && aArrayOrVal[1]) ? `<option>${aArrayOrVal[0]}年${aArrayOrVal[1]}月</option>` : '';
+            return newVal;
+          }
+        }
+        return aArrayOrVal.map(arrayOrVal => getOptionHTML(arrayOrVal)).join('');
+      };
+
+      let optionHTML = getOptionHTML(aPeriodData);
+      
+      let result = `<div class="row mt-4 d-flex align-items-center">
+          <div class="col-8">
+            <select name="" id="" class="form-select">${optionHTML}</select>
+          </div>
+          <div class="col-4">のご褒美</div>
+        </div>
+        <div class="row my-3 p-3">
+          <textarea name="" id="" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="row my-3 d-flex align-items-center">
+          <div class="col">
+            todo達成率
+          </div>
+          <div class="col">
+            <input type="text" name="" id="" class="form-control">
+          </div>
+          <div class="col">
+            %以上でご褒美獲得
+          </div>
+        </div>`;
+        return result;
+    };
+
+    if(!this.rewardsData.size) {
+      this.settingsData.forEach((val, key) => {
+        let newData = new Map();
+        newData.goal = val.goal;
+        newData.annualperiod = val.goalperiodarray;
+        newData.monthlyperiod = val.monthlygoalsarrayperiod;
+        newData.weeklyperiod = val.weeklygoalsarrayperiod;
+        this.rewardsData.set(key, newData);
+      });
+    }
+
+    let optionHTML = '<option>全ての目標</option>';
+    this.rewardsData.forEach((val, key) => {
+      optionHTML += `<option value="${key}">${val.goal}</option>`;
+    });
+    selectRewardsElm.innerHTML = optionHTML;
+
+    const that = this;
+    selectRewardsElm.addEventListener('change', function() {
+      let currentId = parseInt(this.value);
+      if(!currentId) {
+        formAreaRewardsElm.innerHTML = '後で';
+      }
+      else {
+        let currentRewardsData = that.rewardsData.get(currentId);
+        let result = '';
+        let periodArray = [currentRewardsData.annualperiod, currentRewardsData.monthlyperiod, currentRewardsData.weeklyperiod];
+        periodArray.forEach((val, index) => {
+          if(val) {
+            result += getFormHTML(val, index);
+          }
+        });
+        formAreaRewardsElm.innerHTML = result;  
+      }
+    });
+
   };
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
+    this.setEventSettings6();
   };
 
   Settings.prototype.run = function() {
