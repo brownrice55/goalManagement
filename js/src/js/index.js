@@ -796,7 +796,7 @@
     }
     
     if(aSectionIndex==3) {
-      let selectedIndex = (aDimensionNum==1) ? [aSelectedIndex] : aSelectedIndex;
+      let selectedIndex = (!Array.isArray(aSelectedIndex)) ? [aSelectedIndex] : aSelectedIndex;
       this.inputAreaElms[aSectionIndex].innerHTML = selectedIndex.reduce((array, index) => array[index], resultArray);
     }
     else {
@@ -890,13 +890,13 @@
       let span = '';
       let requiredClass = '';
       for(let cnt=0;cnt<monthCnt;++cnt) {
-        year = (month==12) ? parseInt(startDateArray[0])+1 : parseInt(startDateArray[0]);
         month = parseInt(startDateArray[1]) + cnt;
+        year = (month>12) ? parseInt(startDateArray[0])+1 : parseInt(startDateArray[0]);
         month = (month>12) ? month-12 : month;
         span = (!cnt || cnt==1) ? '<span class="text-danger">※</span>' : '';
         requiredClass = (!cnt || cnt==1) ? ' js-required' : '';
         result += `<div class="p-2">
-          <label for="inputMonthly${cnt}">${month}月の目標${span}</label>
+          <label for="inputMonthly${cnt}">${year}年${month}月の目標${span}</label>
           <input type="text" class="form-control my-2${requiredClass}" id="inputMonthly${cnt}" data-period="${year},${month}">
         </div>`;
       }
@@ -1111,11 +1111,11 @@
 
       let inputArray = Array.from(inputElms, elm => elm.value);
       let inputArrayPeriod = Array.from(inputElms, elm => elm.dataset.period);
-      
+
       if(tempInputWeeklyArray[0]) {
         if(dimensionNumPeriod==3) {
-          tempInputWeeklyArray[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArray;
-          tempInputWeeklyArrayPeriod[parseInt(selectedIndex[0])][parseInt(selectedIndex[1])] = inputArrayPeriod;  
+          tempInputWeeklyArray[selectedIndex[0]][selectedIndex[1]] = inputArray;
+          tempInputWeeklyArrayPeriod[selectedIndex[0]][selectedIndex[1]] = inputArrayPeriod;  
         }
         else {
           tempInputWeeklyArray[selectedIndex] = inputArray;
@@ -1475,6 +1475,10 @@
 
 
   Settings.prototype.setEventSettings6 = function() {//ご褒美
+
+    let commonElms = navAndCommon.commonElmsAndData();
+    this.settingsData = commonElms[0];
+    this.rewardsData = commonElms[3];
 
     const selectRewardsElm = document.querySelector('.js-selectRewards');
     const formAreaRewardsElm = document.querySelector('.js-formAreaRewards');
