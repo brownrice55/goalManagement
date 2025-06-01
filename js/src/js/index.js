@@ -376,11 +376,32 @@
     this.displayGoalList();
 
     hideOrShowGoalList();
+
+    const sortData = (aData) => {
+      let cnt = 1;
+      let newData = new Map();
+      aData.forEach((val) => {
+        if(val) {
+          newData.set(cnt, val);
+          ++cnt;  
+        }
+      });
+      return newData;
+    };
+
     const deleteSettingBtnElms = document.querySelectorAll('.js-deleteSettingBtn');
     deleteSettingBtnElms.forEach(elm => {
       elm.addEventListener('click', function() {
-        that.settingsData.delete(parseInt(this.dataset.key));
+        let keyToBeDeleted = parseInt(this.dataset.key);
+        that.settingsData.delete(keyToBeDeleted);
+        that.rewardsData.delete(keyToBeDeleted);
+
+        that.settingsData = sortData(that.settingsData);
+        that.rewardsData = sortData(that.rewardsData);
+
         localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
+        localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
+        that.displayGoalList();
         hideOrShowGoalList();
       });
     });
@@ -1466,7 +1487,7 @@
       }
 
       that.currentSettingsData.todoarray = inputArrays;
-      that.currentSettingsData.status = 5;
+      that.currentSettingsData.status = 'complete';
   
       that.saveAndNextData(5);
       that.setEventSettings6();
@@ -1587,21 +1608,32 @@
 
     let periodArrayForIndefinite = [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
 
+    const setNewRewardsData = (aVal) => {
+      if(aVal) {
+        let newData = new Map();
+        newData.goal = aVal.goal;
+        newData.period = aVal.period;
+        newData.annualperiod = (newData.period=='indefinite') ? annualPeriodArray : aVal.goalperiodarray;
+        newData.monthlyperiod = (newData.period=='indefinite') ? monthlyPeriodArray : aVal.monthlygoalsarrayperiod;
+        newData.weeklyperiod = (newData.period=='indefinite') ? weeklyPeriodArray : aVal.weeklygoalsarrayperiod;
+        return newData;  
+      }
+    };
+
     if(!this.rewardsData.size) {
       this.settingsData.forEach((val, key) => {
-        let newData = new Map();
-        newData.goal = val.goal;
-        newData.period = val.period;
-        newData.annualperiod = (newData.period=='indefinite') ? annualPeriodArray : val.goalperiodarray;
-        newData.monthlyperiod = (newData.period=='indefinite') ? monthlyPeriodArray : val.monthlygoalsarrayperiod;
-        newData.weeklyperiod = (newData.period=='indefinite') ? weeklyPeriodArray : val.weeklygoalsarrayperiod;
-        this.rewardsData.set(key, newData);
+        this.rewardsData.set(key, setNewRewardsData(val));
       });
     }
-
+    else {
+      this.rewardsData.set(this.id, setNewRewardsData(this.currentSettingsData));
+    }
+    
     let optionHTML = '<option>全ての目標</option>';
     this.rewardsData.forEach((val, key) => {
-      optionHTML += `<option value="${key}">${val.goal}</option>`;
+      if(val) {
+        optionHTML += `<option value="${key}">${val.goal}</option>`;
+      }
     });
     selectRewardsElm.innerHTML = optionHTML;
 
@@ -1630,6 +1662,15 @@
         result = getResultHTML(periodArray, isIndefinite);
       }
       formAreaRewardsElm.innerHTML = result;
+    });
+
+
+    let saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
+    saveRewardsBtnElm.disabled = false;//後でFormValidation
+    saveRewardsBtnElm.addEventListener('click', function() {
+      let id = 'all';//仮
+      that.rewardsData.set(id, this.currentRewardsData);
+      localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
     });
 
   };
