@@ -643,7 +643,7 @@
   };
 
 
-  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aSectionIndex, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek, aLength, aTempRadioTodoArray, aTempCheckboxTodoArray, aTempCheckboxTodoArray2) {    
+  Settings.prototype.getInputHtmlArray = function(aTempInputArray, aSectionIndex, aSelectedIndex, aYear, aMonth, aDate, aIsOnlyOneWeek, aLength, aTempRadioTodoArray, aTempCheckboxTodoArray, aTempCheckboxTodoArray2, aDimension) {
     let resultArray = [];
     let startDateArray = [];
     let value = '';
@@ -735,7 +735,7 @@
     }
     else { // todo
 
-      const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aYear, aMonth, aDate) => {
+      const getResultArray = (aDimension, aTempInputArray, aCnt, aCnt2, aCnt3, aYear, aMonth, aDate) => {
         let result = '';
         let date = aDate;
         let radioCheckedArray = [];
@@ -744,6 +744,12 @@
         
         for(let cnt=0;cnt<aLength;++cnt) {
           if(aDimension==3) {
+            value = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][aCnt3][cnt]).trim() : '';
+            radioCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][aCnt3][cnt] : [false,false,false,false];
+            checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][aCnt3][cnt] : [false,false,false,false,false,false,false];
+            checkboxCheckedArray2 = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][aCnt2][aCnt3][cnt] : [false];
+          }
+          else if(aDimension==2) {
             value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][cnt]).trim() : '';
             radioCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][cnt] : [false,false,false,false];
             checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][cnt] : [false,false,false,false,false,false,false];
@@ -767,20 +773,42 @@
         year = aYear;
         month = aMonth;
         resultArray[index] = [];
-        if(Array.isArray(arrayOrVal)) {
+        if(aDimension==3) {
+          let array = arrayOrVal;
+          array.forEach((array2, index2) => {
+            resultArray[index][index2] = [];
+            array2.forEach((val, index3) => {
+              resultArray[index][index2][index3] = (val) ? getResultArray(aDimension, aTempInputArray, index, index2, index3, year, month, date) : '';
+            });
+          });
+        }
+        else if(aDimension==2) {
           let array = arrayOrVal;
           array.forEach((val, index2) => {
-            resultArray[index][index2] = (val) ? getResultArray(3, aTempInputArray, index, index2, year, month, date) : '';
+            resultArray[index][index2] = (val) ? getResultArray(aDimension, aTempInputArray, index, index2, null, year, month, date) : '';
           });
         }
         else {
           let val = arrayOrVal;
-          resultArray[index] = (val) ? getResultArray(2, aTempInputArray, index, null, year, month, date) : '';
+          resultArray[index] = (val) ? getResultArray(aDimension, aTempInputArray, index, null, year, month, date) : '';
         }
       });
     }
     
-    this.inputAreaElms[aSectionIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
+    if(aSectionIndex==3) {
+      if(aDimension==3) {
+        this.inputAreaElms[aSectionIndex].innerHTML = resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])][parseInt(aSelectedIndex[2])];
+      }
+      else if(aDimension==2) {
+        this.inputAreaElms[aSectionIndex].innerHTML = resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])];
+      }
+      else {
+        this.inputAreaElms[aSectionIndex].innerHTML = resultArray[aSelectedIndex];
+      }
+    }
+    else {
+      this.inputAreaElms[aSectionIndex].innerHTML = (Array.isArray(aSelectedIndex)) ? resultArray[parseInt(aSelectedIndex[0])][parseInt(aSelectedIndex[1])] : resultArray[aSelectedIndex];
+    }
 
   };
 
@@ -889,7 +917,7 @@
       this.goalPeriodElms[1].textContent = getTextContent(this.currentSettingsData.goalperiodarray[0][0], this.currentSettingsData.goalperiodarray[0][1]);
 
       this.addGoalOptions(0);
-      
+
       this.getInputHtmlArray(null, 1, selectedIndex, null, null, null, false);
 
       this.selectGoalsElms[0].addEventListener('change', function() {
@@ -1219,7 +1247,7 @@
       let tempCheckboxTodoCheckedArray =  getTempDataArray(aCheckboxTodoDivElms);
       let tempCheckboxTodoCheckedArray2 =  getTempDataArray(aCheckboxTodoDivElms2);
 
-      return [tempInputTodoValueArray, tempRadioTodoCheckedArray, tempCheckboxTodoCheckedArray, tempCheckboxTodoCheckedArray2]
+      return [tempInputTodoValueArray, tempRadioTodoCheckedArray, tempCheckboxTodoCheckedArray, tempCheckboxTodoCheckedArray2];
     };
 
     if(!this.currentSettingsData.weeklygoalsarrayperiod) {//期間なし
@@ -1241,7 +1269,7 @@
       selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
       let selectedPeriodArray = Array(dimensionNum).fill('');
       let selectedPeriodText = '';
-
+      
       const setSelectedPeriod = (aSelectedIndex) => {
         let selectedPeriodValue = (Array.isArray(aSelectedIndex)) ? aSelectedIndex.reduce((accumulator, currentIndex) => accumulator[currentIndex], this.currentSettingsData.weeklygoalsarrayperiod) : this.currentSettingsData.weeklygoalsarrayperiod[aSelectedIndex];
         selectedPeriodArray = selectedPeriodValue.split(',');
@@ -1258,14 +1286,34 @@
   
       this.addGoalOptions(2);
   
-      if(dimensionNum>1) {
+      if(dimensionNum==3) {
+        const length1 = this.currentSettingsData.weeklygoalsarrayperiod.length;
+        const length2 = 12;
+        const length3 = 12;
+
+        tempInputTodoArray = Array.from({length: length1}, () =>
+          Array.from({length: length2}, () =>
+            Array.from({length: length3}, () => undefined)
+          )
+        );
+        tempRadioTodoArray = Array.from({length: length1}, () =>
+          Array.from({length: length2}, () => [false,false,false,false])
+        );
+        tempCheckboxTodoArray = Array.from({length: length1}, () =>
+          Array.from({length: length2}, () => [false,false,false,false,false,false,false])
+        );
+        tempCheckboxTodoArray2 = Array.from({length: length1}, () =>
+          Array.from({length: length2}, () => [false])
+        );
+      }
+      else if(dimensionNum==2) {
         tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
         tempRadioTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false]);
         tempCheckboxTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false,false,false,false]);
         tempCheckboxTodoArray2 = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false]);
       }
 
-      this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, true, 3, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2);
+      this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, null, 3, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2, dimensionNum);
 
       this.selectGoalsElms[2].addEventListener('change', function() {
         let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
@@ -1275,7 +1323,13 @@
 
         const tempData = getTempData(inputTodoElms, radioTodoDivElms, checkboxTodoDivElms, checkboxTodoDivElms2);
 
-        if(dimensionNum>1) {
+        if(dimensionNum==3) {
+          tempInputTodoArray[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[0];
+          tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[1];
+          tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[2];
+          tempCheckboxTodoArray2[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[3];
+        }
+        else if(dimensionNum==2) {
           tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[0];
           tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[1];
           tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[2];
@@ -1294,10 +1348,10 @@
         startYear = startYearAndMonth[0];
         startMonth = startYearAndMonth[1];
 
-        let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') ? startDate : 1;
-        that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, false, inputTodoElms.length, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2);
+        let targetStartDate = (selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0' || selectedIndex[0]=='0' && selectedIndex[1]=='0' && selectedIndex[2]=='0') ? startDate : 1;
+        that.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, targetStartDate, null, inputTodoElms.length, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2, dimensionNum);
 
-        if(selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0') {
+        if(selectedIndex==0 || selectedIndex[0]=='0' && selectedIndex[1]=='0' || selectedIndex[0]=='0' && selectedIndex[1]=='0' && selectedIndex[2]=='0') {
           setEventForCompleteBtn();
         }
         setRadioAndCheckbox();
@@ -1344,7 +1398,13 @@
         tempCheckboxTodoArray2 = tempData[3];
       }
       else {
-        if(dimensionNum>1) {
+        if(dimensionNum==3) {
+          tempInputTodoArray[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[0];
+          tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[1];
+          tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[2];
+          tempCheckboxTodoArray2[selectedIndex[0]][selectedIndex[1]][selectedIndex[2]] = tempData[3];
+        }
+        else if(dimensionNum==2) {
           tempInputTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[0];
           tempRadioTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[1];
           tempCheckboxTodoArray[selectedIndex[0]][selectedIndex[1]] = tempData[2];
