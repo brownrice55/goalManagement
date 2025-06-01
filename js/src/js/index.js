@@ -428,6 +428,7 @@
     }
     let getDate = this.getDate(multiplication, this.currentSettingsData.period[0]);
     this.currentSettingsData.period[3] = getDate;
+    this.endDateNumArray = this.currentSettingsData.period[3].map(Number);
 
     let [dateY, dateM, dateD] = getDate;
     let date = `${dateY}/${dateM}/${dateD}`;
@@ -565,7 +566,7 @@
     this.selectGoalsElms[aIndex].innerHTML = goalOption;
   };
 
-  Settings.prototype.getWeekArray = function(aYear, aMonth, aDate) {
+  Settings.prototype.getWeekArray = function(aYear, aMonth, aDate, aIsRewards) {
     let daysOfTheYear = this.getDaysOfTheYear(aYear, aMonth);
     let theNumberOfDaysInAMonth = this.getTheNumberOfDaysInAMonth(aMonth, daysOfTheYear);
 
@@ -575,24 +576,23 @@
     let addendArray = [1, 7, 6, 5, 4, 3, 2];
     let firstMonday = aDate + addendArray[dayIndexOfFirstDayOfTheMonth];
 
-    this.endDateNumArray = this.currentSettingsData.period[3].map(Number);
     let endDate = (aYear==this.endDateNumArray[0] && aMonth==this.endDateNumArray[1]) ? this.endDateNumArray[2] : theNumberOfDaysInAMonth;
 
     let weekArray = [];
     if((firstMonday-1)>=endDate) {
-      weekArray[0] = [aDate, endDate];
+      weekArray[0] = aIsRewards ? [`${aYear},${aMonth},${aDate},${endDate}`] : [aDate, endDate];
       return weekArray;
     }
-    weekArray[0] = [aDate, (firstMonday-1)];
+    weekArray[0] = aIsRewards ? [`${aYear},${aMonth},${aDate},${(firstMonday-1)}`] : [aDate, (firstMonday-1)];
     for(let cnt=0;cnt<=5;++cnt) {
       if((firstMonday+6)+7*cnt<=endDate) {
-        weekArray[(cnt+1)] = [firstMonday+7*cnt, (firstMonday+6)+7*cnt];
+        weekArray[(cnt+1)] = aIsRewards ? [`${aYear},${aMonth},${firstMonday+7*cnt},${(firstMonday+6)+7*cnt}`] : [firstMonday+7*cnt, (firstMonday+6)+7*cnt];
       }
       else if((firstMonday)+7*cnt>endDate) {
         return weekArray;
       }
       else {
-        weekArray[(cnt+1)] = [firstMonday+7*cnt, endDate];
+        weekArray[(cnt+1)] = aIsRewards ? [`${aYear},${aMonth},${firstMonday+7*cnt},${endDate}`] : [firstMonday+7*cnt, endDate];
         return weekArray;
       }
     }
@@ -1488,9 +1488,52 @@
         return result;
     };
 
-    let annualPeriodArray = [["2025/05/31", "2025/12/31"],["2026/01/01", "2026/12/31"]];//仮
-    let monthlyPeriodArray = [[["2025", "5"], ["2025", "6"]],[["2026", "5"], ["2026", "6"],]];//仮
-    let weeklyPeriodArray = [['2025,5,31,31'],['2025,6,1,1']];//仮
+    const getDateString = (aPeriod, aDiff) => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const date = today.getDate();
+      let array = [];
+      if(aPeriod=='year') {
+        if(!aDiff) {
+          array.push(`${year}/${month}/${date}, ${year}/12/12`);
+        }
+        else {
+          array.push(`${year+aDiff}/1/1, ${year+aDiff}/12/12`);
+        }
+        return array;
+      }
+      if(aPeriod=='month') {
+        let firstMonth = (!aDiff) ? month : 1;
+        for(let cnt=0;cnt<12;++cnt) {
+          if((firstMonth+cnt)>12) {
+            return array;
+          }
+          array.push([year+aDiff, firstMonth+cnt]);
+        }
+        return array;
+      }
+      if(aPeriod=='week') {
+        for(let cnt=0;cnt<3;++cnt) {
+          let newYear = (month+cnt>12) ? year+1 : year;
+          let newMonth = (month+cnt>12) ? month+cnt-12 : month+cnt;
+          let newDate = (!cnt) ? date : 1;
+          let weekArray = this.getWeekArray(newYear, newMonth, newDate, true);
+          array.push(weekArray);
+        }
+        return array;
+      }
+    };
+
+    let annualPeriodArray = [];
+    let monthlyPeriodArray = [];
+    let weeklyPeriodArray = [];
+    for(let cnt=0;cnt<3;++cnt) {
+      annualPeriodArray.push(getDateString('year',cnt));
+      monthlyPeriodArray.push(getDateString('month',cnt));
+    }
+    weeklyPeriodArray = getDateString('week',null);
+
     let periodArrayForIndefinite = [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
 
     if(!this.rewardsData.size) {
