@@ -205,25 +205,18 @@
     const that = this;
     this.inputGoalElms[aIndex].addEventListener('keyup', function() {
       let thisValue = this.value.trim();
-      that.settingsData.forEach((val, key) => {
-        let isFirst = true;
-        if(val.goal==thisValue) {
-          if(aIndex && isFirst) {
-            isFirst = false;
-            return;
-          }
-          that.inputAlertElms[aIndex].textContent = '既に登録済みです';
-          that.inputAlertElms[aIndex].classList.remove('d-none');
-          this.classList.add('border-danger');
-          duplication = true;
-        }
-        else {
-          that.inputAlertElms[aIndex].textContent = '';
-          that.inputAlertElms[aIndex].classList.add('d-none');
-          this.classList.remove('border-danger');
-          duplication = false;
-        }
-      });
+      let duplicationArrayTrueOrFalse = [...that.settingsData].map(val => (val[1].goal==thisValue) ? true : false);
+      let duplication = duplicationArrayTrueOrFalse.some(val => val);
+      if(!aIndex && duplication || aIndex && duplication && !duplicationArrayTrueOrFalse.at(-1)) {
+        that.inputAlertElms[aIndex].textContent = '既に登録済みです';
+        that.inputAlertElms[aIndex].classList.remove('d-none');
+        this.classList.add('border-danger');
+      }
+      else {
+        that.inputAlertElms[aIndex].textContent = '';
+        that.inputAlertElms[aIndex].classList.add('d-none');
+        this.classList.remove('border-danger');
+      }
       isOkForGoal = (!duplication && thisValue) ? true : false;
       if(aIndex) {
         that.saveAndNextBtnElms[aIndex].disabled = (isOkForGoal && isOkForInput) ? false : true;
