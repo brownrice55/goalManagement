@@ -30,7 +30,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　新規登録・目標一覧 |  |  |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/9b48ef0d-3b56-442c-b3b6-a8c048c811fd" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/50fff464-5931-41af-a892-cc713eb38f6c" width="200"> |  |  |
 
 | 設定　年間目標 | 設定　月間目標 | 設定　週間目標 |
 | ---- | ---- | ---- |
