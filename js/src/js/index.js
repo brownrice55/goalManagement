@@ -256,7 +256,7 @@
     }
   };
 
-  Settings.prototype.setRewardsData = function(aIsSettings6) {
+  Settings.prototype.getPeriodArrayForIndefinite = function() {
     const getDateString = (aPeriod, aDiff) => {
       const today = new Date();
       const year = today.getFullYear();
@@ -303,6 +303,16 @@
     }
     weeklyPeriodArray = getDateString('week',null);
 
+    return [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
+  }
+
+  Settings.prototype.setRewardsData = function(aShortageArray) {
+
+    let getPeriodArrayForIndefinite = this.getPeriodArrayForIndefinite();
+    let annualPeriodArray = getPeriodArrayForIndefinite[0];
+    let monthlyPeriodArray = getPeriodArrayForIndefinite[1];
+    let weeklyPeriodArray = getPeriodArrayForIndefinite[2];
+
     const setNewRewardsData = (aVal, aPeriod) => {
       let newVal = {};
       newVal.goal = (!aVal) ? '全ての目標' : aVal.goal;
@@ -310,8 +320,15 @@
       newVal.annualperiod = (aPeriod=='indefinite') ? annualPeriodArray : aVal.goalperiodarray;
       newVal.monthlyperiod = (aPeriod=='indefinite') ? monthlyPeriodArray : aVal.monthlygoalsarrayperiod;
       newVal.weeklyperiod = (aPeriod=='indefinite') ? weeklyPeriodArray : aVal.weeklygoalsarrayperiod;
+      newVal.rewardsannual = {percent: 0, period: '', rewards: ''};
+      newVal.rewardsmonthly = {percent: 0, period: '', rewards: ''};
+      newVal.rewardsweekly = {percent: 0, period: '', rewards: ''};
       return newVal;
     };
+
+    if(aShortageArray) {
+      return setNewRewardsData(aShortageArray[0], aShortageArray[1]);
+    }
 
     this.rewardsData.clear();
     this.rewardsData.set(1000, setNewRewardsData('', 'indefinite'));
@@ -321,12 +338,6 @@
       }
     });
 
-    if(aIsSettings6) {
-      if(this.currentSettingsData && this.currentSettingsData.status=='complete') {
-        this.rewardsData.set(this.id, setNewRewardsData(this.currentSettingsData, ''));
-      }
-      return [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
-    }
   };
 
   Settings.prototype.setEventSettings1 = function() {
@@ -462,8 +473,8 @@
     const sortData = (aData) => {
       let cnt = 1;
       let newData = new Map();
-      aData.forEach((val) => {
-        if(val) {
+      aData.forEach((val, key) => {
+        if(val && key!=1000) {
           newData.set(cnt, val);
           ++cnt;  
         }
@@ -475,9 +486,20 @@
       elm.addEventListener('click', function() {
         let keyToBeDeleted = parseInt(this.dataset.key);
         that.settingsData.delete(keyToBeDeleted);
-        that.settingsData = sortData(that.settingsData);
-
-        that.setRewardsData(false);
+        if(!that.rewardsData.size) {
+          that.settingsData = sortData(that.settingsData);
+          that.setRewardsData();
+        }
+        else {
+          that.rewardsData.delete(keyToBeDeleted);
+          that.settingsData.forEach((val, key) => {
+            if(!that.rewardsData.get(key)) {
+              that.rewardsData.set(key, that.setRewardsData([val, val.period[3]]));
+            }
+          });
+          that.settingsData = sortData(that.settingsData);
+          that.rewardsData = sortData(that.rewardsData);
+        }
 
         localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
         localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
@@ -1580,12 +1602,14 @@
     let commonElms = navAndCommon.commonElmsAndData();
     this.settingsData = commonElms[0];
     this.rewardsData = commonElms[3];
-    this.currentRewardsData = new Map();
+    this.currentRewardsData = {};
 
     const selectRewardsElm = document.querySelector('.js-selectRewards');
     const formAreaRewardsElm = document.querySelector('.js-formAreaRewards');
 
     const getFormHTML = (aPeriodData, aIndex, aIsIndefinite) => {
+      let rewardsInputDataArray = [this.currentRewardsData.rewardsannual, this.currentRewardsData.rewardsmonthly, this.currentRewardsData.rewardsweekly];
+      let inputData = rewardsInputDataArray[aIndex];
 
       const getOptionHTML = (aArrayOrVal) => {
         let dimensionNum = this.getDimensionNum(aArrayOrVal);
@@ -1625,14 +1649,14 @@
           <div class="col-4">のご褒美</div>
         </div>
         <div class="row my-2 p-3">
-          <textarea name="" id="rewards-${aIndex}" class="form-control" rows="5"></textarea>
+          <textarea name="" id="rewards-${aIndex}" class="form-control" rows="5">${inputData.rewards}</textarea>
         </div>
         <div class="row my-2 d-flex align-items-center">
           <div class="col">
             todo達成率
           </div>
           <div class="col">
-            <input type="text" name="" id="percent-${aIndex}" class="form-control">
+            <input type="text" name="" id="percent-${aIndex}" class="form-control" value="${inputData.percent}">
           </div>
           <div class="col">
             %以上でご褒美獲得
@@ -1641,8 +1665,19 @@
         return result;
     };
 
-    let periodArrayForIndefinite = this.setRewardsData(true);
-    
+    let periodArrayForIndefinite = this.getPeriodArrayForIndefinite();
+
+    if(!this.rewardsData.size) {
+      this.setRewardsData();
+    }
+    else {
+      this.settingsData.forEach((val, key) => {
+        if(!this.rewardsData.get(key)) {
+          this.rewardsData.set(key, this.setRewardsData([val, val.period[3]]));
+        }
+      });
+    }
+
     let optionHTML = '';
     this.rewardsData.forEach((val, key) => {
       if(val) {
@@ -1660,7 +1695,9 @@
       });
       return result;
     };
-    formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);
+    
+    this.currentRewardsData = this.rewardsData.get(1000);
+    formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);//全ての目標
 
     const that = this;
     
@@ -1673,7 +1710,6 @@
 
       formAreaRewardsElm.innerHTML = result;
     });
-
 
     let saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
     saveRewardsBtnElm.disabled = false;//後でFormValidation
