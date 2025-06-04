@@ -1608,31 +1608,30 @@
     const formAreaRewardsElm = document.querySelector('.js-formAreaRewards');
 
     const getFormHTML = (aPeriodData, aIndex, aIsIndefinite) => {
-      let rewardsInputDataArray = [this.currentRewardsData.rewardsannual, this.currentRewardsData.rewardsmonthly, this.currentRewardsData.rewardsweekly];
-      let inputData = rewardsInputDataArray[aIndex];
+      let index = -1;
 
       const getOptionHTML = (aArrayOrVal) => {
         let dimensionNum = this.getDimensionNum(aArrayOrVal);
         let newVal = '';
         if(aIndex==2 && !Array.isArray(aArrayOrVal)) {//週
           let val = (aArrayOrVal) ? aArrayOrVal.replace(',','年').replace(',','月').replace(',','日〜') : '';
-          newVal = (val) ? `<option value="${aArrayOrVal}">${val}日</option>` : '';
+          newVal = (val) ? `<option value="${aArrayOrVal}" data-index="${++index}">${val}日</option>` : '';
           return newVal;
         }
         else if(dimensionNum==1) {
           if(!aIndex) {//年
             if(aIsIndefinite) {
-              newVal = (aArrayOrVal) ? `<option value="${aArrayOrVal}">${aArrayOrVal[0].substring(0, 4)}年</option>` : '';
+              newVal = (aArrayOrVal) ? `<option value="${aArrayOrVal}" data-index="${++index}">${aArrayOrVal[0].substring(0, 4)}年</option>` : '';
             }
             else {
               let start = (aArrayOrVal[0]) ? aArrayOrVal[0].replace('/','年').replace('/','月') : '';
               let end = (aArrayOrVal[1]) ? aArrayOrVal[1].replace('/','年').replace('/','月') : '';
-              newVal = (start && end) ? `<option value="$aArrayOrVal">${start}日〜${end}日</option>` : '';
+              newVal = (start && end) ? `<option value="$aArrayOrVal" data-index="${++index}">${start}日〜${end}日</option>` : '';
             }
             return newVal;
           }
           else if(aIndex==1) {//月
-            newVal = (aArrayOrVal[0] && aArrayOrVal[1]) ? `<option value="${aArrayOrVal}">${aArrayOrVal[0]}年${aArrayOrVal[1]}月</option>` : '';
+            newVal = (aArrayOrVal[0] && aArrayOrVal[1]) ? `<option value="${aArrayOrVal}" data-index="${++index}">${aArrayOrVal[0]}年${aArrayOrVal[1]}月</option>` : '';
             return newVal;
           }
         }
@@ -1648,21 +1647,31 @@
           </div>
           <div class="col-4">のご褒美</div>
         </div>
-        <div class="row my-2 p-3">
-          <textarea name="" id="rewards-${aIndex}" class="form-control" rows="5">${inputData.rewards}</textarea>
-        </div>
-        <div class="row my-2 d-flex align-items-center">
-          <div class="col">
-            todo達成率
-          </div>
-          <div class="col">
-            <input type="text" name="" id="percent-${aIndex}" class="form-control" value="${inputData.percent}">
-          </div>
-          <div class="col">
-            %以上でご褒美獲得
-          </div>
-        </div></div>`;
+        <div class="js-rewardsInput"></div>
+        
+      </div>`;
         return result;
+    };
+
+    const getInputHtml = (aIndex, aIndex2) => {
+      let rewardsInputDataArray = [this.currentRewardsData.rewardsannual, this.currentRewardsData.rewardsmonthly, this.currentRewardsData.rewardsweekly];
+      let textareaData = rewardsInputDataArray[aIndex].rewards;
+      let inputData = rewardsInputDataArray[aIndex].percent;
+
+      return `<div class="row my-2 d-flex align-items-center">
+        <div class="row my-2 p-3">
+          <textarea name="" id="rewards-${aIndex}" class="form-control" rows="5">${textareaData[aIndex2]}</textarea>
+        </div>
+        <div class="col">
+          todo達成率
+        </div>
+        <div class="col">
+          <input type="text" name="" id="percent-${aIndex}" class="form-control" value="${inputData[aIndex2]}">
+        </div>
+        <div class="col">
+          %以上でご褒美獲得
+        </div>
+      </div>`;
     };
 
     let periodArrayForIndefinite = this.getPeriodArrayForIndefinite();
@@ -1695,38 +1704,88 @@
       });
       return result;
     };
-    
-    this.currentRewardsData = this.rewardsData.get(1000);
+
+    this.currentId = 1000;
+    this.currentRewardsData = this.rewardsData.get(this.currentId);
     formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);//全ての目標
 
+    let rewardsInput = document.querySelectorAll('.js-rewardsInput');
+
+    for(let cnt=0,len=rewardsInput.length;cnt<len;++cnt) {
+      rewardsInput[cnt].innerHTML = getInputHtml(cnt, 0);      
+    }
+
     const that = this;
-    
+
+    let selectElms = formAreaRewardsElm.querySelectorAll('select');
+
+    const setEventSelectPeriod = (aRewardsInput) => {
+      selectElms.forEach((elm, index) => {
+        elm.addEventListener('change', function() {
+          let selectedOption = this.options[this.selectedIndex];
+          let selectedOptionIndex = selectedOption.dataset.index;
+
+          if(aRewardsInput.length==1) {
+            rewardsInput[index].innerHTML = getInputHtml((index+2), selectedOptionIndex); 
+          }
+          else if(aRewardsInput.length==2) {
+            rewardsInput[index].innerHTML = getInputHtml((index+1), selectedOptionIndex);
+          }
+          else {
+            rewardsInput[index].innerHTML = getInputHtml(index, selectedOptionIndex);
+          }
+        });
+      });
+    };
+
     selectRewardsElm.addEventListener('change', function() {
-      let currentId = parseInt(this.value);
-      that.currentRewardsData = that.rewardsData.get(currentId);
+      that.currentId = parseInt(this.value);
+      that.currentRewardsData = that.rewardsData.get(that.currentId);
       let isIndefinite = (that.currentRewardsData.period=='indefinite') ? true : false;
       let periodArray = [that.currentRewardsData.annualperiod, that.currentRewardsData.monthlyperiod, that.currentRewardsData.weeklyperiod];
       let result = getResultHTML(periodArray, isIndefinite);
 
       formAreaRewardsElm.innerHTML = result;
+      
+      rewardsInput = document.querySelectorAll('.js-rewardsInput');
+
+      // initial
+      if(rewardsInput.length==1) {
+        rewardsInput[0].innerHTML = getInputHtml(2, 0); 
+      }
+      else if(rewardsInput.length==2) {
+        rewardsInput[0].innerHTML = getInputHtml(1, 0); 
+        rewardsInput[1].innerHTML = getInputHtml(2, 0); 
+      }
+      else {
+        for(let cnt=0,len=rewardsInput.length;cnt<len;++cnt) {
+          rewardsInput[cnt].innerHTML = getInputHtml(cnt, 0);      
+        }
+      }
+
+      selectElms = formAreaRewardsElm.querySelectorAll('select');
+      setEventSelectPeriod(rewardsInput);
+
     });
+
+    setEventSelectPeriod(rewardsInput);
 
     let saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
     saveRewardsBtnElm.disabled = false;//後でFormValidation
     saveRewardsBtnElm.addEventListener('click', function() {
       let rewardsDivElms = document.querySelectorAll('.js-rewardsDiv');
 
-      let currentId = parseInt(selectRewardsElm.value);
-      that.currentRewardsData = that.rewardsData.get(currentId);
+      that.currentId = parseInt(selectRewardsElm.value);
+      that.currentRewardsData = that.rewardsData.get(that.currentId);
 
-      const getValue = (aIndex) => {
+      const getValue = (aIndex) => {//後で修正
         let textareaElm = rewardsDivElms[aIndex].querySelector('textarea');
         let inputElm = rewardsDivElms[aIndex].querySelector('input');
         let selectElm = rewardsDivElms[aIndex].querySelector('select');
         let data = {
-          rewards: textareaElm.value,
-          percent: inputElm.value,
-          period: selectElm.value
+          rewards: [textareaElm.value],
+          percent: [inputElm.value],
+          period: [selectElm.value]
         };
         return data;
       };
@@ -1745,7 +1804,7 @@
       that.currentRewardsData.rewardsmonthly = dataArray[1];
       that.currentRewardsData.rewardsweekly = dataArray[2];
 
-      that.rewardsData.set(currentId, that.currentRewardsData);
+      that.rewardsData.set(that.currentId, that.currentRewardsData);
       localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
     });
 
