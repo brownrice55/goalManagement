@@ -304,7 +304,7 @@
     weeklyPeriodArray = getDateString('week',null);
 
     return [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
-  }
+  };
 
   Settings.prototype.setRewardsData = function(aShortageArray) {
 
@@ -315,14 +315,19 @@
 
     const setNewRewardsData = (aVal, aPeriod) => {
       let newVal = {};
+
       newVal.goal = (!aVal) ? '全ての目標' : aVal.goal;
       newVal.period = (aPeriod) ? aPeriod : aVal.period;
       newVal.annualperiod = (aPeriod=='indefinite') ? annualPeriodArray : aVal.goalperiodarray;
       newVal.monthlyperiod = (aPeriod=='indefinite') ? monthlyPeriodArray : aVal.monthlygoalsarrayperiod;
       newVal.weeklyperiod = (aPeriod=='indefinite') ? weeklyPeriodArray : aVal.weeklygoalsarrayperiod;
-      newVal.rewardsannual = {percent: 0, period: '', rewards: ''};
-      newVal.rewardsmonthly = {percent: 0, period: '', rewards: ''};
-      newVal.rewardsweekly = {percent: 0, period: '', rewards: ''};
+
+      let annualLength = newVal.annualperiod.length;
+      let monthlyLength = newVal.monthlyperiod.length;
+      let weeklyLength = newVal.weeklyperiod.length;
+      newVal.rewardsannual = {percent: Array(annualLength).fill(0), period: Array(annualLength).fill(''), rewards: Array(annualLength).fill('')};
+      newVal.rewardsmonthly = {percent: Array(monthlyLength).fill(0), period: Array(monthlyLength).fill(''), rewards: Array(monthlyLength).fill('')};
+      newVal.rewardsweekly = {percent: Array(weeklyLength).fill(0), period: Array(weeklyLength).fill(''), rewards: Array(weeklyLength).fill('')};
       return newVal;
     };
 
@@ -1687,8 +1692,12 @@
       });
     }
 
+    let rewardsDataForEdit = new Map(
+      Array.from(this.rewardsData, ([key, value]) => [key, JSON.parse(JSON.stringify(value))])
+    );
+
     let optionHTML = '';
-    this.rewardsData.forEach((val, key) => {
+    rewardsDataForEdit.forEach((val, key) => {
       if(val) {
         optionHTML += `<option value="${key}">${val.goal}</option>`;
       }
@@ -1706,7 +1715,7 @@
     };
 
     this.currentId = 1000;
-    this.currentRewardsData = this.rewardsData.get(this.currentId);
+    this.currentRewardsData = rewardsDataForEdit.get(this.currentId);
     formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);//全ての目標
 
     let rewardsInput = document.querySelectorAll('.js-rewardsInput');
@@ -1734,13 +1743,14 @@
           else {
             rewardsInput[index].innerHTML = getInputHtml(index, selectedOptionIndex);
           }
+          setEventForStoreNewDataForSave();
         });
       });
     };
 
     selectRewardsElm.addEventListener('change', function() {
       that.currentId = parseInt(this.value);
-      that.currentRewardsData = that.rewardsData.get(that.currentId);
+      that.currentRewardsData = rewardsDataForEdit.get(that.currentId);
       let isIndefinite = (that.currentRewardsData.period=='indefinite') ? true : false;
       let periodArray = [that.currentRewardsData.annualperiod, that.currentRewardsData.monthlyperiod, that.currentRewardsData.weeklyperiod];
       let result = getResultHTML(periodArray, isIndefinite);
@@ -1765,46 +1775,79 @@
 
       selectElms = formAreaRewardsElm.querySelectorAll('select');
       setEventSelectPeriod(rewardsInput);
-
+      setEventForStoreNewDataForSave();
     });
 
     setEventSelectPeriod(rewardsInput);
 
-    let saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
-    saveRewardsBtnElm.disabled = false;//後でFormValidation
-    saveRewardsBtnElm.addEventListener('click', function() {
+    const storeNewDataForSave = () => {
       let rewardsDivElms = document.querySelectorAll('.js-rewardsDiv');
+      let rewardsInputDataArray = [that.currentRewardsData.rewardsannual, that.currentRewardsData.rewardsmonthly, that.currentRewardsData.rewardsweekly];
 
-      that.currentId = parseInt(selectRewardsElm.value);
-      that.currentRewardsData = that.rewardsData.get(that.currentId);
+      const getValue = (aIndex, aIndex2) => {
 
-      const getValue = (aIndex) => {//後で修正
         let textareaElm = rewardsDivElms[aIndex].querySelector('textarea');
         let inputElm = rewardsDivElms[aIndex].querySelector('input');
         let selectElm = rewardsDivElms[aIndex].querySelector('select');
-        let data = {
-          rewards: [textareaElm.value],
-          percent: [inputElm.value],
-          period: [selectElm.value]
-        };
-        return data;
+        let selectOptionElms = rewardsDivElms[aIndex].querySelectorAll('select option');
+        let selectOptionElmsLength = selectOptionElms.length;
+
+        let selectedOption = selectElm.options[selectElm.selectedIndex];
+        let selectedOptionIndex = selectedOption.dataset.index;
+
+        rewardsInputDataArray[aIndex2].rewards[selectedOptionIndex] = textareaElm.value;
+        rewardsInputDataArray[aIndex2].percent[selectedOptionIndex] = inputElm.value;
+        rewardsInputDataArray[aIndex2].period[selectedOptionIndex] = selectElm.value;
       };
 
       let dataArray = Array(3);
       if(rewardsDivElms.length==3) {
-        dataArray = [getValue(0), getValue(1), getValue(2)];
+        getValue(0, 0);
+        getValue(1 ,1);
+        getValue(2, 2);
       }
       else if(rewardsDivElms.length==2) {
-        dataArray = [null, getValue(0), getValue(1)];
+        getValue(0, 1);
+        getValue(1, 2)
       }
       else {
-        dataArray = [null, null, getValue(0)];
+        getValue(0, 2);
       }
-      that.currentRewardsData.rewardsannual = dataArray[0];
-      that.currentRewardsData.rewardsmonthly = dataArray[1];
-      that.currentRewardsData.rewardsweekly = dataArray[2];
 
-      that.rewardsData.set(that.currentId, that.currentRewardsData);
+      rewardsDataForEdit.set(that.currentId, that.currentRewardsData);
+
+    };
+
+    const setEventForStoreNewDataForSave = () => {
+      let textareaElms = document.querySelectorAll('.js-formAreaRewards textarea');
+      textareaElms.forEach(elm => {
+        elm.addEventListener('keyup', function() {
+          storeNewDataForSave();
+        });
+      });
+  
+      let inputElms = document.querySelectorAll('.js-formAreaRewards input');
+      inputElms.forEach(elm => {
+        elm.addEventListener('keyup', function() {
+          storeNewDataForSave();
+        });
+      });  
+    };
+
+    setEventForStoreNewDataForSave();
+
+    let saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
+    saveRewardsBtnElm.disabled = false;//後でFormValidation
+    saveRewardsBtnElm.addEventListener('click', function() {
+      
+      that.currentId = parseInt(selectRewardsElm.value);
+      that.currentRewardsData = rewardsDataForEdit.get(that.currentId);
+
+      storeNewDataForSave();
+
+      that.rewardsData = new Map(
+        Array.from(rewardsDataForEdit, ([key, value]) => [key, JSON.parse(JSON.stringify(value))])
+      );
       localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
     });
 
