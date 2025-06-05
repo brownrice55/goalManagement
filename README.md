@@ -42,7 +42,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　ご褒美１ | 設定　ご褒美２ |  |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/3a826487-3c83-42f6-8ff5-1336d4b15600" width="200"> | <img src="https://github.com/user-attachments/assets/902ec2bd-99f4-421e-937c-3a49dfc52a67" width="200"> |  |
+| <img src="https://github.com/user-attachments/assets/2887d706-b26f-4a36-aa49-8ccc3d4dc5c1" width="200"> | <img src="https://github.com/user-attachments/assets/836fc552-19d4-4408-8e66-10f1753f4c2d" width="200"> |  |
 
 | 設定　編集１ | 設定　編集２ | 設定　モーダル |
 | ---- | ---- | ---- |

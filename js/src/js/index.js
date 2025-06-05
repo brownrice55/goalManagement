@@ -322,8 +322,8 @@
       newVal.monthlyperiod = (aPeriod=='indefinite') ? monthlyPeriodArray : aVal.monthlygoalsarrayperiod;
       newVal.weeklyperiod = (aPeriod=='indefinite') ? weeklyPeriodArray : aVal.weeklygoalsarrayperiod;
 
-      let annualLength = newVal.annualperiod.length;
-      let monthlyLength = newVal.monthlyperiod.length;
+      let annualLength = (newVal.annualperiod) ? newVal.annualperiod.length : 0;
+      let monthlyLength = (newVal.monthlyperiod) ? newVal.monthlyperiod.length : 0;
       let weeklyLength = newVal.weeklyperiod.length;
       newVal.rewardsannual = {percent: Array(annualLength).fill(0), period: Array(annualLength).fill(''), rewards: Array(annualLength).fill('')};
       newVal.rewardsmonthly = {percent: Array(monthlyLength).fill(0), period: Array(monthlyLength).fill(''), rewards: Array(monthlyLength).fill('')};
@@ -1612,6 +1612,9 @@
     const selectRewardsElm = document.querySelector('.js-selectRewards');
     const formAreaRewardsElm = document.querySelector('.js-formAreaRewards');
 
+    const cancelChangesBtnElm = document.querySelector('.js-cancelChangesBtn');
+    const saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
+
     const getFormHTML = (aPeriodData, aIndex, aIsIndefinite) => {
       let index = -1;
 
@@ -1696,14 +1699,6 @@
       Array.from(this.rewardsData, ([key, value]) => [key, JSON.parse(JSON.stringify(value))])
     );
 
-    let optionHTML = '';
-    rewardsDataForEdit.forEach((val, key) => {
-      if(val) {
-        optionHTML += `<option value="${key}">${val.goal}</option>`;
-      }
-    });
-    selectRewardsElm.innerHTML = optionHTML;
-
     const getResultHTML = (aPeriodArray, aIsIndefinite) => {
       let result = '';
       aPeriodArray.forEach((val, index) => {
@@ -1714,15 +1709,32 @@
       return result;
     };
 
+    // reset to its initial state
+    let rewardsInput = document.querySelectorAll('.js-rewardsInput');
+    
+    const setInitialState = () => {
+      cancelChangesBtnElm.disabled = true;
+      saveRewardsBtnElm.disabled = true;
+      let optionHTML = '';
+      rewardsDataForEdit.forEach((val, key) => {
+        if(val) {
+          optionHTML += `<option value="${key}">${val.goal}</option>`;
+        }
+      });
+      selectRewardsElm.innerHTML = optionHTML;
+
+      formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);//全ての目標
+
+      rewardsInput = document.querySelectorAll('.js-rewardsInput');
+  
+      for(let cnt=0,len=rewardsInput.length;cnt<len;++cnt) {
+        rewardsInput[cnt].innerHTML = getInputHtml(cnt, 0);
+      }
+    };
+
     this.currentId = 1000;
     this.currentRewardsData = rewardsDataForEdit.get(this.currentId);
-    formAreaRewardsElm.innerHTML = getResultHTML(periodArrayForIndefinite, true);//全ての目標
-
-    let rewardsInput = document.querySelectorAll('.js-rewardsInput');
-
-    for(let cnt=0,len=rewardsInput.length;cnt<len;++cnt) {
-      rewardsInput[cnt].innerHTML = getInputHtml(cnt, 0);      
-    }
+    setInitialState();
 
     const that = this;
 
@@ -1796,7 +1808,7 @@
         let selectedOptionIndex = selectedOption.dataset.index;
 
         rewardsInputDataArray[aIndex2].rewards[selectedOptionIndex] = textareaElm.value;
-        rewardsInputDataArray[aIndex2].percent[selectedOptionIndex] = inputElm.value;
+        rewardsInputDataArray[aIndex2].percent[selectedOptionIndex] = parseInt(inputElm.value);
         rewardsInputDataArray[aIndex2].period[selectedOptionIndex] = selectElm.value;
       };
 
@@ -1818,28 +1830,53 @@
 
     };
 
+    const judgeDisabledForBtns = () => {//後で見直し
+      if(this.rewardsData.size!=rewardsDataForEdit.size) {
+        return false;
+      }
+
+      for (const [key, value] of this.rewardsData) {
+        if (!rewardsDataForEdit.has(key) || rewardsDataForEdit.get(key)!==value) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+
     const setEventForStoreNewDataForSave = () => {
       let textareaElms = document.querySelectorAll('.js-formAreaRewards textarea');
-      textareaElms.forEach(elm => {
-        elm.addEventListener('keyup', function() {
-          storeNewDataForSave();
-        });
-      });
-  
       let inputElms = document.querySelectorAll('.js-formAreaRewards input');
-      inputElms.forEach(elm => {
-        elm.addEventListener('keyup', function() {
-          storeNewDataForSave();
+
+      const setEvent = (aElms) => {
+        aElms.forEach(elm => {
+          elm.addEventListener('keyup', function() {
+            storeNewDataForSave();
+            cancelChangesBtnElm.disabled = judgeDisabledForBtns();
+            saveRewardsBtnElm.disabled = judgeDisabledForBtns();
+          });
         });
-      });  
+      };
+
+      setEvent(textareaElms);
+      setEvent(inputElms);
     };
 
     setEventForStoreNewDataForSave();
 
-    let saveRewardsBtnElm = document.querySelector('.js-saveRewardsBtn');
-    saveRewardsBtnElm.disabled = false;//後でFormValidation
+    cancelChangesBtnElm.addEventListener('click', function() {
+      let rewardsDataForEdit = new Map(
+        Array.from(that.rewardsData, ([key, value]) => [key, JSON.parse(JSON.stringify(value))])
+      );
+
+      // reset to its initial state
+      that.currentId = 1000;
+      that.currentRewardsData = rewardsDataForEdit.get(that.currentId);
+      setInitialState();
+
+    });
+
     saveRewardsBtnElm.addEventListener('click', function() {
-      
       that.currentId = parseInt(selectRewardsElm.value);
       that.currentRewardsData = rewardsDataForEdit.get(that.currentId);
 
@@ -1849,8 +1886,14 @@
         Array.from(rewardsDataForEdit, ([key, value]) => [key, JSON.parse(JSON.stringify(value))])
       );
       localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
-    });
+      
+      // reset to its initial state
+      that.currentId = 1000;
+      that.currentRewardsData = rewardsDataForEdit.get(that.currentId);
+      setInitialState();
 
+      navAndCommon.switchPage(0, that.sectionElms);
+    });
   };
 
   Settings.prototype.setEvent = function() {
