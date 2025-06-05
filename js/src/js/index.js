@@ -148,6 +148,10 @@
 
     this.startDateNumArray = Array(3).fill(0);
     this.endDateNumArray = Array(3).fill(0);
+
+    this.defaultFrequencyArray = [false,false,false,false];
+    this.defaultYoubiArray = [false,false,false,false,false,false,false];
+    this.defaultOthersArray = [false,false];
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -723,7 +727,7 @@
   Settings.prototype.getInputAreaHtmlSet = function(aCnt, aValue, aRadioCheckedArray, aCheckboxCheckedArray, aCheckboxCheckedArray2) {
     const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
     const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
-    const othersArray = ['前倒しOK'];
+    const othersArray = ['前倒しOK', '隔週'];
     let customChecked = false;
 
     const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt, aValue) => {
@@ -764,9 +768,9 @@
     let className = (!aCnt) ? 'form-control mb-2 js-inputTodo' : 'form-control mb-2 js-inputTodo js-inputTodoRequired';
     let result = `<span class="${classNameAlert}"></span>
       <input class="${className}" type="text" id="inputTodo${aCnt}" value="${(aValue)?aValue:''}">`;
-    result += getInputAreaHtml(4, frequencyArray, 'frequency', aCnt, aValue);
-    result += getInputAreaHtml(7, youbiArray, 'youbi', aCnt, aValue);
-    result += getInputAreaHtml(1, othersArray, 'others', aCnt, aValue);
+    result += getInputAreaHtml(this.defaultFrequencyArray.length, frequencyArray, 'frequency', aCnt, aValue);
+    result += getInputAreaHtml(this.defaultYoubiArray.length, youbiArray, 'youbi', aCnt, aValue);
+    result += getInputAreaHtml(this.defaultOthersArray.length, othersArray, 'others', aCnt, aValue);
     return result;
   };
 
@@ -873,21 +877,21 @@
         for(let cnt=0;cnt<aLength;++cnt) {
           if(aDimensionNum==3) {
             value = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][aCnt3][cnt]).trim() : '';
-            radioCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][aCnt3][cnt] : [false,false,false,false];
-            checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][aCnt3][cnt] : [false,false,false,false,false,false,false];
-            checkboxCheckedArray2 = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][aCnt2][aCnt3][cnt] : [false];
+            radioCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][aCnt3][cnt] : this.defaultFrequencyArray;
+            checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][aCnt3][cnt] : this.defaultYoubiArray;
+            checkboxCheckedArray2 = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][aCnt2][aCnt3][cnt] : this.defaultOthersArray;
           }
           else if(aDimensionNum==2) {
             value = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][cnt]).trim() : '';
-            radioCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][cnt] : [false,false,false,false];
-            checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][cnt] : [false,false,false,false,false,false,false];
-            checkboxCheckedArray2 = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][aCnt2][cnt] : [false];
+            radioCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][cnt] : this.defaultFrequencyArray;
+            checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][cnt] : this.defaultYoubiArray;
+            checkboxCheckedArray2 = (aTempInputArray[aCnt][aCnt2] && aTempInputArray[aCnt][aCnt2][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][aCnt2][cnt] : this.defaultOthersArray;
           }
           else {
             value = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? String(aTempInputArray[aCnt][cnt]).trim() : '';
-            radioCheckedArray = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempRadioTodoArray[aCnt][cnt] : [false,false,false,false];
-            checkboxCheckedArray = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][cnt] : [false,false,false,false,false,false,false];
-            checkboxCheckedArray2 = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][cnt] : [false];
+            radioCheckedArray = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempRadioTodoArray[aCnt][cnt] : this.defaultFrequencyArray;
+            checkboxCheckedArray = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][cnt] : this.defaultYoubiArray;
+            checkboxCheckedArray2 = (aTempInputArray[aCnt] && aTempInputArray[aCnt][cnt]!=null) ? aTempCheckboxTodoArray2[aCnt][cnt] : this.defaultOthersArray;
           }
           result += '<div class="border-bottom py-3">';
           result += this.getInputAreaHtmlSet(cnt, value, radioCheckedArray, checkboxCheckedArray, checkboxCheckedArray2);
@@ -1378,7 +1382,7 @@
       let result = '';
       for(let cnt=0;cnt<3;++cnt) {
         result += '<div class="border-bottom py-3">';
-        result += this.getInputAreaHtmlSet(cnt, '', [false,false,false,false], [false,false,false,false,false,false,false], [false]);
+        result += this.getInputAreaHtmlSet(cnt, '', this.defaultFrequencyArray, this.defaultYoubiArray, this.defaultOthersArray);
         result += '</div>';  
       }
       this.inputAreaElms[3].innerHTML = result;
@@ -1424,15 +1428,15 @@
           );
         };
 
-        tempRadioTodoArray = getNewArray([false,false,false,false]);
-        tempCheckboxTodoArray = getNewArray([false,false,false,false,false,false,false]);
-        tempCheckboxTodoArray2 = getNewArray([false]);
+        tempRadioTodoArray = getNewArray(this.defaultFrequencyArray);
+        tempCheckboxTodoArray = getNewArray(this.defaultYoubiArray);
+        tempCheckboxTodoArray2 = getNewArray(this.defaultOthersArray);
       }
       else if(dimensionNum==2) {
         tempInputTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => []);
-        tempRadioTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false]);
-        tempCheckboxTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false,false,false,false,false,false,false]);
-        tempCheckboxTodoArray2 = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => [false]);
+        tempRadioTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => this.defaultFrequencyArray);
+        tempCheckboxTodoArray = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => this.defaultYoubiArray);
+        tempCheckboxTodoArray2 = Array.from(this.currentSettingsData.weeklygoalsarrayperiod, () => this.defaultOthersArray);
       }
 
       this.getInputHtmlArray(tempInputTodoArray, 3, selectedIndex, startYear, startMonth, startDate, null, 3, tempRadioTodoArray, tempCheckboxTodoArray, tempCheckboxTodoArray2, dimensionNum);
@@ -1490,7 +1494,7 @@
     addTodoInputBtnElm.addEventListener('click', function() {
       let divElm = document.createElement('div');
       divElm.className = 'border-bottom py-3';
-      divElm.innerHTML = that.getInputAreaHtmlSet(addInputCnt, '', [false,false,false,false], [false,false,false,false,false,false,false], [false]);
+      divElm.innerHTML = that.getInputAreaHtmlSet(addInputCnt, '', that.defaultFrequencyArray, that.defaultYoubiArray, that.defaultOthersArray);
       that.inputAreaElms[3].appendChild(divElm);
       ++addInputCnt;
       setRadioAndCheckbox();

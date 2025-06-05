@@ -38,7 +38,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　todo |  |  |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/fbd3ce5f-761b-405d-9a09-91bd76eab4fa" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/5cd3824b-4478-433f-ab5d-ce8d40ba7c80" width="200"> |  |  |
 
 | 設定　ご褒美１ | 設定　ご褒美２ |  |
 | ---- | ---- | ---- |
