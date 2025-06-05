@@ -1800,7 +1800,7 @@
       let rewardsDivElms = document.querySelectorAll('.js-rewardsDiv');
       let rewardsInputDataArray = [that.currentRewardsData.rewardsannual, that.currentRewardsData.rewardsmonthly, that.currentRewardsData.rewardsweekly];
 
-      const getValue = (aIndex, aIndex2) => {
+      const getAndStoreValuesInTheCurrentData = (aIndex, aIndex2) => {
 
         let textareaElm = rewardsDivElms[aIndex].querySelector('textarea');
         let inputElm = rewardsDivElms[aIndex].querySelector('input');
@@ -1818,16 +1818,16 @@
 
       let dataArray = Array(3);
       if(rewardsDivElms.length==3) {
-        getValue(0, 0);
-        getValue(1 ,1);
-        getValue(2, 2);
+        getAndStoreValuesInTheCurrentData(0, 0);
+        getAndStoreValuesInTheCurrentData(1 ,1);
+        getAndStoreValuesInTheCurrentData(2, 2);
       }
       else if(rewardsDivElms.length==2) {
-        getValue(0, 1);
-        getValue(1, 2)
+        getAndStoreValuesInTheCurrentData(0, 1);
+        getAndStoreValuesInTheCurrentData(1, 2)
       }
       else {
-        getValue(0, 2);
+        getAndStoreValuesInTheCurrentData(0, 2);
       }
 
       rewardsDataForEdit.set(that.currentId, that.currentRewardsData);
