@@ -1,7 +1,7 @@
 (function() {
   'use strict';
 
-  let navAndCommon, settings;
+  let navAndCommon, settings, todo;
   
   const NavAndCommon = function() {
     this.initialize.apply(this, arguments);
@@ -1910,6 +1910,21 @@
   };
 
 
+  const Todo = function() {
+    this.initialize.apply(this, arguments);
+  };
+
+  Todo.prototype.initialize = function() {
+  };
+
+  Todo.prototype.setEvent = function() {
+  };
+
+  Todo.prototype.run = function() {
+    this.setEvent();
+  };
+
+  
   window.addEventListener('DOMContentLoaded', function() {
     navAndCommon = new NavAndCommon();
     navAndCommon.run();

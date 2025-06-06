@@ -54,7 +54,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 結果 |  |  |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/3a792627-c3c7-4b25-868f-d379a47582fd" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/48233321-2d05-4026-87e1-b02532d69731" width="200"> |  |  |
 
 
 ## 関連リンク
