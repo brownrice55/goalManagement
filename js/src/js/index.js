@@ -17,21 +17,21 @@
     this.headerElm = document.querySelector('.js-header');
   };
 
-  NavAndCommon.prototype.commonElmsAndData = function() {
-    const getDataFromLocalStorage = (aName) => {
-      let data = new Map();
-      let dataFromLocalStorage = localStorage.getItem(aName);
-      if(dataFromLocalStorage!=='undefined') {
-        const dataJson = JSON.parse(dataFromLocalStorage);
-        data = new Map(dataJson);
-      }
-      return data;
-    };
+  NavAndCommon.prototype.getDataFromLocalStorage = function(aName) {
+    let data = new Map();
+    let dataFromLocalStorage = localStorage.getItem(aName);
+    if(dataFromLocalStorage!=='undefined') {
+      const dataJson = JSON.parse(dataFromLocalStorage);
+      data = new Map(dataJson);
+    }
+    return data;
+  };
 
-    let settingsData = getDataFromLocalStorage('goalManagementSettingsData');
+  NavAndCommon.prototype.commonElmsAndData = function() {
+    let settingsData = this.getDataFromLocalStorage('goalManagementSettingsData');
     let sectionElms = document.querySelectorAll('.js-section');
     let settingsSectionElms = document.querySelectorAll('.js-settingsSection');
-    let rewardsData = getDataFromLocalStorage('goalManagementRewardsData');
+    let rewardsData = this.getDataFromLocalStorage('goalManagementRewardsData');
     return [settingsData, sectionElms, settingsSectionElms, rewardsData];
   };
 
@@ -1608,9 +1608,8 @@
 
   Settings.prototype.setEventSettings6 = function() {//ご褒美
 
-    let commonElms = navAndCommon.commonElmsAndData();
-    this.settingsData = commonElms[0];
-    this.rewardsData = commonElms[3];
+    this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
+    this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
     this.currentRewardsData = {};
 
     const selectRewardsElm = document.querySelector('.js-selectRewards');
@@ -1915,22 +1914,100 @@
   };
 
   Todo.prototype.initialize = function() {
+    this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
+    this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
+
+    this.resultData = navAndCommon.getDataFromLocalStorage('goalManagementResultData');
+    if(!this.resultData.size) {
+      this.setResultDataForDisplayAndEdit();
+    }
+  };
+
+  Todo.prototype.setResultDataForDisplayAndEdit = function() {
+    let cnt = 0;
+    this.settingData.forEach((val, key) => {
+      if(val.status=='complete') {
+        val.todoarray.forEach((array, index)=> {
+          let value = {
+            todo: array.todo,
+            period: array.period,
+            youbi: array.youbi,
+            option: array.others,
+            arrayIndex: index,
+            originalKey : key
+          };
+          this.resultData.set(++cnt, value);
+        });
+      }
+    });
+  };
+
+  Todo.prototype.displayTodoPage = function() {
+    const todaysTodoAreaElm = document.querySelector('.js-todaysTodoArea');
+    const notAchievedTodoAreaElm = document.querySelector('.js-notAchievedTodoArea');
+    const doneTodoAreaElm = document.querySelector('.js-doneTodoArea');
+    
+
+    todaysTodoAreaElm.innerHTML = `<p>今日（5月3日土曜日）のtodo</p>`;
+    notAchievedTodoAreaElm.innerHTML = `<p>今週の未達todo</p>`;
+    doneTodoAreaElm.innerHTML = `<p>本日完了済みtodo</p>`;
+
+    this.resultData.forEach((val, key) => {
+      // if(val.period== &&) {//条件があえば
+        todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="todo-${key}">
+          <label class="form-check-label" for="todo-${key}">${val.todo}</label>
+        </div>`;
+      // }
+
+      // else if() {//条件があえば
+        notAchievedTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
+          <label class="form-check-label" for="notAchieved-${key}">${val.todo}（5/2）</label>
+        </div>`;
+      // }
+
+      // else if() {//条件があえば
+        doneTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="done-${key}" checked>
+          <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
+        </div>`;
+      // }
+
+    });
+
+    const todoListAreaElm = document.querySelector('.js-todoListArea');
+    todoListAreaElm.innerHTML += `<li>健康的に生活する</li>
+      <li>（良い発音の）英語で自信を持って自分の意見を言えるようになる</li>`;
+
+    const todoRewardsAreaElm = document.querySelector('.js-todoRewardsArea');
+
+    todoRewardsAreaElm.innerHTML = `<div class="row">
+      <div class="col text-center">今日のtodo達成率<br>33%</div>
+      <div class="col text-center">今週のtodo達成率<br>90%</div>
+    </div>
+    <p class="mt-3">今週のご褒美は「ご褒美の内容が入ります。ご褒美の内容が入ります。」です。90%達成目指して頑張ろう！</p>`;
+
   };
 
   Todo.prototype.setEvent = function() {
+    this.displayTodoPage();
   };
 
   Todo.prototype.run = function() {
     this.setEvent();
   };
 
-  
+
   window.addEventListener('DOMContentLoaded', function() {
     navAndCommon = new NavAndCommon();
     navAndCommon.run();
 
     settings = new Settings();
     settings.run();
+
+    todo = new Todo();
+    todo.run();
   });
 
 }());
