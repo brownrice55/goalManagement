@@ -35,6 +35,13 @@
     return [settingsData, sectionElms, settingsSectionElms, rewardsData];
   };
 
+  NavAndCommon.prototype.commonArray = function() {
+    const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
+    const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
+    const othersArray = ['前倒しOK', '隔週'];
+    return [ frequencyArray, youbiArray, othersArray ];
+  };
+
   NavAndCommon.prototype.switchPage = function(aIndex, aSectionElms) { //common
     aSectionElms.forEach(elm => {
       elm.classList.add('d-none');
@@ -725,9 +732,11 @@
 
 
   Settings.prototype.getInputAreaHtmlSet = function(aCnt, aValue, aRadioCheckedArray, aCheckboxCheckedArray, aCheckboxCheckedArray2) {
-    const frequencyArray = ['毎日', '平日のみ', '土日のみ', 'カスタム'];
-    const youbiArray = ['月', '火', '水', '木', '金', '土', '日'];
-    const othersArray = ['前倒しOK', '隔週'];
+    const commonArray = navAndCommon.commonArray();
+    const frequencyArray = commonArray[0];
+    const youbiArray = commonArray[1];
+    const othersArray = commonArray[2];
+
     let customChecked = false;
 
     const getInputAreaHtml = (aLength, aArray, aPrefix, aCnt, aValue) => {
@@ -1917,62 +1926,97 @@
     this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
     this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
 
-    this.resultData = navAndCommon.getDataFromLocalStorage('goalManagementResultData');
-    if(!this.resultData.size) {
-      this.setResultDataForDisplayAndEdit();
+    this.weeklyTodoData = navAndCommon.getDataFromLocalStorage('goalManagementWeeklyTodoData');
+    if(!this.weeklyTodoData.size) {
+      this.setWeeklyTodoData();
     }
   };
 
-  Todo.prototype.setResultDataForDisplayAndEdit = function() {
+  Todo.prototype.setWeeklyTodoData = function() {
     let cnt = 0;
     this.settingData.forEach((val, key) => {
       if(val.status=='complete') {
         val.todoarray.forEach((array, index)=> {
+          let periodArray = array.period.split(',').map(Number);
+          let stringHead = `${periodArray[0]}-${periodArray[1]}`;
+          let arrayLength = periodArray[3] - periodArray[2] + 1;
+          let stringArray = Array(arrayLength);
+          let stringArrayForDisplay = Array(arrayLength);
+          let isAchievedArray = Array(arrayLength);
+          for(let cnt=0;cnt<arrayLength;++cnt) {
+            stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
+            stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
+            isAchievedArray[stringArray[cnt]] = false;
+          }
+
           let value = {
             todo: array.todo,
             period: array.period,
-            youbi: array.youbi,
+            youbiArray: array.youbi,
             option: array.others,
             arrayIndex: index,
-            originalKey : key
+            originalKey: key,
+            isAchievedArray: isAchievedArray,
+            stringArray: stringArray,
+            stringArrayForDisplay: stringArrayForDisplay
           };
-          this.resultData.set(++cnt, value);
+          this.weeklyTodoData.set(++cnt, value);
         });
       }
     });
   };
 
+  Todo.prototype.getDate = function() {
+    let now = new Date();
+    let dateY = now.getFullYear();
+    let dateM = now.getMonth() + 1;
+    let dateD = now.getDate();
+    let youbi = now.getDay();
+    return [dateY, dateM, dateD, youbi];
+  };
+
   Todo.prototype.displayTodoPage = function() {
     const todaysTodoAreaElm = document.querySelector('.js-todaysTodoArea');
     const notAchievedTodoAreaElm = document.querySelector('.js-notAchievedTodoArea');
-    const doneTodoAreaElm = document.querySelector('.js-doneTodoArea');
-    
+    const doneTodoAreaElm = document.querySelector('.js-doneTodoArea');    
 
-    todaysTodoAreaElm.innerHTML = `<p>今日（5月3日土曜日）のtodo</p>`;
+    let today = this.getDate();
+    const commonArray = navAndCommon.commonArray();
+    const frequencyArray = commonArray[0];
+    const youbiArray = commonArray[1];
+    const othersArray = commonArray[2];
+    let youbiIndex = (today[3]==0) ? 6 : (today[3]-1);
+    let todayString = `${today[0]}-${today[1]}-${today[2]}`;
+
+    todaysTodoAreaElm.innerHTML = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
     notAchievedTodoAreaElm.innerHTML = `<p>今週の未達todo</p>`;
     doneTodoAreaElm.innerHTML = `<p>本日完了済みtodo</p>`;
 
-    this.resultData.forEach((val, key) => {
-      // if(val.period== &&) {//条件があえば
-        todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+    this.weeklyTodoData.forEach((val, key) => {
+      let periodArray = val.period.split(',').map(Number);
+
+      if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex]) {
+        if(!val.isAchievedArray[todayString]) {
+          todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
           <input type="checkbox" class="form-check-input" id="todo-${key}">
           <label class="form-check-label" for="todo-${key}">${val.todo}</label>
         </div>`;
-      // }
-
-      // else if() {//条件があえば
-        notAchievedTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
-          <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
-          <label class="form-check-label" for="notAchieved-${key}">${val.todo}（5/2）</label>
-        </div>`;
-      // }
-
-      // else if() {//条件があえば
-        doneTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+        }
+        if(val.isAchievedArray[todayString]) {
+          doneTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
           <input type="checkbox" class="form-check-input" id="done-${key}" checked>
           <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
         </div>`;
-      // }
+        }
+        val.stringArray.forEach((val2, key2) => {
+          if(todayString!=val2 && !val.isAchievedArray[val2]) {
+            notAchievedTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
+            <label class="form-check-label" for="notAchieved-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
+          </div>`;  
+          }  
+        });
+      }
 
     });
 
