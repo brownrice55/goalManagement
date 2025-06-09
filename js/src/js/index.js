@@ -1951,6 +1951,7 @@
 
           let value = {
             todo: array.todo,
+            goal: val.goal,
             period: array.period,
             youbiArray: array.youbi,
             option: array.others,
@@ -1992,15 +1993,28 @@
     notAchievedTodoAreaElm.innerHTML = `<p>今週の未達todo</p>`;
     doneTodoAreaElm.innerHTML = `<p>本日完了済みtodo</p>`;
 
+    this.activeGoalList = [];
+
     this.weeklyTodoData.forEach((val, key) => {
       let periodArray = val.period.split(',').map(Number);
 
       if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex]) {
+        this.activeGoalList.push(val.goal);
         if(!val.isAchievedArray[todayString]) {
-          todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
-          <input type="checkbox" class="form-check-input" id="todo-${key}">
-          <label class="form-check-label" for="todo-${key}">${val.todo}</label>
-        </div>`;
+          if(Array.isArray(val.todo)) {
+            val.todo.forEach((val2, key2) => {
+              todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="todo-${key2}">
+                <label class="form-check-label" for="todo-${key2}">${val2}</label>
+              </div>`;  
+            });
+          }
+          else {
+            todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="todo-${key}">
+              <label class="form-check-label" for="todo-${key}">${val.todo}</label>
+            </div>`;  
+          }
         }
         if(val.isAchievedArray[todayString]) {
           doneTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
@@ -2009,7 +2023,8 @@
         </div>`;
         }
         val.stringArray.forEach((val2, key2) => {
-          if(todayString!=val2 && !val.isAchievedArray[val2]) {
+          let keyToday = (todayString==val2) ? key2 : -1;
+          if(todayString!=val2 && !val.isAchievedArray[val2] && keyToday>key2) {
             notAchievedTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
             <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
             <label class="form-check-label" for="notAchieved-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
@@ -2017,20 +2032,42 @@
           }  
         });
       }
-
     });
 
     const todoListAreaElm = document.querySelector('.js-todoListArea');
-    todoListAreaElm.innerHTML += `<li>健康的に生活する</li>
-      <li>（良い発音の）英語で自信を持って自分の意見を言えるようになる</li>`;
+    let activeGoalListResult = '';
+    let activeGoalListArray = [];
+    
+    this.activeGoalList.forEach(val => {
+      activeGoalListResult += `<li>${val}</li>`;
+      activeGoalListArray.push(val);
+    });
+    todoListAreaElm.innerHTML = activeGoalListResult;
 
     const todoRewardsAreaElm = document.querySelector('.js-todoRewardsArea');
 
+    let rewardsText = '';
+    this.rewardsData.forEach((val, key) => {
+      val.rewardsweekly.period.forEach((val2, index2) => {
+        if(val2 && val2!='undefined') {
+          let periodArray = val2.split(',').map(Number);
+          if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2]) {
+            rewardsText = `「${val.goal}：${val.rewardsweekly.rewards[index2]}（ ${val.rewardsweekly.percent[index2]}%で達成）」`;
+          }
+        } 
+      })
+    });
+
+    let optionHTML = `<option value="全ての目標">全ての目標</option>`;
+    activeGoalListArray.forEach((val, index) => {
+      optionHTML += `<option value="${val}">${val}</option>`;
+    });
     todoRewardsAreaElm.innerHTML = `<div class="row">
+      <select name="rewardsResult" id="rewardsResult" class="form-select mb-3">${optionHTML}</select>
       <div class="col text-center">今日のtodo達成率<br>33%</div>
       <div class="col text-center">今週のtodo達成率<br>90%</div>
     </div>
-    <p class="mt-3">今週のご褒美は「ご褒美の内容が入ります。ご褒美の内容が入ります。」です。90%達成目指して頑張ろう！</p>`;
+    <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
 
   };
 
