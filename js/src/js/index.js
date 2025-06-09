@@ -42,6 +42,17 @@
     return [ frequencyArray, youbiArray, othersArray ];
   };
 
+  NavAndCommon.prototype.getDimensionNum = function(aObj) {
+    if(!Array.isArray(aObj)) {
+      return 0;
+    }
+    let max = 0;
+    for (let cnt=0,len=aObj.length;cnt<len;++cnt) {
+      max = Math.max(max, this.getDimensionNum(aObj[cnt]));
+    }
+    return ++max;
+  };
+
   NavAndCommon.prototype.switchPage = function(aIndex, aSectionElms) { //common
     aSectionElms.forEach(elm => {
       elm.classList.add('d-none');
@@ -641,17 +652,6 @@
     });
   };
 
-  Settings.prototype.getDimensionNum = function(aObj) {
-    if(!Array.isArray(aObj)) {
-      return 0;
-    }
-    let max = 0;
-    for (let cnt=0,len=aObj.length;cnt<len;++cnt) {
-      max = Math.max(max, this.getDimensionNum(aObj[cnt]));
-    }
-    return ++max;
-  };
-
   Settings.prototype.addGoalOptions = function(aIndex) {
     let goalOption = ''
     let inputHTML = '';
@@ -664,7 +664,7 @@
     }
     else {//aIndex 1:weekly  aIndex 2:todo
       let data = (aIndex==1) ? this.currentSettingsData.monthlygoalsarray : this.currentSettingsData.weeklygoalsarray;
-      let dimensionNum = this.getDimensionNum(data);
+      let dimensionNum = navAndCommon.getDimensionNum(data);
 
       const getOptionData = (aVal, aArray) => {
         if(aVal) {
@@ -1192,7 +1192,7 @@
     }
     else {
       this.addGoalOptions(1);
-      dimensionNumPeriod = this.getDimensionNum(this.currentSettingsData.monthlygoalsarrayperiod);
+      dimensionNumPeriod = navAndCommon.getDimensionNum(this.currentSettingsData.monthlygoalsarrayperiod);
 
       if(dimensionNumPeriod==3) {
         tempInputWeeklyArray = Array.from(this.currentSettingsData.monthlygoalsarrayperiod, () => []);
@@ -1399,7 +1399,7 @@
     }
     else {
 
-      dimensionNum = this.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
+      dimensionNum = navAndCommon.getDimensionNum(this.currentSettingsData.weeklygoalsarrayperiod);
       selectedIndex = (dimensionNum>1) ? Array(dimensionNum).fill(0) : 0;
       let selectedPeriodArray = Array(dimensionNum).fill('');
       let selectedPeriodText = '';
@@ -1631,7 +1631,7 @@
       let index = -1;
 
       const getOptionHTML = (aArrayOrVal) => {
-        let dimensionNum = this.getDimensionNum(aArrayOrVal);
+        let dimensionNum = navAndCommon.getDimensionNum(aArrayOrVal);
         let newVal = '';
         if(aIndex==2 && !Array.isArray(aArrayOrVal)) {//週
           let val = (aArrayOrVal) ? aArrayOrVal.replace(',','年').replace(',','月').replace(',','日〜') : '';
@@ -1937,31 +1937,40 @@
     this.settingData.forEach((val, key) => {
       if(val.status=='complete') {
         val.todoarray.forEach((array, index)=> {
-          let periodArray = array.period.split(',').map(Number);
-          let stringHead = `${periodArray[0]}-${periodArray[1]}`;
-          let arrayLength = periodArray[3] - periodArray[2] + 1;
-          let stringArray = Array(arrayLength);
-          let stringArrayForDisplay = Array(arrayLength);
-          let isAchievedArray = Array(arrayLength);
-          for(let cnt=0;cnt<arrayLength;++cnt) {
-            stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
-            stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
-            isAchievedArray[stringArray[cnt]] = false;
-          }
+          if(array.period=='indefinite') {
 
-          let value = {
-            todo: array.todo,
-            goal: val.goal,
-            period: array.period,
-            youbiArray: array.youbi,
-            option: array.others,
-            arrayIndex: index,
-            originalKey: key,
-            isAchievedArray: isAchievedArray,
-            stringArray: stringArray,
-            stringArrayForDisplay: stringArrayForDisplay
-          };
-          this.weeklyTodoData.set(++cnt, value);
+          }
+          else {
+            let periodArray = array.period.split(',').map(Number);
+            let stringHead = `${periodArray[0]}-${periodArray[1]}`;
+            let arrayLength = periodArray[3] - periodArray[2] + 1;
+            let stringArray = Array(arrayLength);
+            let stringArrayForDisplay = Array(arrayLength);
+            for(let cnt=0;cnt<arrayLength;++cnt) {
+              stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
+              stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
+            }
+            
+            let todoArray = Array.isArray(array.todo) ? array.todo : [array.todo];
+            let optionArray = Array.isArray(array.others) ? array.others : [array.others];
+            let dimensionNum = navAndCommon.getDimensionNum(array.youbi);
+
+            todoArray.forEach((val2, index2)=> {
+              let value = {
+                todo: val2,
+                goal: val.goal,
+                period: array.period,
+                youbiArray: (dimensionNum>1) ? array.youbi[index2] : array.youbi,
+                option: optionArray[index2],
+                arrayIndex: index,
+                originalKey: key,
+                isAchievedArray: Array(arrayLength).fill(false),
+                stringArray: stringArray,
+                stringArrayForDisplay: stringArrayForDisplay
+              };
+              this.weeklyTodoData.set(++cnt, value);    
+            });
+          }
         });
       }
     });
@@ -1989,50 +1998,49 @@
     let youbiIndex = (today[3]==0) ? 6 : (today[3]-1);
     let todayString = `${today[0]}-${today[1]}-${today[2]}`;
 
-    todaysTodoAreaElm.innerHTML = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
-    notAchievedTodoAreaElm.innerHTML = `<p>今週の未達todo</p>`;
-    doneTodoAreaElm.innerHTML = `<p>本日完了済みtodo</p>`;
 
-    this.activeGoalList = [];
+    const displayTodoList = () => {
+      let resultTodaysTodo = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
+      let resultNotAchievedTodo = `<p>今週の未達todo</p>`;
+      let resultDoneTodo = `<p>本日完了済みtodo</p>`;
+  
+      this.activeGoalList = [];
 
-    this.weeklyTodoData.forEach((val, key) => {
-      let periodArray = val.period.split(',').map(Number);
-
-      if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex]) {
-        this.activeGoalList.push(val.goal);
-        if(!val.isAchievedArray[todayString]) {
-          if(Array.isArray(val.todo)) {
-            val.todo.forEach((val2, key2) => {
-              todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="todo-${key2}">
-                <label class="form-check-label" for="todo-${key2}">${val2}</label>
-              </div>`;  
-            });
+      this.weeklyTodoData.forEach((val, key) => {
+        let periodArray = val.period.split(',').map(Number);
+  
+        if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex]) {
+          if(!this.activeGoalList.includes(val.goal)) {
+            this.activeGoalList.push(val.goal);
           }
-          else {
-            todaysTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="todo-${key}">
-              <label class="form-check-label" for="todo-${key}">${val.todo}</label>
+          if(!val.isAchievedArray[todayString]) {
+            resultTodaysTodo += `<div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input js-todoCheckbox" id="todo-${key}" data-key="${key}">
+                <label class="form-check-label" for="todo-${key}">${val.todo}</label>
+              </div>`;
+          }
+          if(val.isAchievedArray[todayString]) {
+            resultDoneTodo += `<div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="done-${key}" checked>
+            <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
+          </div>`;
+          }
+          val.stringArray.forEach((val2, key2) => {
+            let keyToday = (todayString==val2) ? key2 : -1;
+            if(todayString!=val2 && !val.isAchievedArray[val2] && keyToday>key2) {
+              resultNotAchievedTodo += `<div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
+              <label class="form-check-label" for="notAchieved-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
             </div>`;  
-          }
+            }  
+          });
         }
-        if(val.isAchievedArray[todayString]) {
-          doneTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
-          <input type="checkbox" class="form-check-input" id="done-${key}" checked>
-          <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
-        </div>`;
-        }
-        val.stringArray.forEach((val2, key2) => {
-          let keyToday = (todayString==val2) ? key2 : -1;
-          if(todayString!=val2 && !val.isAchievedArray[val2] && keyToday>key2) {
-            notAchievedTodoAreaElm.innerHTML += `<div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
-            <label class="form-check-label" for="notAchieved-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
-          </div>`;  
-          }  
-        });
-      }
-    });
+      });
+      todaysTodoAreaElm.innerHTML = resultTodaysTodo;
+      doneTodoAreaElm.innerHTML = resultDoneTodo;
+      notAchievedTodoAreaElm.innerHTML = resultNotAchievedTodo;  
+    };
+    displayTodoList();
 
     const todoListAreaElm = document.querySelector('.js-todoListArea');
     let activeGoalListResult = '';
@@ -2069,7 +2077,22 @@
     </div>
     <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
 
+    const that = this;
+    const setEventChangeTodo = () => {
+      let todoCheckboxElms = document.querySelectorAll('.js-todoCheckbox');
+      todoCheckboxElms.forEach((elm, index) => {
+        elm.addEventListener('change', function() {
+          let key = this.dataset.key;
+          let selectedData = that.weeklyTodoData.get(parseInt(key));
+          selectedData.isAchievedArray[todayString] = this.checked;
+          displayTodoList();
+          setEventChangeTodo();
+        })
+      });
+    }
+    setEventChangeTodo();
   };
+
 
   Todo.prototype.setEvent = function() {
     this.displayTodoPage();
