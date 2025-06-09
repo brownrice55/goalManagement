@@ -2021,7 +2021,7 @@
           }
           if(val.isAchievedArray[todayString]) {
             resultDoneTodo += `<div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="done-${key}" checked>
+            <input type="checkbox" class="form-check-input js-todoCheckbox" id="done-${key}" data-key="${key}" checked>
             <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
           </div>`;
           }
