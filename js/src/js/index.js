@@ -2106,38 +2106,25 @@
     <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
 
     const that = this;
-    const setEventChangeTodo = () => {
-      let todoCheckboxElms = document.querySelectorAll('.js-todoCheckbox');
+    const setEventChangeTodo = (aClass, aIsToday) => {
+      let todoCheckboxElms = document.querySelectorAll(aClass);
       todoCheckboxElms.forEach((elm, index) => {
         elm.addEventListener('change', function() {
-          let key = parseInt(this.dataset.key);
+          let keyArray = (aIsToday) ? Array(2) : this.dataset.key.split(',');
+          let key = (aIsToday) ? parseInt(this.dataset.key) : parseInt(keyArray[0]);
+          let dayString = (aIsToday) ? todayString : keyArray[1];
           let selectedData = that.weeklyTodoData.get(key);
-          selectedData.isAchievedArray[todayString] = this.checked;
+          selectedData.isAchievedArray[dayString] = this.checked;
           that.weeklyTodoData.set(key, selectedData);
           localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
           displayTodoList();
-          setEventChangeTodo();
+          setEventChangeTodo('.js-todoCheckbox', true);
+          setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
         })
       });
     };
-    setEventChangeTodo();
-
-    const setEventChangeNotAchievedTodo = () => {
-      let todoCheckboxElms = document.querySelectorAll('.js-todoCheckboxNotAchieved');
-      todoCheckboxElms.forEach((elm, index) => {
-        elm.addEventListener('change', function() {
-          let keyArray = this.dataset.key.split(',');
-          let key = parseInt(keyArray[0]);
-          let selectedData = that.weeklyTodoData.get(key);
-          selectedData.isAchievedArray[keyArray[1]] = this.checked;
-          that.weeklyTodoData.set(key, selectedData);
-          localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
-          displayTodoList();
-          setEventChangeNotAchievedTodo();
-        })
-      });
-    };
-    setEventChangeNotAchievedTodo();
+    setEventChangeTodo('.js-todoCheckbox', true);
+    setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
 
   };
 
