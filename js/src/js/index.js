@@ -32,7 +32,8 @@
     let sectionElms = document.querySelectorAll('.js-section');
     let settingsSectionElms = document.querySelectorAll('.js-settingsSection');
     let rewardsData = this.getDataFromLocalStorage('goalManagementRewardsData');
-    return [settingsData, sectionElms, settingsSectionElms, rewardsData];
+    let weeklyTodoData = this.getDataFromLocalStorage('goalManagementWeeklyTodoData');
+    return [settingsData, sectionElms, settingsSectionElms, rewardsData, weeklyTodoData];
   };
 
   NavAndCommon.prototype.commonArray = function() {
@@ -157,7 +158,8 @@
     this.sectionElms = commonElms[1];
     this.settingsSectionElms = commonElms[2];
     this.rewardsData = commonElms[3];
-    
+    this.weeklyTodoData = commonElms[4];
+
     this.saveAndNextBtnElms = document.querySelectorAll('.js-saveAndNextBtn');
     this.inputGoalElms = document.querySelectorAll('.js-inputGoal');
     this.inputAlertElms = document.querySelectorAll('.js-inputAlert');
@@ -538,8 +540,21 @@
           that.rewardsData = sortData(that.rewardsData, true);
         }
 
+        if(!that.weeklyTodoData.size) {
+          todo.setWeeklyTodoData();
+        }
+        else {
+          that.weeklyTodoData.forEach((val, key) => {
+            if(parseInt(val.originalKey)==keyToBeDeleted) {
+              that.weeklyTodoData.delete(key);
+            }
+          });
+          that.weeklyTodoData = sortData(that.weeklyTodoData, false);
+        }
+
         localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
         localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
+        localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
         that.displayGoalList();
         hideOrShowGoalList();
       });
@@ -2038,12 +2053,12 @@
             <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
           </div>`;
           }
+          let todaysIndex = val.stringArray.indexOf(todayString);
           val.stringArray.forEach((val2, key2) => {
-            let keyToday = (todayString==val2) ? key2 : -1;
-            if(todayString!=val2 && !val.isAchievedArray[val2] && keyToday>key2) {
+            if(todayString!=val2 && !val.isAchievedArray[val2] && todaysIndex>key2) {
               resultNotAchievedTodo += `<div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="notAchieved-${key}">
-              <label class="form-check-label" for="notAchieved-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
+              <input type="checkbox" class="form-check-input" id="notAchieved-${val2}-${key}">
+              <label class="form-check-label" for="notAchieved-${val2}-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
             </div>`;  
             }  
           });
