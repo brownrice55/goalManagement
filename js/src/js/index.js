@@ -121,6 +121,10 @@
     globalNavElms.forEach((elm, index) => {
       elm.addEventListener('click', function() {
         that.switchPage(sectionIndex[0][index], that.sectionElms);
+        if(sectionIndex[0][index]==0) {
+          todo.getData();
+          todo.displayTodoPage();
+        }
       });
     });
 
@@ -128,6 +132,9 @@
       elm.addEventListener('click', function() {
         that.switchPage(1, that.sectionElms);
         that.switchPage(sectionIndex[1][index], that.settingsSectionElms);
+        if(sectionIndex[1][index]==5) {
+          settings.setEventSettings6();
+        }
       });
     });
 
@@ -497,9 +504,12 @@
 
     hideOrShowGoalList();
 
-    const sortData = (aData) => {
-      let cnt = 1;
+    const sortData = (aData, aIsRewardsData) => {
       let newData = new Map();
+      if(aIsRewardsData) {
+        newData.set(1000, aData.get(1000));
+      }
+      let cnt = 1;
       aData.forEach((val, key) => {
         if(val && key!=1000) {
           newData.set(cnt, val);
@@ -514,7 +524,7 @@
         let keyToBeDeleted = parseInt(this.dataset.key);
         that.settingsData.delete(keyToBeDeleted);
         if(!that.rewardsData.size) {
-          that.settingsData = sortData(that.settingsData);
+          that.settingsData = sortData(that.settingsData, false);
           that.setRewardsData();
         }
         else {
@@ -524,8 +534,8 @@
               that.rewardsData.set(key, that.setRewardsData([val, val.period[3]]));
             }
           });
-          that.settingsData = sortData(that.settingsData);
-          that.rewardsData = sortData(that.rewardsData);
+          that.settingsData = sortData(that.settingsData, false);
+          that.rewardsData = sortData(that.rewardsData, true);
         }
 
         localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
@@ -764,9 +774,9 @@
         for(let cnt=0;cnt<aLength;++cnt) {
           customChecked = (aPrefix=='frequency' && (checkedArray[3])) ? true : false;
           result += `<div class="form-check form-check-inline">
-          <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}"${(checkedArray[cnt])?' checked':''}>
+          <input class="form-check-input" type="${inputType}"${name} id="${aPrefix}-${aCnt}-${cnt}"${(checkedArray[cnt]==true)?' checked':''}>
           <label class="form-check-label" for="${aPrefix}-${aCnt}-${cnt}">${aArray[cnt]}</label>
-        </div>`;
+        </div>`;//後で見直し※1
         }
       result += `</div>`;
 
@@ -884,7 +894,7 @@
         let checkboxCheckedArray2 = [];
         
         for(let cnt=0;cnt<aLength;++cnt) {
-          if(aDimensionNum==3) {
+          if(aDimensionNum==3) {//後で見直し※1
             value = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? String(aTempInputArray[aCnt][aCnt2][aCnt3][cnt]).trim() : '';
             radioCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempRadioTodoArray[aCnt][aCnt2][aCnt3][cnt] : this.defaultFrequencyArray;
             checkboxCheckedArray = (aTempInputArray[aCnt][aCnt2][aCnt3] && aTempInputArray[aCnt][aCnt2][aCnt3][cnt]!=null) ? aTempCheckboxTodoArray[aCnt][aCnt2][aCnt3][cnt] : this.defaultYoubiArray;
@@ -1923,6 +1933,10 @@
   };
 
   Todo.prototype.initialize = function() {
+    this.getData();
+  };
+
+  Todo.prototype.getData = function() {
     this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
     this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
 
@@ -1964,7 +1978,7 @@
                 option: optionArray[index2],
                 arrayIndex: index,
                 originalKey: key,
-                isAchievedArray: Array(arrayLength).fill(false),
+                isAchievedArray: Object.fromEntries(stringArray.map(key => [key, false])),
                 stringArray: stringArray,
                 stringArrayForDisplay: stringArrayForDisplay
               };
@@ -1998,7 +2012,6 @@
     let youbiIndex = (today[3]==0) ? 6 : (today[3]-1);
     let todayString = `${today[0]}-${today[1]}-${today[2]}`;
 
-
     const displayTodoList = () => {
       let resultTodaysTodo = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
       let resultNotAchievedTodo = `<p>今週の未達todo</p>`;
@@ -2008,7 +2021,7 @@
 
       this.weeklyTodoData.forEach((val, key) => {
         let periodArray = val.period.split(',').map(Number);
-  
+
         if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex]) {
           if(!this.activeGoalList.includes(val.goal)) {
             this.activeGoalList.push(val.goal);
@@ -2082,9 +2095,11 @@
       let todoCheckboxElms = document.querySelectorAll('.js-todoCheckbox');
       todoCheckboxElms.forEach((elm, index) => {
         elm.addEventListener('change', function() {
-          let key = this.dataset.key;
-          let selectedData = that.weeklyTodoData.get(parseInt(key));
+          let key = parseInt(this.dataset.key);
+          let selectedData = that.weeklyTodoData.get(key);
           selectedData.isAchievedArray[todayString] = this.checked;
+          that.weeklyTodoData.set(key, selectedData);
+          localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
           displayTodoList();
           setEventChangeTodo();
         })
