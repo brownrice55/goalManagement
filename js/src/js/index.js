@@ -2030,7 +2030,7 @@
     const displayTodoList = () => {
       let resultTodaysTodo = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
       let resultNotAchievedTodo = `<p>今週の未達todo</p>`;
-      let resultDoneTodo = `<p>本日完了済みtodo</p>`;
+      let resultDoneTodo = `<p>今日の完了済みtodo</p>`;
   
       this.activeGoalList = [];
 
@@ -2057,7 +2057,7 @@
           val.stringArray.forEach((val2, key2) => {
             if(todayString!=val2 && !val.isAchievedArray[val2] && todaysIndex>key2) {
               resultNotAchievedTodo += `<div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="notAchieved-${val2}-${key}">
+              <input type="checkbox" class="form-check-input js-todoCheckboxNotAchieved" id="notAchieved-${val2}-${key}" data-key="${key},${val2}">
               <label class="form-check-label" for="notAchieved-${val2}-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
             </div>`;  
             }  
@@ -2119,8 +2119,26 @@
           setEventChangeTodo();
         })
       });
-    }
+    };
     setEventChangeTodo();
+
+    const setEventChangeNotAchievedTodo = () => {
+      let todoCheckboxElms = document.querySelectorAll('.js-todoCheckboxNotAchieved');
+      todoCheckboxElms.forEach((elm, index) => {
+        elm.addEventListener('change', function() {
+          let keyArray = this.dataset.key.split(',');
+          let key = parseInt(keyArray[0]);
+          let selectedData = that.weeklyTodoData.get(key);
+          selectedData.isAchievedArray[keyArray[1]] = this.checked;
+          that.weeklyTodoData.set(key, selectedData);
+          localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
+          displayTodoList();
+          setEventChangeNotAchievedTodo();
+        })
+      });
+    };
+    setEventChangeNotAchievedTodo();
+
   };
 
 

@@ -50,7 +50,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定後home |  |  |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/3fabda73-ae8a-4fba-9d55-cf56ac1002ed" width="200"> |  |  |
+| <img src="https://github.com/user-attachments/assets/84dc6bfb-39cf-411c-b746-9073f0c8b1f5" width="200"> |  |  |
 
 | 結果 |  |  |
 | ---- | ---- | ---- |
