@@ -211,16 +211,16 @@
           mapKeys.add(val.originalKey);
         }
 
-        mapKeys.forEach(keyVal => {
+        mapKeys.forEach(originalKey => {
           let val = this.settingsData.get(originalKey);
-          let cnt = this.weeklyTodoData.size;
+          let cnt = 0;
           if(val.status=='complete') {
             val.todoarray.forEach((array, index)=> {
               if(array.period=='indefinite') {
 
               }
               else {
-                todo.setEachDataForWeeklyTodo(val, originalKey, array, index, cnt);//後で修正
+                todo.setEachDataForWeeklyTodo(val, val.originalKey, array, index, [++cnt,this.weeklyTodoData.size]);
               }
             });
           }
@@ -1998,7 +1998,10 @@
     }
   };
 
-  Todo.prototype.setEachDataForWeeklyTodo = function(aVal, aKey, aArray, aIndex, aCnt) {//後で修正
+  Todo.prototype.setEachDataForWeeklyTodo = function(aVal, aKey, aArray, aIndex, aCntArray) {
+    if(aCntArray && aCntArray[0]==1) {
+      this.weeklyTodoKeyCnt = aCntArray[1];
+    }
     let periodArray = aArray.period.split(',').map(Number);
     let stringHead = `${periodArray[0]}-${periodArray[1]}`;
     let arrayLength = periodArray[3] - periodArray[2] + 1;
@@ -2038,7 +2041,7 @@
 
           }
           else {
-            this.setEachDataForWeeklyTodo(val, key, array, index);
+            this.setEachDataForWeeklyTodo(val, key, array, index, null);
           }
         });
       }
