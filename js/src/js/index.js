@@ -13,6 +13,7 @@
     this.sectionElms = commonElms[1];
     this.settingsSectionElms = commonElms[2];
     this.rewardsData = commonElms[3];
+    this.weeklyTodoData = commonElms[4];
 
     this.headerElm = document.querySelector('.js-header');
   };
@@ -190,6 +191,44 @@
     if(aIndex<4) {
       this.saveAndNextBtnElms[aIndex].disabled = true;
     }
+    if(aIndex==5) {//completeの時にrewardsとweeklyTodoに追加
+      if(!this.rewardsData.size) {
+        this.setRewardsData();
+      }
+      else {
+        this.settingsData.forEach((val, key) => {
+          if(!this.rewardsData.get(key)) {
+            this.rewardsData.set(key, this.setRewardsData([val, val.period[3]]));
+          }
+        });
+      }
+      if(!this.weeklyTodoData.size) {
+        this.weeklyTodoData = todo.setWeeklyTodoData(true);
+      }
+      else {
+        const mapKeys = new Set();
+        for(const [, val] of this.weeklyTodoData) {
+          mapKeys.add(val.originalKey);
+        }
+
+        mapKeys.forEach(keyVal => {
+          let val = this.settingsData.get(originalKey);
+          let cnt = this.weeklyTodoData.size;
+          if(val.status=='complete') {
+            val.todoarray.forEach((array, index)=> {
+              if(array.period=='indefinite') {
+
+              }
+              else {
+                todo.setEachDataForWeeklyTodo(val, originalKey, array, index, cnt);//後で修正
+              }
+            });
+          }
+        });
+      }
+      localStorage.setItem('goalManagementRewardsData', JSON.stringify([...this.rewardsData]));
+      localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
+    }
   };
 
   Settings.prototype.getDate = function(aDiff, aDate) {
@@ -337,7 +376,7 @@
     return [annualPeriodArray, monthlyPeriodArray, weeklyPeriodArray];
   };
 
-  Settings.prototype.setRewardsData = function(aShortageArray) {
+  Settings.prototype.setRewardsData = function(aShortageArray, aStore) {
 
     let getPeriodArrayForIndefinite = this.getPeriodArrayForIndefinite();
     let annualPeriodArray = getPeriodArrayForIndefinite[0];
@@ -374,6 +413,10 @@
       }
     });
 
+    if(aStore) {
+      localStorage.setItem('goalManagementRewardsData', JSON.stringify([...this.rewardsData]));
+      return this.rewardsData;
+    }
   };
 
   Settings.prototype.setEventSettings1 = function() {
@@ -541,7 +584,7 @@
         }
 
         if(!that.weeklyTodoData.size) {
-          todo.setWeeklyTodoData();
+          that.weeklyTodoData = todo.setWeeklyTodoData(true);
         }
         else {
           that.weeklyTodoData.forEach((val, key) => {
@@ -1721,17 +1764,6 @@
 
     let periodArrayForIndefinite = this.getPeriodArrayForIndefinite();
 
-    if(!this.rewardsData.size) {
-      this.setRewardsData();
-    }
-    else {
-      this.settingsData.forEach((val, key) => {
-        if(!this.rewardsData.get(key)) {
-          this.rewardsData.set(key, this.setRewardsData([val, val.period[3]]));
-        }
-      });
-    }
-
     let rewardsDataForEdit = new Map(
       Array.from(this.rewardsData, ([key, value]) => [key, JSON.parse(JSON.stringify(value))])
     );
@@ -1954,15 +1986,51 @@
   Todo.prototype.getData = function() {
     this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
     this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
+    if(!this.rewardsData.size) {
+      this.rewardsData = settings.setRewardsData(false, true);
+      localStorage.setItem('goalManagementRewardsData', JSON.stringify([...this.rewardsData]));
+    }
 
     this.weeklyTodoData = navAndCommon.getDataFromLocalStorage('goalManagementWeeklyTodoData');
     if(!this.weeklyTodoData.size) {
       this.setWeeklyTodoData();
+      localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
     }
   };
 
-  Todo.prototype.setWeeklyTodoData = function() {
-    let cnt = 0;
+  Todo.prototype.setEachDataForWeeklyTodo = function(aVal, aKey, aArray, aIndex, aCnt) {//後で修正
+    let periodArray = aArray.period.split(',').map(Number);
+    let stringHead = `${periodArray[0]}-${periodArray[1]}`;
+    let arrayLength = periodArray[3] - periodArray[2] + 1;
+    let stringArray = Array(arrayLength);
+    let stringArrayForDisplay = Array(arrayLength);
+    for(let cnt=0;cnt<arrayLength;++cnt) {
+      stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
+      stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
+    }
+    
+    let todoArray = Array.isArray(aArray.todo) ? aArray.todo : [aArray.todo];
+    let optionArray = Array.isArray(aArray.others) ? aArray.others : [aArray.others];
+    let dimensionNum = navAndCommon.getDimensionNum(aArray.youbi);
+    todoArray.forEach((val2, index2)=> {
+      let value = {
+        todo: val2,
+        goal: aVal.goal,
+        period: aArray.period,
+        youbiArray: (dimensionNum>1) ? aArray.youbi[index2] : aArray.youbi,
+        option: optionArray[index2],
+        arrayIndex: aIndex,
+        originalKey: aKey,
+        isAchievedArray: Object.fromEntries(stringArray.map(akey => [akey, false])),
+        stringArray: stringArray,
+        stringArrayForDisplay: stringArrayForDisplay
+      };
+      this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);    
+    });
+  };
+
+  Todo.prototype.setWeeklyTodoData = function(aReturn) {
+    this.weeklyTodoKeyCnt = 0;
     this.settingData.forEach((val, key) => {
       if(val.status=='complete') {
         val.todoarray.forEach((array, index)=> {
@@ -1970,39 +2038,14 @@
 
           }
           else {
-            let periodArray = array.period.split(',').map(Number);
-            let stringHead = `${periodArray[0]}-${periodArray[1]}`;
-            let arrayLength = periodArray[3] - periodArray[2] + 1;
-            let stringArray = Array(arrayLength);
-            let stringArrayForDisplay = Array(arrayLength);
-            for(let cnt=0;cnt<arrayLength;++cnt) {
-              stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
-              stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
-            }
-            
-            let todoArray = Array.isArray(array.todo) ? array.todo : [array.todo];
-            let optionArray = Array.isArray(array.others) ? array.others : [array.others];
-            let dimensionNum = navAndCommon.getDimensionNum(array.youbi);
-
-            todoArray.forEach((val2, index2)=> {
-              let value = {
-                todo: val2,
-                goal: val.goal,
-                period: array.period,
-                youbiArray: (dimensionNum>1) ? array.youbi[index2] : array.youbi,
-                option: optionArray[index2],
-                arrayIndex: index,
-                originalKey: key,
-                isAchievedArray: Object.fromEntries(stringArray.map(key => [key, false])),
-                stringArray: stringArray,
-                stringArrayForDisplay: stringArrayForDisplay
-              };
-              this.weeklyTodoData.set(++cnt, value);    
-            });
+            this.setEachDataForWeeklyTodo(val, key, array, index);
           }
         });
       }
     });
+    if(aReturn) {
+      return this.weeklyTodoData;
+    }
   };
 
   Todo.prototype.getDate = function() {
