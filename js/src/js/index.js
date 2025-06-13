@@ -207,12 +207,20 @@
       }
       else {
         const mapKeys = new Set();
-        for(const [, val] of this.weeklyTodoData) {
+        this.weeklyTodoData.forEach((val) => {
           mapKeys.add(val.originalKey);
-        }
+        });
 
-        mapKeys.forEach(originalKey => {
-          let val = this.settingsData.get(originalKey);
+        let addedData = [];
+        this.settingsData.forEach((val, key) => {
+          if(!mapKeys.has(key)) {
+            addedData.push({key:key, val:val});
+          }
+        });
+
+        addedData.forEach((data) => {
+          let val = data.val;
+          let key = data.key;
           let cnt = 0;
           if(val.status=='complete') {
             val.todoarray.forEach((array, index)=> {
@@ -220,14 +228,13 @@
 
               }
               else {
-                todo.setEachDataForWeeklyTodo(val, val.originalKey, array, index, [++cnt,this.weeklyTodoData.size]);
+                todo.setEachDataForWeeklyTodo(val, data.key, array, index, [++cnt,this.weeklyTodoData.size]);
               }
             });
           }
         });
       }
       localStorage.setItem('goalManagementRewardsData', JSON.stringify([...this.rewardsData]));
-      localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
     }
   };
 
@@ -420,6 +427,10 @@
   };
 
   Settings.prototype.setEventSettings1 = function() {
+    if(!this.weeklyTodoData.size) {
+      let commonElms = navAndCommon.commonElmsAndData();
+      this.weeklyTodoData = commonElms[4];
+    }
     const inputElms = this.settingsSectionElms[0].querySelectorAll('.js-inputSettingsTop');
     const selectElm = this.settingsSectionElms[0].querySelector('select');
     this.deleteSettingBtnElms = document.querySelectorAll('.js-deleteSettingBtn');
@@ -582,6 +593,8 @@
           that.settingsData = sortData(that.settingsData, false);
           that.rewardsData = sortData(that.rewardsData, true);
         }
+        localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
+        localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
 
         if(!that.weeklyTodoData.size) {
           that.weeklyTodoData = todo.setWeeklyTodoData(true);
@@ -595,8 +608,6 @@
           that.weeklyTodoData = sortData(that.weeklyTodoData, false);
         }
 
-        localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
-        localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
         localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
         that.displayGoalList();
         hideOrShowGoalList();
@@ -1687,6 +1698,7 @@
 
     this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
     this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
+    
     this.currentRewardsData = {};
 
     const selectRewardsElm = document.querySelector('.js-selectRewards');
@@ -1967,7 +1979,6 @@
 
   Settings.prototype.setEvent = function() {
     this.setEventSettings1();
-    this.setEventSettings6();
   };
 
   Settings.prototype.run = function() {
@@ -2011,7 +2022,7 @@
       stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
       stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
     }
-    
+
     let todoArray = Array.isArray(aArray.todo) ? aArray.todo : [aArray.todo];
     let optionArray = Array.isArray(aArray.others) ? aArray.others : [aArray.others];
     let dimensionNum = navAndCommon.getDimensionNum(aArray.youbi);
@@ -2028,8 +2039,9 @@
         stringArray: stringArray,
         stringArrayForDisplay: stringArrayForDisplay
       };
-      this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);    
+      this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);
     });
+    localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
   };
 
   Todo.prototype.setWeeklyTodoData = function(aReturn) {
