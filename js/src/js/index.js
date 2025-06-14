@@ -165,7 +165,6 @@
     this.inputGoalElms = document.querySelectorAll('.js-inputGoal');
     this.inputAlertElms = document.querySelectorAll('.js-inputAlert');
     this.id = 0;
-    this.currentSettingsData = {};
 
     this.inputAreaElms = document.querySelectorAll('.js-inputArea');
     this.goalPeriodElms = document.querySelectorAll('.js-goalPeriod');
@@ -202,22 +201,22 @@
           }
         });
       }
+      this.weeklyTodoData = navAndCommon.getDataFromLocalStorage('goalManagementWeeklyTodoData');
       if(!this.weeklyTodoData.size) {
         this.weeklyTodoData = todo.setWeeklyTodoData(true);
+        localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
       }
       else {
         const mapKeys = new Set();
         this.weeklyTodoData.forEach((val) => {
           mapKeys.add(val.originalKey);
         });
-
         let addedData = [];
         this.settingsData.forEach((val, key) => {
           if(!mapKeys.has(key)) {
             addedData.push({key:key, val:val});
           }
         });
-
         addedData.forEach((data) => {
           let val = data.val;
           let key = data.key;
@@ -443,6 +442,65 @@
     this.saveAndNextBtnElms[0].disabled = true;
     this.displayGoalList();
     this.hideOrShowGoalList();
+    this.setEventDeleteSettingsData();
+  };
+
+  Settings.prototype.setEventDeleteSettingsData = function() {
+    const sortData = (aData, aIsRewardsData) => {
+      let newData = new Map();
+      if(aIsRewardsData) {
+        newData.set(1000, aData.get(1000));
+      }
+      let cnt = 1;
+      aData.forEach((val, key) => {
+        if(val && key!=1000) {
+          newData.set(cnt, val);
+          ++cnt;  
+        }
+      });
+      return newData;
+    };
+
+    const that = this;
+    this.deleteSettingBtnElms.forEach(elm => {
+      elm.addEventListener('click', function() {
+        let keyToBeDeleted = parseInt(this.dataset.key);
+        that.settingsData.delete(keyToBeDeleted);
+        if(!that.rewardsData.size) {
+          that.settingsData = sortData(that.settingsData, false);
+          that.setRewardsData();
+        }
+        else {
+          that.rewardsData.delete(keyToBeDeleted);
+          that.settingsData.forEach((val, key) => {
+            if(!that.rewardsData.get(key)) {
+              that.rewardsData.set(key, that.setRewardsData([val, val.period[3]]));
+            }
+          });
+          that.settingsData = sortData(that.settingsData, false);
+          that.rewardsData = sortData(that.rewardsData, true);
+        }
+        localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
+        localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
+
+        if(!that.weeklyTodoData.size) {
+          that.weeklyTodoData = todo.setWeeklyTodoData(true);
+        }
+        else {
+          that.weeklyTodoData.forEach((val, key) => {
+            if(parseInt(val.originalKey)==keyToBeDeleted) {
+              that.weeklyTodoData.delete(key);
+            }
+          });
+          that.weeklyTodoData = sortData(that.weeklyTodoData, false);
+        }
+        localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
+        that.displayGoalList();
+        that.hideOrShowGoalList();
+        that.setEventDeleteSettingsData();
+        navAndCommon.hideAndShowGlobalNav(that.settingsData.size);
+      });
+    });
   };
 
   Settings.prototype.setEventSettings1 = function() {
@@ -514,6 +572,7 @@
       that.startDateNumArray = inputPeriodStartElm.value.split('-').map(Number);
 
       let nextPageIndex = getNextPageIndex();
+      that.saveAndNextData(nextPageIndex);
 
       if(nextPageIndex==1) {
         that.setEventSettings2();
@@ -528,7 +587,6 @@
         that.currentSettingsData.period[3] = 'indefinite';
         that.setEventSettings5();
       }
-      that.saveAndNextData(nextPageIndex);
     });
 
     this.setFormValidationForInput(0, null);
@@ -572,60 +630,8 @@
 
     this.hideOrShowGoalList();
 
-    const sortData = (aData, aIsRewardsData) => {
-      let newData = new Map();
-      if(aIsRewardsData) {
-        newData.set(1000, aData.get(1000));
-      }
-      let cnt = 1;
-      aData.forEach((val, key) => {
-        if(val && key!=1000) {
-          newData.set(cnt, val);
-          ++cnt;  
-        }
-      });
-      return newData;
-    };
+    this.setEventDeleteSettingsData();
 
-    this.deleteSettingBtnElms.forEach(elm => {
-      elm.addEventListener('click', function() {
-        let keyToBeDeleted = parseInt(this.dataset.key);
-        that.settingsData.delete(keyToBeDeleted);
-        if(!that.rewardsData.size) {
-          that.settingsData = sortData(that.settingsData, false);
-          that.setRewardsData();
-        }
-        else {
-          that.rewardsData.delete(keyToBeDeleted);
-          that.settingsData.forEach((val, key) => {
-            if(!that.rewardsData.get(key)) {
-              that.rewardsData.set(key, that.setRewardsData([val, val.period[3]]));
-            }
-          });
-          that.settingsData = sortData(that.settingsData, false);
-          that.rewardsData = sortData(that.rewardsData, true);
-        }
-        localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
-        localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
-
-        if(!that.weeklyTodoData.size) {
-          that.weeklyTodoData = todo.setWeeklyTodoData(true);
-        }
-        else {
-          that.weeklyTodoData.forEach((val, key) => {
-            if(parseInt(val.originalKey)==keyToBeDeleted) {
-              that.weeklyTodoData.delete(key);
-            }
-          });
-          that.weeklyTodoData = sortData(that.weeklyTodoData, false);
-        }
-
-        localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
-        that.displayGoalList();
-        that.hideOrShowGoalList();
-      });
-      navAndCommon.hideAndShowGlobalNav(that.settingsData.size);
-    });
   };
 
   Settings.prototype.getDaysOfTheYear = function(aYear, aMonth) {
@@ -1768,7 +1774,7 @@
         <div class="js-rewardsInput"></div>
         
       </div>`;
-        return result;
+      return result;
     };
 
     const getInputHtml = (aIndex, aIndex2) => {
