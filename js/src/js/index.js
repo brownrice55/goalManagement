@@ -83,7 +83,7 @@
       if (event.matches) {
         document.addEventListener('click', function(event) {
         isOpen = navbarNavElm.classList.contains('show');
-          if (isOpen && !that.headerElm.contains(event.target)) {
+          if(isOpen && !that.headerElm.contains(event.target)) {
             bsCollapse.hide();
           }
         });
@@ -100,8 +100,8 @@
     listener(mediaQueryList);
   };
 
-  NavAndCommon.prototype.hideAndShowGlobalNav = function() {
-    if(this.settingsData.size) {
+  NavAndCommon.prototype.hideAndShowGlobalNav = function(aData) {
+    if(aData) {
       this.headerElm.classList.remove('d-none');
     }
     else {
@@ -111,7 +111,7 @@
 
   NavAndCommon.prototype.setEvent = function() {
     this.switchPage(null, this.sectionElms);
-    this.hideAndShowGlobalNav();
+    this.hideAndShowGlobalNav(this.settingsData.size);
 
     const globalNavElms = document.querySelectorAll('.js-globalNav');
     const globalNavSettingsElms = document.querySelectorAll('.js-globalNavSettings');
@@ -235,6 +235,8 @@
         });
       }
       localStorage.setItem('goalManagementRewardsData', JSON.stringify([...this.rewardsData]));
+      this.resetSettings1();
+      navAndCommon.hideAndShowGlobalNav(this.settingsData.size);
     }
   };
 
@@ -426,6 +428,23 @@
     }
   };
 
+  Settings.prototype.hideOrShowGoalList = function() {
+    if(this.settingsData.size) {
+      this.goalListElm.parentNode.classList.remove('d-none');
+    }
+    else {
+      this.goalListElm.parentNode.classList.add('d-none');
+    }
+  };
+
+  Settings.prototype.resetSettings1 = function() {
+    this.inputGoalElms[0].value = '';
+    this.id = this.settingsData.size + 1;
+    this.saveAndNextBtnElms[0].disabled = true;
+    this.displayGoalList();
+    this.hideOrShowGoalList();
+  };
+
   Settings.prototype.setEventSettings1 = function() {
     if(!this.weeklyTodoData.size) {
       let commonElms = navAndCommon.commonElmsAndData();
@@ -447,15 +466,6 @@
       aElm.value = `${dateY}-${dateM}-${dateD}`;
       aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
       aElm.max = `${(dateY+50)}-${dateM}-${dateD}`;
-    };
-
-    const hideOrShowGoalList = () => {
-      if(this.settingsData.size) {
-        this.goalListElm.parentNode.classList.remove('d-none');
-      }
-      else {
-        this.goalListElm.parentNode.classList.add('d-none');
-      }
     };
 
     setDate(0, inputPeriodStartElm);
@@ -488,12 +498,14 @@
 
     const that = this;
 
-    this.saveAndNextBtnElms[0].addEventListener('click', function() {
+    this.saveAndNextBtnElms[0].addEventListener('click', function(event) {
+      event.stopImmediatePropagation();
       if(selectElm.value=='custom') {
         const diffInMs = new Date(inputPeriodEndElm.value) - new Date(inputPeriodStartElm.value);
         diffInDays = Math.floor(diffInMs/(1000*60*60*24));
       }
 
+      that.currentSettingsData = {};
       that.id = that.settingsData.size + 1;
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
@@ -502,7 +514,6 @@
       that.startDateNumArray = inputPeriodStartElm.value.split('-').map(Number);
 
       let nextPageIndex = getNextPageIndex();
-      that.saveAndNextData(nextPageIndex);
 
       if(nextPageIndex==1) {
         that.setEventSettings2();
@@ -517,6 +528,7 @@
         that.currentSettingsData.period[3] = 'indefinite';
         that.setEventSettings5();
       }
+      that.saveAndNextData(nextPageIndex);
     });
 
     this.setFormValidationForInput(0, null);
@@ -558,7 +570,7 @@
 
     this.displayGoalList();
 
-    hideOrShowGoalList();
+    this.hideOrShowGoalList();
 
     const sortData = (aData, aIsRewardsData) => {
       let newData = new Map();
@@ -610,8 +622,9 @@
 
         localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
         that.displayGoalList();
-        hideOrShowGoalList();
+        that.hideOrShowGoalList();
       });
+      navAndCommon.hideAndShowGlobalNav(that.settingsData.size);
     });
   };
 
@@ -1594,18 +1607,17 @@
       navAndCommon.switchPage(index, that.settingsSectionElms);
     });
 
-    completeBtnElm.addEventListener('click', function() {
+    const taskForCompletion = () => {
+      selectedIndex = (dimensionNum>1) ? this.selectGoalsElms[2].value.split('-').map(Number) : parseInt(this.selectGoalsElms[2].value);
 
-      selectedIndex = (dimensionNum>1) ? that.selectGoalsElms[2].value.split('-').map(Number) : parseInt(that.selectGoalsElms[2].value);
-
-      let inputTodoElms = that.inputAreaElms[3].querySelectorAll('.js-inputTodo');
-      let radioTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
-      let checkboxTodoDivElms = that.inputAreaElms[3].querySelectorAll('.js-youbiCheckbox');
-      let checkboxTodoDivElms2 = that.inputAreaElms[3].querySelectorAll('.js-othersCheckbox');
+      let inputTodoElms = this.inputAreaElms[3].querySelectorAll('.js-inputTodo');
+      let radioTodoDivElms = this.inputAreaElms[3].querySelectorAll('.js-frequencyCheckbox');
+      let checkboxTodoDivElms = this.inputAreaElms[3].querySelectorAll('.js-youbiCheckbox');
+      let checkboxTodoDivElms2 = this.inputAreaElms[3].querySelectorAll('.js-othersCheckbox');
 
       const tempData = getTempData(inputTodoElms, radioTodoDivElms, checkboxTodoDivElms, checkboxTodoDivElms2);
 
-      if(!that.currentSettingsData.weeklygoalsarrayperiod) {
+      if(!this.currentSettingsData.weeklygoalsarrayperiod) {
         tempInputTodoArray = tempData[0];
         tempRadioTodoArray = tempData[1];
         tempCheckboxTodoArray = tempData[2];
@@ -1634,7 +1646,7 @@
 
       let inputArrays = [];
       
-      if(!that.currentSettingsData.weeklygoalsarrayperiod) {
+      if(!this.currentSettingsData.weeklygoalsarrayperiod) {
         tempInputTodoArray.forEach((val, index) => {
           if(val && tempCheckboxTodoArray[index]) {
             let todoData = {
@@ -1655,7 +1667,7 @@
               array2.forEach((val, index3) => {
                 if(val && tempCheckboxTodoArray[index][index2][index3]) {
                   let todoData = {
-                    period: (dimensionNum==3) ? that.currentSettingsData.weeklygoalsarrayperiod[index][index2][index3] : that.currentSettingsData.weeklygoalsarrayperiod[index][index2],
+                    period: (dimensionNum==3) ? this.currentSettingsData.weeklygoalsarrayperiod[index][index2][index3] : this.currentSettingsData.weeklygoalsarrayperiod[index][index2],
                     todo: val,
                     frequency: tempRadioTodoArray[index][index2][index3],
                     youbi: tempCheckboxTodoArray[index][index2][index3],
@@ -1672,7 +1684,7 @@
             array.forEach((val, index2) => {
               if(val && tempCheckboxTodoArray[index][index2]) {
                 let todoData = {
-                  period: that.currentSettingsData.weeklygoalsarrayperiod[index],
+                  period: this.currentSettingsData.weeklygoalsarrayperiod[index],
                   todo: val,
                   frequency: tempRadioTodoArray[index][index2],
                   youbi: tempCheckboxTodoArray[index][index2],
@@ -1685,12 +1697,18 @@
         }
       }
 
-      that.currentSettingsData.todoarray = inputArrays;
-      that.currentSettingsData.status = 'complete';
+      this.currentSettingsData.todoarray = inputArrays;
+      this.currentSettingsData.status = 'complete';
   
-      that.saveAndNextData(5);
-      that.setEventSettings6();
+      this.saveAndNextData(5);
+      this.setEventSettings6();
+    };
+
+    completeBtnElm.addEventListener('click', function(event) {
+      event.stopImmediatePropagation();
+      taskForCompletion();
     });
+
   };
 
 
@@ -1974,6 +1992,8 @@
       setInitialState();
 
       navAndCommon.switchPage(0, that.sectionElms);
+      todo.getData();
+      todo.displayTodoPage();
     });
   };
 
