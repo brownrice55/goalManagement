@@ -202,8 +202,8 @@
         });
       }
       this.weeklyTodoData = navAndCommon.getDataFromLocalStorage('goalManagementWeeklyTodoData');
-      if(!this.weeklyTodoData.size) {
-        this.weeklyTodoData = todo.setWeeklyTodoData(true);
+      if(!this.weeklyTodoData.size && this.settingsData) {
+        this.setWeeklyTodoData();
         localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
       }
       else {
@@ -227,7 +227,7 @@
 
               }
               else {
-                todo.setEachDataForWeeklyTodo(val, data.key, array, index, [++cnt,this.weeklyTodoData.size]);
+                this.setEachDataForWeeklyTodo(val, data.key, array, index, [++cnt,this.weeklyTodoData.size]);
               }
             });
           }
@@ -427,6 +427,60 @@
     }
   };
 
+  Settings.prototype.setEachDataForWeeklyTodo = function(aVal, aKey, aArray, aIndex, aCntArray) {
+    if(aCntArray && aCntArray[0]==1) {
+      this.weeklyTodoKeyCnt = aCntArray[1];
+    }
+    let periodArray = aArray.period.split(',').map(Number);
+    let stringHead = `${periodArray[0]}-${periodArray[1]}`;
+    let arrayLength = periodArray[3] - periodArray[2] + 1;
+    let stringArray = Array(arrayLength);
+    let stringArrayForDisplay = Array(arrayLength);
+    for(let cnt=0;cnt<arrayLength;++cnt) {
+      stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
+      stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
+    }
+
+    let todoArray = Array.isArray(aArray.todo) ? aArray.todo : [aArray.todo];
+    let optionArray = Array.isArray(aArray.others) ? aArray.others : [aArray.others];
+    let dimensionNum = navAndCommon.getDimensionNum(aArray.youbi);
+    todoArray.forEach((val2, index2)=> {
+      let value = {
+        todo: val2,
+        goal: aVal.goal,
+        period: aArray.period,
+        youbiArray: (dimensionNum>1) ? aArray.youbi[index2] : aArray.youbi,
+        option: optionArray[index2],
+        arrayIndex: aIndex,
+        originalKey: aKey,
+        isAchievedArray: Object.fromEntries(stringArray.map(akey => [akey, false])),
+        stringArray: stringArray,
+        stringArrayForDisplay: stringArrayForDisplay
+      };
+      this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);
+    });
+    localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
+  };
+
+  Settings.prototype.setWeeklyTodoData = function(aReturn) {
+    this.weeklyTodoKeyCnt = 0;
+    this.settingsData.forEach((val, key) => {
+      if(val.status=='complete') {
+        val.todoarray.forEach((array, index)=> {
+          if(array.period=='indefinite') {
+
+          }
+          else {
+            this.setEachDataForWeeklyTodo(val, key, array, index, null);
+          }
+        });
+      }
+    });
+    if(aReturn) {
+      return this.weeklyTodoData;
+    }
+  };
+
   Settings.prototype.hideOrShowGoalList = function() {
     if(this.settingsData.size) {
       this.goalListElm.parentNode.classList.remove('d-none');
@@ -465,6 +519,7 @@
     this.deleteSettingBtnElms.forEach(elm => {
       elm.addEventListener('click', function() {
         let keyToBeDeleted = parseInt(this.dataset.key);
+        let targetValue = that.settingsData.get(keyToBeDeleted);
         that.settingsData.delete(keyToBeDeleted);
         if(!that.rewardsData.size) {
           that.settingsData = sortData(that.settingsData, false);
@@ -483,12 +538,12 @@
         localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
         localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
 
-        if(!that.weeklyTodoData.size) {
-          that.weeklyTodoData = todo.setWeeklyTodoData(true);
+        if(!that.weeklyTodoData.size && that.settingsData) {
+          that.setWeeklyTodoData();
         }
         else {
           that.weeklyTodoData.forEach((val, key) => {
-            if(parseInt(val.originalKey)==keyToBeDeleted) {
+            if(val.originalKey==targetValue.originalKey) {
               that.weeklyTodoData.delete(key);
             }
           });
@@ -565,6 +620,7 @@
 
       that.currentSettingsData = {};
       that.id = that.settingsData.size + 1;
+      that.currentSettingsData.originalKey = that.settingsData.size + 1;
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
@@ -2029,63 +2085,9 @@
     }
 
     this.weeklyTodoData = navAndCommon.getDataFromLocalStorage('goalManagementWeeklyTodoData');
-    if(!this.weeklyTodoData.size) {
-      this.setWeeklyTodoData();
+    if(!this.weeklyTodoData.size && this.settingsData) {
+      this.weeklyTodoData = settings.setWeeklyTodoData(true);
       localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
-    }
-  };
-
-  Todo.prototype.setEachDataForWeeklyTodo = function(aVal, aKey, aArray, aIndex, aCntArray) {
-    if(aCntArray && aCntArray[0]==1) {
-      this.weeklyTodoKeyCnt = aCntArray[1];
-    }
-    let periodArray = aArray.period.split(',').map(Number);
-    let stringHead = `${periodArray[0]}-${periodArray[1]}`;
-    let arrayLength = periodArray[3] - periodArray[2] + 1;
-    let stringArray = Array(arrayLength);
-    let stringArrayForDisplay = Array(arrayLength);
-    for(let cnt=0;cnt<arrayLength;++cnt) {
-      stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
-      stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
-    }
-
-    let todoArray = Array.isArray(aArray.todo) ? aArray.todo : [aArray.todo];
-    let optionArray = Array.isArray(aArray.others) ? aArray.others : [aArray.others];
-    let dimensionNum = navAndCommon.getDimensionNum(aArray.youbi);
-    todoArray.forEach((val2, index2)=> {
-      let value = {
-        todo: val2,
-        goal: aVal.goal,
-        period: aArray.period,
-        youbiArray: (dimensionNum>1) ? aArray.youbi[index2] : aArray.youbi,
-        option: optionArray[index2],
-        arrayIndex: aIndex,
-        originalKey: aKey,
-        isAchievedArray: Object.fromEntries(stringArray.map(akey => [akey, false])),
-        stringArray: stringArray,
-        stringArrayForDisplay: stringArrayForDisplay
-      };
-      this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);
-    });
-    localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
-  };
-
-  Todo.prototype.setWeeklyTodoData = function(aReturn) {
-    this.weeklyTodoKeyCnt = 0;
-    this.settingData.forEach((val, key) => {
-      if(val.status=='complete') {
-        val.todoarray.forEach((array, index)=> {
-          if(array.period=='indefinite') {
-
-          }
-          else {
-            this.setEachDataForWeeklyTodo(val, key, array, index, null);
-          }
-        });
-      }
-    });
-    if(aReturn) {
-      return this.weeklyTodoData;
     }
   };
 
