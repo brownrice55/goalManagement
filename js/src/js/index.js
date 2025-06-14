@@ -223,12 +223,7 @@
           let cnt = 0;
           if(val.status=='complete') {
             val.todoarray.forEach((array, index)=> {
-              if(array.period=='indefinite') {
-
-              }
-              else {
-                this.setEachDataForWeeklyTodo(val, data.key, array, index, [++cnt,this.weeklyTodoData.size]);
-              }
+              this.setEachDataForWeeklyTodo(val, data.key, array, index, [++cnt,this.weeklyTodoData.size]);
             });
           }
         });
@@ -431,14 +426,18 @@
     if(aCntArray && aCntArray[0]==1) {
       this.weeklyTodoKeyCnt = aCntArray[1];
     }
-    let periodArray = aArray.period.split(',').map(Number);
-    let stringHead = `${periodArray[0]}-${periodArray[1]}`;
-    let arrayLength = periodArray[3] - periodArray[2] + 1;
-    let stringArray = Array(arrayLength);
-    let stringArrayForDisplay = Array(arrayLength);
-    for(let cnt=0;cnt<arrayLength;++cnt) {
-      stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
-      stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
+    let stringArray = [];
+    let stringArrayForDisplay = [];
+    if(!aArray.period=='indefinite') {
+      let periodArray = aArray.period.split(',').map(Number);
+      let stringHead = `${periodArray[0]}-${periodArray[1]}`;
+      let arrayLength = periodArray[3] - periodArray[2] + 1;
+      stringArray = Array(arrayLength);
+      stringArrayForDisplay = Array(arrayLength);
+      for(let cnt=0;cnt<arrayLength;++cnt) {
+        stringArray[cnt] = `${stringHead}-${periodArray[2]+cnt}`;
+        stringArrayForDisplay[cnt] = `${periodArray[1]}/${periodArray[2]+cnt}`;
+      }
     }
 
     let todoArray = Array.isArray(aArray.todo) ? aArray.todo : [aArray.todo];
@@ -467,12 +466,7 @@
     this.settingsData.forEach((val, key) => {
       if(val.status=='complete') {
         val.todoarray.forEach((array, index)=> {
-          if(array.period=='indefinite') {
-
-          }
-          else {
-            this.setEachDataForWeeklyTodo(val, key, array, index, null);
-          }
+          this.setEachDataForWeeklyTodo(val, key, array, index, null);
         });
       }
     });
@@ -620,7 +614,7 @@
 
       that.currentSettingsData = {};
       that.id = that.settingsData.size + 1;
-      that.currentSettingsData.originalKey = that.settingsData.size + 1;
+      that.currentSettingsData.originalKey = that.id;
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
@@ -2123,7 +2117,7 @@
       this.weeklyTodoData.forEach((val, key) => {
         let periodArray = val.period.split(',').map(Number);
 
-        if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex]) {
+        if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex] || val.period=='indefinite' && val.youbiArray[youbiIndex]) {
           if(!this.activeGoalList.includes(val.goal)) {
             this.activeGoalList.push(val.goal);
           }
