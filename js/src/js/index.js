@@ -444,19 +444,21 @@
     let optionArray = Array.isArray(aArray.others) ? aArray.others : [aArray.others];
     let dimensionNum = navAndCommon.getDimensionNum(aArray.youbi);
     todoArray.forEach((val2, index2)=> {
-      let value = {
-        todo: val2,
-        goal: aVal.goal,
-        period: aArray.period,
-        youbiArray: (dimensionNum>1) ? aArray.youbi[index2] : aArray.youbi,
-        option: optionArray[index2],
-        arrayIndex: aIndex,
-        originalKey: aKey,
-        isAchievedArray: Object.fromEntries(stringArray.map(akey => [akey, false])),
-        stringArray: stringArray,
-        stringArrayForDisplay: stringArrayForDisplay
-      };
-      this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);
+      if(val2) {
+        let value = {
+          todo: val2,
+          goal: aVal.goal,
+          period: aArray.period,
+          youbiArray: (dimensionNum>1) ? aArray.youbi[index2] : aArray.youbi,
+          option: optionArray[index2],
+          arrayIndex: aIndex,
+          originalKey: aKey,
+          isAchievedArray: Object.fromEntries(stringArray.map(akey => [akey, false])),
+          stringArray: stringArray,
+          stringArrayForDisplay: stringArrayForDisplay
+        };
+        this.weeklyTodoData.set(++this.weeklyTodoKeyCnt, value);
+      }
     });
     localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
   };
@@ -486,8 +488,14 @@
 
   Settings.prototype.resetSettings1 = function() {
     this.inputGoalElms[0].value = '';
-    this.id = this.settingsData.size + 1;
     this.saveAndNextBtnElms[0].disabled = true;
+    const [inputRadioElm, inputPeriodStartElm, inputPeriodEndElm, inputModalElm] = this.inputElmsSettings1;
+    this.setDateInInput(0, inputPeriodStartElm);
+    this.setDateInInput(1, inputModalElm);
+    inputRadioElm.checked = true;
+    inputPeriodEndElm.classList.add('d-none');
+    this.selectElmSettings1.classList.remove('d-none');
+    this.selectElmSettings1.value = 'w1';
     this.displayGoalList();
     this.hideOrShowGoalList();
     this.setEventDeleteSettingsData();
@@ -552,43 +560,43 @@
     });
   };
 
+  Settings.prototype.setDateInInput = function(aDiff, aElm, aDate) {
+    let getDate = this.getDate(aDiff, aDate);
+
+    let [dateY, dateM, dateD] = getDate;
+
+    aElm.value = `${dateY}-${dateM}-${dateD}`;
+    aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
+    aElm.max = `${(dateY+50)}-${dateM}-${dateD}`;
+  };
+
   Settings.prototype.setEventSettings1 = function() {
     if(!this.weeklyTodoData.size) {
       let commonElms = navAndCommon.commonElmsAndData();
       this.weeklyTodoData = commonElms[4];
     }
-    const inputElms = this.settingsSectionElms[0].querySelectorAll('.js-inputSettingsTop');
-    const selectElm = this.settingsSectionElms[0].querySelector('select');
+    this.inputElmsSettings1 = this.settingsSectionElms[0].querySelectorAll('.js-inputSettingsTop');
+    this.selectElmSettings1 = this.settingsSectionElms[0].querySelector('select');
     this.deleteSettingBtnElms = document.querySelectorAll('.js-deleteSettingBtn');
 
-    const [inputRadioElm, inputPeriodStartElm, inputPeriodEndElm, inputModalElm] = inputElms;
+    const [inputRadioElm, inputPeriodStartElm, inputPeriodEndElm, inputModalElm] = this.inputElmsSettings1;
+
+    this.setDateInInput(0, inputPeriodStartElm);
+    this.setDateInInput(1, inputModalElm);
 
     let diffInDays = 0;
-
-    const setDate = (aDiff, aElm, aDate) => {
-      let getDate = this.getDate(aDiff, aDate);
-
-      let [dateY, dateM, dateD] = getDate;
-
-      aElm.value = `${dateY}-${dateM}-${dateD}`;
-      aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
-      aElm.max = `${(dateY+50)}-${dateM}-${dateD}`;
-    };
-
-    setDate(0, inputPeriodStartElm);
-    setDate(1, inputModalElm);
 
     const getNextPageIndex = () => {
       if(!inputRadioElm.checked) {
         return 4;
       }
-      if(selectElm.value=='w1') {
+      if(this.selectElmSettings1.value=='w1') {
         return 3;
       }
-      if(selectElm.value=='m1' || selectElm.value=='m2' || selectElm.value=='m3') {
+      if(this.selectElmSettings1.value=='m1' || this.selectElmSettings1.value=='m2' || this.selectElmSettings1.value=='m3') {
         return 2;
       }
-      if(selectElm.value=='custom') {
+      if(this.selectElmSettings1.value=='custom') {
         if(diffInDays<=7) {
           return 4;
         }
@@ -607,7 +615,7 @@
 
     this.saveAndNextBtnElms[0].addEventListener('click', function(event) {
       event.stopImmediatePropagation();
-      if(selectElm.value=='custom') {
+      if(that.selectElmSettings1.value=='custom') {
         const diffInMs = new Date(inputPeriodEndElm.value) - new Date(inputPeriodStartElm.value);
         diffInDays = Math.floor(diffInMs/(1000*60*60*24));
       }
@@ -618,7 +626,7 @@
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
       that.currentSettingsData.radioPeriod = inputRadioElm.checked;
-      that.currentSettingsData.period = [ inputPeriodStartElm.value, (selectElm.value!='custom') ? selectElm.value : inputPeriodEndElm.value, (selectElm.value!='custom') ? 0 : diffInDays, (selectElm.value=='custom') ? inputPeriodEndElm.value.split('-') : 0 ];
+      that.currentSettingsData.period = [ inputPeriodStartElm.value, (that.selectElmSettings1.value!='custom') ? that.selectElmSettings1.value : inputPeriodEndElm.value, (that.selectElmSettings1.value!='custom') ? 0 : diffInDays, (that.selectElmSettings1.value=='custom') ? inputPeriodEndElm.value.split('-') : 0 ];
       that.startDateNumArray = inputPeriodStartElm.value.split('-').map(Number);
 
       let nextPageIndex = getNextPageIndex();
@@ -643,11 +651,11 @@
 
     const modalElm = document.querySelector('.js-modal');
     const bsModal = new bootstrap.Modal(modalElm);
-    this.tempSelectValue = selectElm.value;
-    selectElm.addEventListener('change', function() {
+    this.tempSelectValue = this.selectElmSettings1.value;
+    this.selectElmSettings1.addEventListener('change', function() {
       if(this.value=='custom') {
         bsModal.show();
-        setDate(1, inputModalElm, inputPeriodStartElm.value);
+        that.setDateInInput(1, inputModalElm, inputPeriodStartElm.value);
       }
       else {
         that.tempSelectValue = this.value;
@@ -663,7 +671,7 @@
     const periodCustomBtnElm = document.querySelector('.js-periodCustomBtn');
     periodCustomBtnElm.addEventListener('click', function() {
       inputPeriodEndElm.classList.remove('d-none');
-      selectElm.classList.add('d-none');
+      that.selectElmSettings1.classList.add('d-none');
       inputPeriodEndElm.value = inputModalElm.value;
       inputPeriodEndElm.min = inputModalElm.min;
       inputPeriodEndElm.max = inputModalElm.max;
@@ -672,7 +680,7 @@
     const periodCancelBtnElms = document.querySelectorAll('.js-periodCancelBtn');
     periodCancelBtnElms.forEach(elm => {
       elm.addEventListener('click', function() {
-        selectElm.value = that.tempSelectValue;
+        that.selectElmSettings1.value = that.tempSelectValue;
       });
     });
 
@@ -1737,18 +1745,20 @@
         }
         else {
           tempInputTodoArray.forEach((array, index) => {
-            array.forEach((val, index2) => {
-              if(val && tempCheckboxTodoArray[index][index2]) {
-                let todoData = {
-                  period: this.currentSettingsData.weeklygoalsarrayperiod[index],
-                  todo: val,
-                  frequency: tempRadioTodoArray[index][index2],
-                  youbi: tempCheckboxTodoArray[index][index2],
-                  others: tempCheckboxTodoArray2[index][index2]
-                };
-                inputArrays.push(todoData);
-              }
-            });
+            if(Array.isArray(array)) {
+              array.forEach((val, index2) => {
+                if(val && tempCheckboxTodoArray[index][index2]) {
+                  let todoData = {
+                    period: this.currentSettingsData.weeklygoalsarrayperiod[index],
+                    todo: val,
+                    frequency: tempRadioTodoArray[index][index2],
+                    youbi: tempCheckboxTodoArray[index][index2],
+                    others: tempCheckboxTodoArray2[index][index2]
+                  };
+                  inputArrays.push(todoData);
+                }
+              });
+            }
           });
         }
       }
