@@ -428,7 +428,7 @@
     }
     let stringArray = [];
     let stringArrayForDisplay = [];
-    if(!aArray.period=='indefinite') {
+    if(aArray.period!='indefinite') {
       let periodArray = aArray.period.split(',').map(Number);
       let stringHead = `${periodArray[0]}-${periodArray[1]}`;
       let arrayLength = periodArray[3] - periodArray[2] + 1;
@@ -487,18 +487,21 @@
   };
 
   Settings.prototype.resetSettings1 = function() {
-    this.inputGoalElms[0].value = '';
-    this.saveAndNextBtnElms[0].disabled = true;
-    const [inputRadioElm, inputPeriodStartElm, inputPeriodEndElm, inputModalElm] = this.inputElmsSettings1;
-    this.setDateInInput(0, inputPeriodStartElm);
-    this.setDateInInput(1, inputModalElm);
-    inputRadioElm.checked = true;
-    inputPeriodEndElm.classList.add('d-none');
-    this.selectElmSettings1.classList.remove('d-none');
-    this.selectElmSettings1.value = 'w1';
-    this.displayGoalList();
-    this.hideOrShowGoalList();
-    this.setEventDeleteSettingsData();
+    // this.inputGoalElms[0].value = '';
+    // this.saveAndNextBtnElms[0].disabled = true;
+    // const [inputRadioElm, inputPeriodStartElm, inputPeriodEndElm, inputModalElm] = this.inputElmsSettings1;
+    // this.setDateInInput(0, inputPeriodStartElm);
+    // this.setDateInInput(1, inputModalElm);
+    // inputRadioElm.checked = true;
+    // this.inputRadioNoneElm.checked = false;
+    // this.selectPeriodAreaElm.classList.remove('checkboxDisabled');
+    // inputPeriodEndElm.classList.add('d-none');
+    // this.selectElmSettings1.classList.remove('d-none');
+    // this.selectElmSettings1.value = 'w1';
+    // this.displayGoalList();
+    // this.hideOrShowGoalList();
+    // this.setEventDeleteSettingsData();
+    window.location.reload();//上記、indefiniteの後にdimenstion3の条件でエラーが出るので一旦location.reload()で対応　後で修正
   };
 
   Settings.prototype.setEventDeleteSettingsData = function() {
@@ -612,6 +615,25 @@
     };
 
     const that = this;
+
+    this.selectPeriodAreaElm = document.querySelector('.js-selectPeriodArea');
+    this.inputRadioNoneElm = document.querySelector('.js-inputRadioNone');
+
+    const radioCheckedDisabled = (aElm, addOrRemove) => {
+      aElm.addEventListener('change', function() {
+        if(this.checked) {
+          if(addOrRemove=='add') {
+            that.selectPeriodAreaElm.classList.add('checkboxDisabled');
+          }
+          else {
+            that.selectPeriodAreaElm.classList.remove('checkboxDisabled');
+          }
+        }
+      });
+    };
+
+    radioCheckedDisabled(inputRadioElm, 'remove');
+    radioCheckedDisabled(this.inputRadioNoneElm, 'add');
 
     this.saveAndNextBtnElms[0].addEventListener('click', function(event) {
       event.stopImmediatePropagation();
