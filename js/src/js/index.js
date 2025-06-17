@@ -2248,22 +2248,23 @@
 
     const todoRewardsAreaElm = document.querySelector('.js-todoRewardsArea');
 
-    let rewardsText = '';
-    this.rewardsData.forEach((val, key) => {
-      val.rewardsweekly.period.forEach((val2, index2) => {
-        if(val2 && val2!='undefined') {
-          let periodArray = val2.split(',').map(Number);
-          if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2]) {
-            rewardsText = `「${val.goal}：${val.rewardsweekly.rewards[index2]}（ ${val.rewardsweekly.percent[index2]}%で達成）」`;
-          }
-        } 
-      })
-    });
-
-
     const getRewardsAreaText = (aGoalName) => {
-      let displayOfTodaysRate = (!aGoalName || aGoalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
-      let displayOfWeeklyRate = (!aGoalName || aGoalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
+      let goalName = !aGoalName ? '全ての目標' : aGoalName;
+
+      let rewardsText = '';
+      this.rewardsData.forEach((val, key) => {
+        val.rewardsweekly.period.forEach((val2, index2) => {
+          if(val2 && val2!='undefined') {
+            let periodArray = val2.split(',').map(Number);
+            if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && goalName==val.goal) {
+              rewardsText = `今週のご褒美は「${goalName}：${val.rewardsweekly.rewards[index2]}（ ${val.rewardsweekly.percent[index2]}%で達成）」です。達成できるように頑張ろう！`;
+            }
+          }
+        })
+      });
+
+      let displayOfTodaysRate = (goalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
+      let displayOfWeeklyRate = (goalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
 
       let optionHTML = `<option value="全ての目標">全ての目標</option>`;
       
@@ -2279,10 +2280,10 @@
       <div class="col text-center">今日のtodo達成率<br>${displayOfTodaysRate}%</div>
       <div class="col text-center">今週のtodo達成率<br>${displayOfWeeklyRate}%</div>
       </div>
-      <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
+      <p class="mt-3">${rewardsText?rewardsText:`今週のご褒美は設定されていません。`}</p>`;
     }
 
-    todoRewardsAreaElm.innerHTML = getRewardsAreaText();
+    todoRewardsAreaElm.innerHTML = getRewardsAreaText('全ての目標');
 
     let selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
     const setEventSelectRewardsResult = () => {
@@ -2319,7 +2320,6 @@
     setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
 
   };
-
 
   Todo.prototype.setEvent = function() {
     this.displayTodoPage();
