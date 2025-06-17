@@ -2138,6 +2138,12 @@
     const othersArray = commonArray[2];
     let youbiIndex = (today[3]==0) ? 6 : (today[3]-1);
     let todayString = `${today[0]}-${today[1]}-${today[2]}`;
+    let eachGoalTodaysDoneCnt = {};
+    let eachGoalTodaysTotalCnt = {};
+    let todaysRateObj = {};
+    let eachGoalWeeklyNotAchievedCnt = {};
+    let eachGoalWeeklyTotalCnt = {};
+    let weeklyRateObj = {};
 
     const displayTodoList = () => {
       let resultTodaysTodo = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
@@ -2156,11 +2162,22 @@
 
         if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] || val.period=='indefinite') {
           ++weeklyTotalCnt;
+          if(!this.activeGoalList.includes(val.goal)) {
+            eachGoalWeeklyNotAchievedCnt[val.goal] = 0;
+            eachGoalWeeklyTotalCnt[val.goal] = 0;
+          }
+          ++eachGoalWeeklyTotalCnt[val.goal];
+
           if(val.youbiArray[youbiIndex]) {
             ++todaysTotalCnt;
+
             if(!this.activeGoalList.includes(val.goal)) {
               this.activeGoalList.push(val.goal);
+              eachGoalTodaysDoneCnt[val.goal] = 0;
+              eachGoalTodaysTotalCnt[val.goal] = 0;
             }
+            ++eachGoalTodaysTotalCnt[val.goal];
+
             if(!val.isAchievedArray[todayString]) {
               resultTodaysTodo += `<div class="mb-3 form-check">
                   <input type="checkbox" class="form-check-input js-todoCheckbox" id="todo-${key}" data-key="${key}">
@@ -2169,6 +2186,7 @@
             }
             if(val.isAchievedArray[todayString]) {
               ++todaysDoneCnt;
+              ++eachGoalTodaysDoneCnt[val.goal];
               resultDoneTodo += `<div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input js-todoCheckbox" id="done-${key}" data-key="${key}" checked>
               <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
@@ -2187,15 +2205,29 @@
             }
             if(!val.isAchievedArray[val2]) {
               ++notAchievedWeeklyCnt;
+              ++eachGoalWeeklyNotAchievedCnt[val.goal];
             }
           });
         }
       });
 
       todaysRate = Math.round(todaysDoneCnt/todaysTotalCnt*100);
+
       weeklyTotalCnt = weeklyTotalCnt*stringArrayLength;
       let achievedWeeklyCnt = weeklyTotalCnt - notAchievedWeeklyCnt + todaysDoneCnt;
       weeklyRate = Math.round((achievedWeeklyCnt/weeklyTotalCnt)*100);
+
+      this.activeGoalList.forEach((val) => {
+        if(Number.isInteger(eachGoalTodaysDoneCnt[val]) && Number.isInteger(eachGoalTodaysTotalCnt[val])) {
+          todaysRateObj[val] = Math.round(eachGoalTodaysDoneCnt[val]/eachGoalTodaysTotalCnt[val]*100);
+        }
+
+        if(Number.isInteger(eachGoalWeeklyNotAchievedCnt[val]) && Number.isInteger(eachGoalWeeklyTotalCnt[val])) {
+          let eachWeeklyTotalCnt = eachGoalWeeklyTotalCnt[val]*stringArrayLength;
+          let eachAchievedWeeklyCnt = eachWeeklyTotalCnt - eachGoalWeeklyNotAchievedCnt[val] + eachGoalTodaysDoneCnt[val];
+          weeklyRateObj[val] = Math.round(eachAchievedWeeklyCnt/eachWeeklyTotalCnt*100);
+        }  
+      });
 
       todaysTodoAreaElm.innerHTML = resultTodaysTodo;
       doneTodoAreaElm.innerHTML = resultDoneTodo;
@@ -2208,11 +2240,9 @@
 
     const todoListAreaElm = document.querySelector('.js-todoListArea');
     let activeGoalListResult = '';
-    let activeGoalListArray = [];
     
     this.activeGoalList.forEach(val => {
       activeGoalListResult += `<li>${val}</li>`;
-      activeGoalListArray.push(val);
     });
     todoListAreaElm.innerHTML = activeGoalListResult;
 
@@ -2230,22 +2260,39 @@
       })
     });
 
-    let optionHTML = `<option value="全ての目標">全ての目標</option>`;
-    activeGoalListArray.forEach((val, index) => {
-      optionHTML += `<option value="${val}">${val}</option>`;
-    });
-    const getRewardsAreaText = () => {
+
+    const getRewardsAreaText = (aGoalName) => {
+      let displayOfTodaysRate = (!aGoalName || aGoalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
+      let displayOfWeeklyRate = (!aGoalName || aGoalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
+
+      let optionHTML = `<option value="全ての目標">全ての目標</option>`;
+      
+      this.activeGoalList.forEach((val, index) => {
+        let selected = (aGoalName==val) ? ' selected' : '';
+        optionHTML += `<option value="${val}"${selected}>${val}</option>`;
+      });
+
       return `<div class="row">
-      <select name="rewardsResult" id="rewardsResult" class="form-select mb-3">${optionHTML}</select>
+      <select name="rewardsResult" id="rewardsResult" class="form-select mb-3 js-selectRewardsResult">${optionHTML}</select>
       </div>
       <div class="row">
-      <div class="col text-center">今日のtodo達成率<br>${todaysRate}%</div>
-      <div class="col text-center">今週のtodo達成率<br>${weeklyRate}%</div>
+      <div class="col text-center">今日のtodo達成率<br>${displayOfTodaysRate}%</div>
+      <div class="col text-center">今週のtodo達成率<br>${displayOfWeeklyRate}%</div>
       </div>
       <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
     }
-    
+
     todoRewardsAreaElm.innerHTML = getRewardsAreaText();
+
+    let selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
+    const setEventSelectRewardsResult = () => {
+      selectRewardsResultElm.addEventListener('change', function() {
+        todoRewardsAreaElm.innerHTML = getRewardsAreaText(this.value);
+        selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
+        setEventSelectRewardsResult();
+      });
+    };
+    setEventSelectRewardsResult();
 
     const that = this;
     const setEventChangeTodo = (aClass, aIsToday) => {
@@ -2263,6 +2310,8 @@
           setEventChangeTodo('.js-todoCheckbox', true);
           setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
           todoRewardsAreaElm.innerHTML = getRewardsAreaText();
+          selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
+          setEventSelectRewardsResult();
         })
       });
     };
