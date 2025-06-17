@@ -80,7 +80,7 @@
     const mediaQueryList = window.matchMedia('(max-width: 992px)');
     let isOpen = false;
     const listener = (event) => {
-      if (event.matches) {
+      if(event.matches) {
         document.addEventListener('click', function(event) {
         isOpen = navbarNavElm.classList.contains('show');
           if(isOpen && !that.headerElm.contains(event.target)) {
@@ -2145,41 +2145,65 @@
       let resultDoneTodo = `<p>今日の完了済みtodo</p>`;
   
       this.activeGoalList = [];
+      let todaysTotalCnt = 0;
+      let todaysDoneCnt = 0;
+      let weeklyTotalCnt = 0;
+      let notAchievedWeeklyCnt = 0;
+      let stringArrayLength = 0;
 
       this.weeklyTodoData.forEach((val, key) => {
         let periodArray = val.period.split(',').map(Number);
 
-        if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && val.youbiArray[youbiIndex] || val.period=='indefinite' && val.youbiArray[youbiIndex]) {
-          if(!this.activeGoalList.includes(val.goal)) {
-            this.activeGoalList.push(val.goal);
+        if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] || val.period=='indefinite') {
+          ++weeklyTotalCnt;
+          if(val.youbiArray[youbiIndex]) {
+            ++todaysTotalCnt;
+            if(!this.activeGoalList.includes(val.goal)) {
+              this.activeGoalList.push(val.goal);
+            }
+            if(!val.isAchievedArray[todayString]) {
+              resultTodaysTodo += `<div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input js-todoCheckbox" id="todo-${key}" data-key="${key}">
+                  <label class="form-check-label" for="todo-${key}">${val.todo}</label>
+                </div>`;
+            }
+            if(val.isAchievedArray[todayString]) {
+              ++todaysDoneCnt;
+              resultDoneTodo += `<div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input js-todoCheckbox" id="done-${key}" data-key="${key}" checked>
+              <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
+            </div>`;
+            }
           }
-          if(!val.isAchievedArray[todayString]) {
-            resultTodaysTodo += `<div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input js-todoCheckbox" id="todo-${key}" data-key="${key}">
-                <label class="form-check-label" for="todo-${key}">${val.todo}</label>
-              </div>`;
-          }
-          if(val.isAchievedArray[todayString]) {
-            resultDoneTodo += `<div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input js-todoCheckbox" id="done-${key}" data-key="${key}" checked>
-            <label class="form-check-label" for="done-${key}"><s class="text-secondary">${val.todo}</s></label>
-          </div>`;
-          }
+          
           let todaysIndex = val.stringArray.indexOf(todayString);
+          stringArrayLength = val.stringArray.length;//後で見直し
           val.stringArray.forEach((val2, key2) => {
             if(todayString!=val2 && !val.isAchievedArray[val2] && todaysIndex>key2) {
               resultNotAchievedTodo += `<div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input js-todoCheckboxNotAchieved" id="notAchieved-${val2}-${key}" data-key="${key},${val2}">
               <label class="form-check-label" for="notAchieved-${val2}-${key}">${val.todo}（${val.stringArrayForDisplay[key2]}）</label>
             </div>`;  
-            }  
+            }
+            if(!val.isAchievedArray[val2]) {
+              ++notAchievedWeeklyCnt;
+            }
           });
         }
       });
+
+      todaysRate = Math.round(todaysDoneCnt/todaysTotalCnt*100);
+      weeklyTotalCnt = weeklyTotalCnt*stringArrayLength;
+      let achievedWeeklyCnt = weeklyTotalCnt - notAchievedWeeklyCnt + todaysDoneCnt;
+      weeklyRate = Math.round((achievedWeeklyCnt/weeklyTotalCnt)*100);
+
       todaysTodoAreaElm.innerHTML = resultTodaysTodo;
       doneTodoAreaElm.innerHTML = resultDoneTodo;
-      notAchievedTodoAreaElm.innerHTML = resultNotAchievedTodo;  
+      notAchievedTodoAreaElm.innerHTML = resultNotAchievedTodo;
     };
+
+    let todaysRate = 0;
+    let weeklyRate = 0;
     displayTodoList();
 
     const todoListAreaElm = document.querySelector('.js-todoListArea');
@@ -2210,12 +2234,18 @@
     activeGoalListArray.forEach((val, index) => {
       optionHTML += `<option value="${val}">${val}</option>`;
     });
-    todoRewardsAreaElm.innerHTML = `<div class="row">
+    const getRewardsAreaText = () => {
+      return `<div class="row">
       <select name="rewardsResult" id="rewardsResult" class="form-select mb-3">${optionHTML}</select>
-      <div class="col text-center">今日のtodo達成率<br>33%</div>
-      <div class="col text-center">今週のtodo達成率<br>90%</div>
-    </div>
-    <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
+      </div>
+      <div class="row">
+      <div class="col text-center">今日のtodo達成率<br>${todaysRate}%</div>
+      <div class="col text-center">今週のtodo達成率<br>${weeklyRate}%</div>
+      </div>
+      <p class="mt-3">今週のご褒美は${rewardsText}です。達成できるように頑張ろう！</p>`;
+    }
+    
+    todoRewardsAreaElm.innerHTML = getRewardsAreaText();
 
     const that = this;
     const setEventChangeTodo = (aClass, aIsToday) => {
@@ -2232,6 +2262,7 @@
           displayTodoList();
           setEventChangeTodo('.js-todoCheckbox', true);
           setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
+          todoRewardsAreaElm.innerHTML = getRewardsAreaText();
         })
       });
     };
