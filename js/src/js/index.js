@@ -2126,6 +2126,49 @@
     return [dateY, dateM, dateD, youbi];
   };
 
+  Todo.prototype.displayTodoChart = function(aDisplayOfTodaysRate, aDisplayOfWeeklyRate) {
+    Chart.register(ChartDataLabels);
+    const canvasElms = document.querySelectorAll('.js-todoChartCanvas');
+
+    const displayGraph = (aCanvasElm, aDataArray) => {
+      new Chart(aCanvasElm, {
+        type: 'doughnut',
+        data: {
+          labels: ['達成', '未達成'],
+          datasets: [{
+            data: aDataArray,
+            borderWidth: 1,
+            backgroundColor: [
+              'rgba(255, 129, 91, 0.8)',
+              'rgba(220, 220, 220, 0.2)'
+            ]
+          }]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: {
+            datalabels: {
+              color: [
+                'rgba(108, 16, 16, 0.8)',
+                'rgba(0, 0, 0, 0.6)'
+              ],
+              formatter: (value, context) => {
+                return (!value) ? '' : context.chart.data.labels[context.dataIndex];
+              }
+            },
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+    };
+
+    displayGraph(canvasElms[0], [aDisplayOfTodaysRate, 100-aDisplayOfTodaysRate]);
+    displayGraph(canvasElms[1], [aDisplayOfWeeklyRate, 100-aDisplayOfWeeklyRate]);
+  };
+
   Todo.prototype.displayTodoPage = function() {
     const todaysTodoAreaElm = document.querySelector('.js-todaysTodoArea');
     const notAchievedTodoAreaElm = document.querySelector('.js-notAchievedTodoArea');
@@ -2144,6 +2187,9 @@
     let eachGoalWeeklyNotAchievedCnt = {};
     let eachGoalWeeklyTotalCnt = {};
     let weeklyRateObj = {};
+
+    let displayOfTodaysRate = 0;
+    let displayOfWeeklyRate = 0;
 
     const displayTodoList = () => {
       let resultTodaysTodo = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
@@ -2257,14 +2303,14 @@
           if(val2 && val2!='undefined') {
             let periodArray = val2.split(',').map(Number);
             if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && goalName==val.goal) {
-              rewardsText = `今週のご褒美は「${goalName}：${val.rewardsweekly.rewards[index2]}（ ${val.rewardsweekly.percent[index2]}%で達成）」です。達成できるように頑張ろう！`;
+              rewardsText = `${goalName}を達成した際（ ${val.rewardsweekly.percent[index2]}%で達成）の今週のご褒美は「${val.rewardsweekly.rewards[index2]}」です。達成できるように頑張ろう！`;
             }
           }
         })
       });
 
-      let displayOfTodaysRate = (goalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
-      let displayOfWeeklyRate = (goalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
+      displayOfTodaysRate = (goalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
+      displayOfWeeklyRate = (goalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
 
       let optionHTML = `<option value="全ての目標">全ての目標</option>`;
       
@@ -2277,18 +2323,30 @@
       <select name="rewardsResult" id="rewardsResult" class="form-select mb-3 js-selectRewardsResult">${optionHTML}</select>
       </div>
       <div class="row">
-      <div class="col text-center">今日のtodo達成率<br>${displayOfTodaysRate}%</div>
-      <div class="col text-center">今週のtodo達成率<br>${displayOfWeeklyRate}%</div>
+        <div class="col text-center">
+          <p>今日のtodo達成率</p>
+          <div class="d-flex justify-content-center align-items-center">
+            <canvas class="js-todoChartCanvas"></canvas>
+          </div>
+        </div>
+        <div class="col text-center">
+          <p>今週のtodo達成率</p>
+          <div class="d-flex justify-content-center align-items-center">
+            <canvas class="js-todoChartCanvas"></canvas>
+          </div>
+        </div>
       </div>
       <p class="mt-3">${rewardsText?rewardsText:`今週のご褒美は設定されていません。`}</p>`;
     }
 
     todoRewardsAreaElm.innerHTML = getRewardsAreaText('全ての目標');
+    this.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
 
     let selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
     const setEventSelectRewardsResult = () => {
       selectRewardsResultElm.addEventListener('change', function() {
         todoRewardsAreaElm.innerHTML = getRewardsAreaText(this.value);
+        that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
         selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
         setEventSelectRewardsResult();
       });
@@ -2311,6 +2369,7 @@
           setEventChangeTodo('.js-todoCheckbox', true);
           setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
           todoRewardsAreaElm.innerHTML = getRewardsAreaText();
+          that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
           selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
           setEventSelectRewardsResult();
         })

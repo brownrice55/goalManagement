@@ -70,6 +70,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 ## 関連リンク
 <ul>
 <li>https://getbootstrap.jp/</li>
+<li>https://www.chartjs.org/</li>
 </ul>
 
 ### 参考
