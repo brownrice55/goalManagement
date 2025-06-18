@@ -2103,14 +2103,18 @@
   };
 
   Todo.prototype.getData = function() {
-    this.settingData = navAndCommon.getDataFromLocalStorage('goalManagementSettingsData');
-    this.rewardsData = navAndCommon.getDataFromLocalStorage('goalManagementRewardsData');
+    let commonElms = navAndCommon.commonElmsAndData();
+    this.settingsData = commonElms[0];
+    this.sectionElms = commonElms[1];
+    this.settingsSectionElms = commonElms[2];
+    this.rewardsData = commonElms[3];
+    this.weeklyTodoData = commonElms[4];
+
     if(!this.rewardsData.size) {
       this.rewardsData = settings.setRewardsData(false, true);
       localStorage.setItem('goalManagementRewardsData', JSON.stringify([...this.rewardsData]));
     }
 
-    this.weeklyTodoData = navAndCommon.getDataFromLocalStorage('goalManagementWeeklyTodoData');
     if(!this.weeklyTodoData.size && this.settingsData) {
       this.weeklyTodoData = settings.setWeeklyTodoData(true);
       localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...this.weeklyTodoData]));
@@ -2239,9 +2243,11 @@
             </div>`;
             }
           }
-          
+
           let todaysIndex = val.stringArray.indexOf(todayString);
-          stringArrayLength = val.stringArray.length;//後で見直し
+          let youbiArrayTrue = val.youbiArray.slice(-val.stringArray.length).filter(youbi => youbi);
+          stringArrayLength = youbiArrayTrue.length;
+          
           val.stringArray.forEach((val2, key2) => {
             if(todayString!=val2 && !val.isAchievedArray[val2] && todaysIndex>key2) {
               resultNotAchievedTodo += `<div class="mb-3 form-check">
@@ -2294,23 +2300,30 @@
 
     const todoRewardsAreaElm = document.querySelector('.js-todoRewardsArea');
 
+    let rewardsText = '';
     const getRewardsAreaText = (aGoalName) => {
+
       let goalName = !aGoalName ? '全ての目標' : aGoalName;
 
-      let rewardsText = '';
+      displayOfTodaysRate = (goalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
+      displayOfWeeklyRate = (goalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
+
+      rewardsText = '';
       this.rewardsData.forEach((val, key) => {
         val.rewardsweekly.period.forEach((val2, index2) => {
           if(val2 && val2!='undefined') {
             let periodArray = val2.split(',').map(Number);
             if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && goalName==val.goal) {
-              rewardsText = `${goalName}を達成した際（ ${val.rewardsweekly.percent[index2]}%で達成）の今週のご褒美は「${val.rewardsweekly.rewards[index2]}」です。達成できるように頑張ろう！`;
+              if(val.rewardsweekly.percent[index2]<=displayOfWeeklyRate) {
+                rewardsText = `今週の${goalName}のtodoの${val.rewardsweekly.percent[index2]}%を達成しました！ご褒美は「${val.rewardsweekly.rewards[index2]}」です。`;
+              }
+              else {
+                rewardsText = `今週の${goalName}のtodoの${val.rewardsweekly.percent[index2]}%を完了した場合、ご褒美は「${val.rewardsweekly.rewards[index2]}」です。達成できるように頑張ろう！`;
+              }
             }
           }
         })
       });
-
-      displayOfTodaysRate = (goalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
-      displayOfWeeklyRate = (goalName=='全ての目標') ? weeklyRate : weeklyRateObj[aGoalName];
 
       let optionHTML = `<option value="全ての目標">全ての目標</option>`;
       
@@ -2318,6 +2331,8 @@
         let selected = (aGoalName==val) ? ' selected' : '';
         optionHTML += `<option value="${val}"${selected}>${val}</option>`;
       });
+
+      let todaysAchievementHTML = (displayOfTodaysRate==100) ? '<p class="mt-3">今日のtodoを全て完了しました！</p>' : '';
 
       return `<div class="row">
       <select name="rewardsResult" id="rewardsResult" class="form-select mb-3 js-selectRewardsResult">${optionHTML}</select>
@@ -2336,7 +2351,8 @@
           </div>
         </div>
       </div>
-      <p class="mt-3">${rewardsText?rewardsText:`今週のご褒美は設定されていません。`}</p>`;
+      ${todaysAchievementHTML}
+      <p class="mt-3">${rewardsText?rewardsText:`今週のご褒美は設定されていません。<button type="button" class="btn btn-primary js-rewardsBtn">ご褒美設定へ</button>`}</p>`;
     }
 
     todoRewardsAreaElm.innerHTML = getRewardsAreaText('全ての目標');
@@ -2349,6 +2365,15 @@
         that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
         selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
         setEventSelectRewardsResult();
+
+        if(!rewardsText) {
+          const rewardsBtnElm = document.querySelector('.js-rewardsBtn');
+          rewardsBtnElm.addEventListener('click', function() {
+            navAndCommon.switchPage(1, that.sectionElms);
+            navAndCommon.switchPage(5, that.settingsSectionElms);
+            settings.setEventSettings6();
+          });
+        }
       });
     };
     setEventSelectRewardsResult();
