@@ -1872,7 +1872,8 @@
           todo達成率
         </div>
         <div class="col">
-          <input type="text" name="" id="percent-${aIndex}" class="form-control" value="${inputData[aIndex2]}">
+          <span class="text-danger small"></span>
+          <input type="number" name="" id="percent-${aIndex}" class="form-control" value="${inputData[aIndex2]}">
         </div>
         <div class="col">
           %以上でご褒美獲得
@@ -2017,32 +2018,54 @@
 
     };
 
-    const judgeDisabledForBtns = () => {//後で見直し
+    const isSame2 = (aArray1, aArray2) => {
+      return (aArray1.length==aArray2.length && aArray1.every((val, index) => val==aArray2[index])) ? true : false;
+    };
+
+    const isSame = (aVal1Obj, aVal2Obj) => {
+      return (isSame2(aVal1Obj.percent, aVal2Obj.percent) && isSame2(aVal1Obj.period, aVal2Obj.period) && isSame2(aVal1Obj.rewards, aVal2Obj.rewards)) ? true : false;
+    };
+
+    const judgeDisabledForBtns = () => {
       if(this.rewardsData.size!=rewardsDataForEdit.size) {
         return false;
       }
 
-      for (const [key, value] of this.rewardsData) {
-        if (!rewardsDataForEdit.has(key) || rewardsDataForEdit.get(key)!==value) {
+      for(const [key, val] of this.rewardsData) {
+        if(!rewardsDataForEdit.has(key)) {
           return false;
         }
+        else {
+          let val2 = rewardsDataForEdit.get(key);
+          return (val.goal==val2.goal && isSame(val.rewardsannual, val2.rewardsannual) && isSame(val.rewardsmonthly, val2.rewardsmonthly) && isSame(val.rewardsweekly, val2.rewardsweekly)) ? true : false;
+        }
       }
-
       return true;
     };
 
     const setEventForStoreNewDataForSave = () => {
       let textareaElms = document.querySelectorAll('.js-formAreaRewards textarea');
       let inputElms = document.querySelectorAll('.js-formAreaRewards input');
+      let spanElms = document.querySelectorAll('.js-formAreaRewards span');
 
       const setEvent = (aElms) => {
-        aElms.forEach(elm => {
-          elm.addEventListener('keyup', function() {
+        for(let cnt=0,len=aElms.length;cnt<len;++cnt) {
+          aElms[cnt].addEventListener('keyup', function() {
+            if(aElms==inputElms) {
+              let value = Number(this.value);
+              spanElms[cnt].textContent = '';
+              if(value>100 || value<0) {
+                saveRewardsBtnElm.disabled = true;
+                spanElms[cnt].textContent = '0から100までの半角数字で入力してください';
+                return;
+              }
+              this.value = parseInt(value);
+            }
             storeNewDataForSave();
             cancelChangesBtnElm.disabled = judgeDisabledForBtns();
             saveRewardsBtnElm.disabled = judgeDisabledForBtns();
           });
-        });
+        }
       };
 
       setEvent(textareaElms);
