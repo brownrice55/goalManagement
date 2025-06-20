@@ -2023,7 +2023,7 @@
     };
 
     const isSame = (aVal1Obj, aVal2Obj) => {
-      return (isSame2(aVal1Obj.percent, aVal2Obj.percent) && isSame2(aVal1Obj.period, aVal2Obj.period) && isSame2(aVal1Obj.rewards, aVal2Obj.rewards)) ? true : false;
+      return (isSame2(aVal1Obj.percent, aVal2Obj.percent) && isSame2(aVal1Obj.rewards, aVal2Obj.rewards)) ? true : false;
     };
 
     const judgeDisabledForBtns = () => {
@@ -2031,13 +2031,17 @@
         return false;
       }
 
+      let isDisabled = true;
       for(const [key, val] of this.rewardsData) {
         if(!rewardsDataForEdit.has(key)) {
           return false;
         }
         else {
           let val2 = rewardsDataForEdit.get(key);
-          return (val.goal==val2.goal && isSame(val.rewardsannual, val2.rewardsannual) && isSame(val.rewardsmonthly, val2.rewardsmonthly) && isSame(val.rewardsweekly, val2.rewardsweekly)) ? true : false;
+          isDisabled = (val.goal==val2.goal && isSame(val.rewardsannual, val2.rewardsannual) && isSame(val.rewardsmonthly, val2.rewardsmonthly) && isSame(val.rewardsweekly, val2.rewardsweekly)) ? true : false;
+          if(!isDisabled) {
+            return false;
+          }
         }
       }
       return true;
@@ -2049,9 +2053,10 @@
       let spanElms = document.querySelectorAll('.js-formAreaRewards span');
 
       const setEvent = (aElms) => {
-        for(let cnt=0,len=aElms.length;cnt<len;++cnt) {
-          aElms[cnt].addEventListener('keyup', function() {
-            if(aElms==inputElms) {
+        let elms = (aElms.size==1) ? [aElms] : aElms;
+        for(let cnt=0,len=elms.length;cnt<len;++cnt) {
+          elms[cnt].addEventListener('keyup', function() {
+            if(elms==inputElms) {
               let value = Number(this.value);
               spanElms[cnt].textContent = '';
               if(value>100 || value<0) {
