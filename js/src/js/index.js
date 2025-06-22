@@ -2162,6 +2162,9 @@
   };
 
   Todo.prototype.displayTodoChart = function(aDisplayOfTodaysRate, aDisplayOfWeeklyRate, aPage, aChartType) {
+    if(!this.doesTodoExist) {
+      return;
+    }
     Chart.register(ChartDataLabels);
     let canvasElms = (aPage=='todo') ? document.querySelectorAll('.js-todoChartCanvas') : document.querySelector('.js-todoChartResultCanvas');
 
@@ -2232,9 +2235,9 @@
     let displayOfWeeklyRate = 0;
 
     const displayTodoList = () => {
-      let resultTodaysTodo = `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>`;
-      let resultNotAchievedTodo = `<p>今週の未達todo</p>`;
-      let resultDoneTodo = `<p>今日の完了済みtodo</p>`;
+      let resultTodaysTodo = '';
+      let resultNotAchievedTodo = '';
+      let resultDoneTodo = '';
   
       this.activeGoalList = [];
       let todaysTotalCnt = 0;
@@ -2317,28 +2320,55 @@
         }  
       });
 
-      todaysTodoAreaElm.innerHTML = resultTodaysTodo;
-      doneTodoAreaElm.innerHTML = resultDoneTodo;
-      notAchievedTodoAreaElm.innerHTML = resultNotAchievedTodo;
+      const todoListAreaElm = document.querySelector('.js-todoListArea');
+
+      this.doesTodoExist = (resultTodaysTodo && resultNotAchievedTodo && resultDoneTodo) ? true : false;
+      if(!this.doesTodoExist) {
+        todaysTodoAreaElm.innerHTML = `<p>今日のtodoはありません。</p><button class="btn btn-primary js-gotoSettingsPage">todoを設定する</button>`;
+        todaysTodoAreaElm.classList.remove('border-bottom');
+        doneTodoAreaElm.classList.add('d-none');
+        notAchievedTodoAreaElm.classList.add('d-none');
+        todoListAreaElm.parentNode.classList.add('d-none');
+
+        const gotoSettingsPageElm = document.querySelector('.js-gotoSettingsPage');
+        const that = this;
+        gotoSettingsPageElm.addEventListener('click', function() {
+          navAndCommon.switchPage(1, that.sectionElms);
+        });
+      }
+      else {
+        todaysTodoAreaElm.innerHTML = (resultTodaysTodo) ? `<p>今日（${today[1]}月${today[2]}日${youbiArray[youbiIndex]}曜日）のtodo</p>${resultTodaysTodo}` : '<p>今日のTodoはありません。</p>';
+        doneTodoAreaElm.innerHTML = resultDoneTodo ? `<p>今日の完了済みtodo</p>${resultDoneTodo}` : '<p>今週の完了済みtodoはありません。</p>';
+        notAchievedTodoAreaElm.innerHTML = (resultNotAchievedTodo) ? `<p>今週の未達todo</p>${resultNotAchievedTodo}` : '<p>今週の未達todoはありません。</p>';
+        todaysTodoAreaElm.classList.add('border-bottom');
+        doneTodoAreaElm.classList.remove('d-none');
+        notAchievedTodoAreaElm.classList.remove('d-none');
+        todoListAreaElm.parentNode.classList.remove('d-none');
+
+        let activeGoalListResult = '';
+        this.activeGoalList.forEach(val => {
+          activeGoalListResult += `<li>${val}</li>`;
+        });
+        todoListAreaElm.innerHTML = activeGoalListResult;
+      }
     };
 
     let todaysRate = 0;
     let weeklyRate = 0;
     displayTodoList();
 
-    const todoListAreaElm = document.querySelector('.js-todoListArea');
-    let activeGoalListResult = '';
-    
-    this.activeGoalList.forEach(val => {
-      activeGoalListResult += `<li>${val}</li>`;
-    });
-    todoListAreaElm.innerHTML = activeGoalListResult;
-
     const todoRewardsAreaElm = document.querySelector('.js-todoRewardsArea');
 
     let rewardsText = '';
     const getRewardsAreaText = (aGoalName) => {
 
+      if(!this.doesTodoExist) {
+        todoRewardsAreaElm.classList.add('d-none');
+        return '';
+      }
+
+      todoRewardsAreaElm.classList.remove('d-none');
+      
       let goalName = !aGoalName ? '全ての目標' : aGoalName;
 
       displayOfTodaysRate = (goalName=='全ての目標') ? todaysRate : todaysRateObj[aGoalName];
@@ -2391,53 +2421,59 @@
       <p class="mt-3">${rewardsText?rewardsText:`今週のご褒美は設定されていません。<button type="button" class="btn btn-primary js-rewardsBtn">ご褒美設定へ</button>`}</p>`;
     }
 
-    todoRewardsAreaElm.innerHTML = getRewardsAreaText('全ての目標');
-    this.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
+    if(!this.doesTodoExist) {
+      todoRewardsAreaElm.classList.add('d-none');
+    }
+    else {
+      todoRewardsAreaElm.classList.remove('d-none');
+      todoRewardsAreaElm.innerHTML = getRewardsAreaText('全ての目標');
+      this.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
 
-    let selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
-    const setEventSelectRewardsResult = () => {
-      selectRewardsResultElm.addEventListener('change', function() {
-        todoRewardsAreaElm.innerHTML = getRewardsAreaText(this.value);
-        that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
-        selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
-        setEventSelectRewardsResult();
-
-        if(!rewardsText) {
-          const rewardsBtnElm = document.querySelector('.js-rewardsBtn');
-          rewardsBtnElm.addEventListener('click', function() {
-            navAndCommon.switchPage(1, that.sectionElms);
-            navAndCommon.switchPage(5, that.settingsSectionElms);
-            settings.setEventSettings6();
-          });
-        }
-      });
-    };
-    setEventSelectRewardsResult();
-
-    const that = this;
-    const setEventChangeTodo = (aClass, aIsToday) => {
-      let todoCheckboxElms = document.querySelectorAll(aClass);
-      todoCheckboxElms.forEach((elm, index) => {
-        elm.addEventListener('change', function() {
-          let keyArray = (aIsToday) ? Array(2) : this.dataset.key.split(',');
-          let key = (aIsToday) ? parseInt(this.dataset.key) : parseInt(keyArray[0]);
-          let dayString = (aIsToday) ? todayString : keyArray[1];
-          let selectedData = that.weeklyTodoData.get(key);
-          selectedData.isAchievedArray[dayString] = this.checked;
-          that.weeklyTodoData.set(key, selectedData);
-          localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
-          displayTodoList();
-          setEventChangeTodo('.js-todoCheckbox', true);
-          setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
-          todoRewardsAreaElm.innerHTML = getRewardsAreaText();
+      let selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
+      const setEventSelectRewardsResult = () => {
+        selectRewardsResultElm.addEventListener('change', function() {
+          todoRewardsAreaElm.innerHTML = getRewardsAreaText(this.value);
           that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
           selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
           setEventSelectRewardsResult();
-        })
-      });
-    };
-    setEventChangeTodo('.js-todoCheckbox', true);
-    setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
+
+          if(!rewardsText) {
+            const rewardsBtnElm = document.querySelector('.js-rewardsBtn');
+            rewardsBtnElm.addEventListener('click', function() {
+              navAndCommon.switchPage(1, that.sectionElms);
+              navAndCommon.switchPage(5, that.settingsSectionElms);
+              settings.setEventSettings6();
+            });
+          }
+        });
+      };
+      setEventSelectRewardsResult();
+
+      const that = this;
+      const setEventChangeTodo = (aClass, aIsToday) => {
+        let todoCheckboxElms = document.querySelectorAll(aClass);
+        todoCheckboxElms.forEach((elm, index) => {
+          elm.addEventListener('change', function() {
+            let keyArray = (aIsToday) ? Array(2) : this.dataset.key.split(',');
+            let key = (aIsToday) ? parseInt(this.dataset.key) : parseInt(keyArray[0]);
+            let dayString = (aIsToday) ? todayString : keyArray[1];
+            let selectedData = that.weeklyTodoData.get(key);
+            selectedData.isAchievedArray[dayString] = this.checked;
+            that.weeklyTodoData.set(key, selectedData);
+            localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
+            displayTodoList();
+            setEventChangeTodo('.js-todoCheckbox', true);
+            setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
+            todoRewardsAreaElm.innerHTML = getRewardsAreaText();
+            that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
+            selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
+            setEventSelectRewardsResult();
+          })
+        });
+      };
+      setEventChangeTodo('.js-todoCheckbox', true);
+      setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
+    }
 
   };
 
