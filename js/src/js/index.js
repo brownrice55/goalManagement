@@ -127,6 +127,9 @@
           todo.getData();
           todo.displayTodoPage();
         }
+        else if(sectionIndex[0][index]==2) {
+          todo.displayResult();
+        }
       });
     });
 
@@ -2158,13 +2161,13 @@
     return [dateY, dateM, dateD, youbi];
   };
 
-  Todo.prototype.displayTodoChart = function(aDisplayOfTodaysRate, aDisplayOfWeeklyRate) {
+  Todo.prototype.displayTodoChart = function(aDisplayOfTodaysRate, aDisplayOfWeeklyRate, aPage, aChartType) {
     Chart.register(ChartDataLabels);
-    const canvasElms = document.querySelectorAll('.js-todoChartCanvas');
+    let canvasElms = (aPage=='todo') ? document.querySelectorAll('.js-todoChartCanvas') : document.querySelector('.js-todoChartResultCanvas');
 
-    const displayGraph = (aCanvasElm, aDataArray) => {
+    const displayGraph = (aCanvasElm, aDataArray, aChartType) => {
       new Chart(aCanvasElm, {
-        type: 'doughnut',
+        type: aChartType,
         data: {
           labels: ['達成', '未達成'],
           datasets: [{
@@ -2197,8 +2200,13 @@
       });
     };
 
-    displayGraph(canvasElms[0], [aDisplayOfTodaysRate, 100-aDisplayOfTodaysRate]);
-    displayGraph(canvasElms[1], [aDisplayOfWeeklyRate, 100-aDisplayOfWeeklyRate]);
+    if(aPage=='todo') {
+      displayGraph(canvasElms[0], [aDisplayOfTodaysRate, 100-aDisplayOfTodaysRate], aChartType);
+      displayGraph(canvasElms[1], [aDisplayOfWeeklyRate, 100-aDisplayOfWeeklyRate], aChartType);
+    }
+    else {
+      displayGraph(canvasElms, [aDisplayOfTodaysRate, 100-aDisplayOfTodaysRate], aChartType);
+    }
   };
 
   Todo.prototype.displayTodoPage = function() {
@@ -2384,13 +2392,13 @@
     }
 
     todoRewardsAreaElm.innerHTML = getRewardsAreaText('全ての目標');
-    this.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
+    this.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
 
     let selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
     const setEventSelectRewardsResult = () => {
       selectRewardsResultElm.addEventListener('change', function() {
         todoRewardsAreaElm.innerHTML = getRewardsAreaText(this.value);
-        that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
+        that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
         selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
         setEventSelectRewardsResult();
 
@@ -2422,7 +2430,7 @@
           setEventChangeTodo('.js-todoCheckbox', true);
           setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
           todoRewardsAreaElm.innerHTML = getRewardsAreaText();
-          that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate);
+          that.displayTodoChart(displayOfTodaysRate, displayOfWeeklyRate, 'todo', 'doughnut');
           selectRewardsResultElm = document.querySelector('.js-selectRewardsResult');
           setEventSelectRewardsResult();
         })
@@ -2431,6 +2439,47 @@
     setEventChangeTodo('.js-todoCheckbox', true);
     setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
 
+  };
+
+  Todo.prototype.displayResult = function () {
+    let chartType = 'doughnut';
+
+    const displayChartElm = document.querySelector('.js-displayChart');
+    const chartHTML = () => {
+      return `<div class="d-flex justify-content-center align-items-center">
+        <canvas class="js-todoChartResultCanvas"></canvas>
+      </div>`;
+    };
+    displayChartElm.innerHTML = chartHTML();
+    this.displayTodoChart(10, null, 'result', chartType);
+
+    let optionHTML = `<option value="全ての目標">全ての目標</option>`;
+    
+    this.activeGoalList.forEach((val) => {
+      optionHTML += `<option value="${val}">${val}</option>`;
+    });
+
+    const selectTodoResultElm = document.querySelector('.js-selectTodoResult');
+    selectTodoResultElm.innerHTML = optionHTML;
+
+    const chartTypeCheckboxElms = document.querySelectorAll('.js-chartTypeCheckbox');
+    const checkboxDisabledElm = document.querySelector('.js-checkboxDisabled');
+    const that = this;
+    chartTypeCheckboxElms.forEach(elm => {
+      elm.addEventListener('change', function() {
+        chartType = this.dataset.type;
+        if(chartType=='line') {
+          checkboxDisabledElm.classList.remove('checkboxDisabled');
+          displayChartElm.innerHTML = chartHTML();
+          that.displayTodoChart(10, null, 'result', chartType);
+        }
+        else {
+          checkboxDisabledElm.classList.add('checkboxDisabled');
+          displayChartElm.innerHTML = chartHTML();
+          that.displayTodoChart(10, null, 'result', chartType);
+        }
+      });
+    });
   };
 
   Todo.prototype.setEvent = function() {
