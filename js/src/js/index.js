@@ -2322,7 +2322,7 @@
 
       const todoListAreaElm = document.querySelector('.js-todoListArea');
 
-      this.doesTodoExist = (resultTodaysTodo && resultNotAchievedTodo && resultDoneTodo) ? true : false;
+      this.doesTodoExist = (!resultTodaysTodo && !resultNotAchievedTodo && !resultDoneTodo) ? false : true;
       if(!this.doesTodoExist) {
         todaysTodoAreaElm.innerHTML = `<p>今日のtodoはありません。</p><button class="btn btn-primary js-gotoSettingsPage">todoを設定する</button>`;
         todaysTodoAreaElm.classList.remove('border-bottom');
@@ -2377,7 +2377,7 @@
       rewardsText = '';
       this.rewardsData.forEach((val, key) => {
         val.rewardsweekly.period.forEach((val2, index2) => {
-          if(val2 && val2!='undefined') {
+          if(val2 && val2!='undefined' && val.rewardsweekly.rewards[index2]) {
             let periodArray = val2.split(',').map(Number);
             if(periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2] && goalName==val.goal) {
               if(val.rewardsweekly.percent[index2]<=displayOfWeeklyRate) {
