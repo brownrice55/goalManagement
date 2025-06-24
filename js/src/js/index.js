@@ -2474,10 +2474,29 @@
       setEventChangeTodo('.js-todoCheckbox', true);
       setEventChangeTodo('.js-todoCheckboxNotAchieved', false);
     }
+  };
+
+  Todo.prototype.setResultData = function() {
+
+    this.resultData = new Map();
+
+    let today = this.getDate();
+    let todayMs = new Date().getTime();
+    this.weeklyTodoData.forEach((val, key) => {
+      let periodArray = val.period.split(',').map(Number);
+      let periodArrayMs = (val.period!='indefinite') ? new Date(`${periodArray[0]}/${periodArray[1]}/${periodArray[3]}`).getTime() : 0;
+
+      let IsThisWeek = (periodArray[0]==today[0] && periodArray[1]==today[1] && periodArray[2]<=today[2] && periodArray[3]>=today[2]) ? true : false;
+
+      if(!IsThisWeek && todayMs>periodArrayMs) {
+        this.resultData.set(key, val);
+      }
+
+    });
 
   };
 
-  Todo.prototype.displayResult = function () {
+  Todo.prototype.displayResult = function() {
     let chartType = 'doughnut';
 
     const displayChartElm = document.querySelector('.js-displayChart');
@@ -2520,6 +2539,7 @@
 
   Todo.prototype.setEvent = function() {
     this.displayTodoPage();
+    this.setResultData();
   };
 
   Todo.prototype.run = function() {
