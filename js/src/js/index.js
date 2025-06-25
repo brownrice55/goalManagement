@@ -2491,9 +2491,21 @@
       if(!IsThisWeek && todayMs>periodArrayMs) {
         this.resultData.set(key, val);
       }
-
     });
 
+  };
+
+  Todo.prototype.getAchievementRate = function() {
+    let valuesArray = [];
+    let youbiArray = [];
+    this.resultData.forEach(val => {
+      valuesArray = (val) && valuesArray.concat(Object.values(val.isAchievedArray));
+      youbiArray = (val) && youbiArray.concat(Object.values(val.youbiArray));
+    });
+
+    let total = youbiArray.filter(youbi => youbi);
+    let achieved = valuesArray.filter(value => value);
+    return Math.round(achieved.length/total.length*100);
   };
 
   Todo.prototype.displayResult = function() {
@@ -2506,7 +2518,7 @@
       </div>`;
     };
     displayChartElm.innerHTML = chartHTML();
-    this.displayTodoChart(10, null, 'result', chartType);
+    this.displayTodoChart(this.getAchievementRate(), null, 'result', chartType);
 
     let optionHTML = `<option value="全ての目標">全ての目標</option>`;
     
@@ -2525,14 +2537,12 @@
         chartType = this.dataset.type;
         if(chartType=='line') {
           checkboxDisabledElm.classList.remove('checkboxDisabled');
-          displayChartElm.innerHTML = chartHTML();
-          that.displayTodoChart(10, null, 'result', chartType);
         }
         else {
           checkboxDisabledElm.classList.add('checkboxDisabled');
-          displayChartElm.innerHTML = chartHTML();
-          that.displayTodoChart(10, null, 'result', chartType);
         }
+        displayChartElm.innerHTML = chartHTML();
+        that.displayTodoChart(that.getAchievementRate(), null, 'result', chartType);
       });
     });
   };
