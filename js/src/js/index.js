@@ -2478,7 +2478,7 @@
 
   Todo.prototype.setResultData = function() {
 
-    this.resultData = new Map();
+    this.resultData = navAndCommon.getDataFromLocalStorage('goalManagementResultData');
 
     let today = this.getDate();
     let todayMs = new Date().getTime();
@@ -2493,14 +2493,19 @@
       }
     });
 
+    localStorage.setItem('goalManagementResultData', JSON.stringify([...this.resultData]));
+
   };
 
-  Todo.prototype.getAchievementRate = function() {
+  Todo.prototype.getAchievementRate = function(aGoalName) {
     let valuesArray = [];
     let youbiArray = [];
+
     this.resultData.forEach(val => {
-      valuesArray = (val) && valuesArray.concat(Object.values(val.isAchievedArray));
-      youbiArray = (val) && youbiArray.concat(Object.values(val.youbiArray));
+      if(!aGoalName || aGoalName=='全ての目標' || aGoalName && aGoalName==val.goal) {
+        valuesArray.push(...Object.values(val.isAchievedArray));
+        youbiArray.push(...Object.values(val.youbiArray));
+      }
     });
 
     let total = youbiArray.filter(youbi => youbi);
@@ -2522,12 +2527,17 @@
 
     let optionHTML = `<option value="全ての目標">全ての目標</option>`;
     
-    this.activeGoalList.forEach((val) => {
-      optionHTML += `<option value="${val}">${val}</option>`;
+    this.resultData.forEach((val) => {
+      optionHTML += `<option value="${val.goal}">${val.goal}</option>`;
     });
 
     const selectTodoResultElm = document.querySelector('.js-selectTodoResult');
     selectTodoResultElm.innerHTML = optionHTML;
+
+    selectTodoResultElm.addEventListener('change', function() {
+      displayChartElm.innerHTML = chartHTML();
+      that.displayTodoChart(that.getAchievementRate(this.value), null, 'result', chartType);
+    });
 
     const chartTypeCheckboxElms = document.querySelectorAll('.js-chartTypeCheckbox');
     const checkboxDisabledElm = document.querySelector('.js-checkboxDisabled');
