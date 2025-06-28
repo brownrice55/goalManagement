@@ -140,6 +140,9 @@
         if(sectionIndex[1][index]==5) {
           settings.setEventSettings6();
         }
+        else if(sectionIndex[1][index]==0) {
+          settings.setIsNextIdSetFirstTimeTrue();
+        }
       });
     });
 
@@ -182,6 +185,14 @@
     this.defaultFrequencyArray = [false,false,false,false];
     this.defaultYoubiArray = [false,false,false,false,false,false,false];
     this.defaultOthersArray = [false,false];
+
+    this.setIsNextIdSetFirstTimeTrue();
+    const keysArray = (this.settingsData.size) && Array.from(this.settingsData.keys());
+    this.nextId = (this.settingsData.size) ? keysArray[keysArray.length-1] : 0;
+  };
+
+  Settings.prototype.setIsNextIdSetFirstTimeTrue = function() {
+    this.isNextIdSetFirstTime = true;
   };
 
   Settings.prototype.saveAndNextData = function(aIndex) {
@@ -194,6 +205,7 @@
       this.saveAndNextBtnElms[aIndex].disabled = true;
     }
     if(aIndex==5) {//completeの時にrewardsとweeklyTodoに追加
+      this.setIsNextIdSetFirstTimeTrue();
       if(!this.rewardsData.size) {
         this.setRewardsData();
       }
@@ -508,20 +520,6 @@
   };
 
   Settings.prototype.setEventDeleteSettingsData = function() {
-    const sortData = (aData, aIsRewardsData) => {
-      let newData = new Map();
-      if(aIsRewardsData) {
-        newData.set(1000, aData.get(1000));
-      }
-      let cnt = 1;
-      aData.forEach((val, key) => {
-        if(val && key!=1000) {
-          newData.set(cnt, val);
-          ++cnt;  
-        }
-      });
-      return newData;
-    };
 
     const that = this;
     this.deleteSettingBtnElms.forEach(elm => {
@@ -530,7 +528,6 @@
         let targetValue = that.settingsData.get(keyToBeDeleted);
         that.settingsData.delete(keyToBeDeleted);
         if(!that.rewardsData.size) {
-          that.settingsData = sortData(that.settingsData, false);
           that.setRewardsData();
         }
         else {
@@ -540,8 +537,6 @@
               that.rewardsData.set(key, that.setRewardsData([val, val.period[3]]));
             }
           });
-          that.settingsData = sortData(that.settingsData, false);
-          that.rewardsData = sortData(that.rewardsData, true);
         }
         localStorage.setItem('goalManagementSettingsData', JSON.stringify([...that.settingsData]));
         localStorage.setItem('goalManagementRewardsData', JSON.stringify([...that.rewardsData]));
@@ -555,7 +550,6 @@
               that.weeklyTodoData.delete(key);
             }
           });
-          that.weeklyTodoData = sortData(that.weeklyTodoData, false);
         }
         localStorage.setItem('goalManagementWeeklyTodoData', JSON.stringify([...that.weeklyTodoData]));
         that.displayGoalList();
@@ -646,7 +640,10 @@
       }
 
       that.currentSettingsData = {};
-      that.id = that.settingsData.size + 1;
+      if(that.isNextIdSetFirstTime) {
+        that.id = (that.settingsData.size) ? ++that.nextId : 1;
+      }
+      that.isNextIdSetFirstTime = false;
       that.currentSettingsData.originalKey = that.id;
       that.currentSettingsData.goal = that.inputGoalElms[0].value.trim();
       that.currentSettingsData.status = 1;
@@ -656,6 +653,7 @@
 
       let nextPageIndex = getNextPageIndex();
       that.saveAndNextData(nextPageIndex);
+      localStorage.setItem('goalManagementSettingsDataNextId', that.nextId);
 
       if(nextPageIndex==1) {
         that.setEventSettings2();
@@ -2479,7 +2477,7 @@
   Todo.prototype.setResultData = function() {
 
     this.resultData = navAndCommon.getDataFromLocalStorage('goalManagementResultData');
-
+    
     let today = this.getDate();
     let todayMs = new Date().getTime();
     this.weeklyTodoData.forEach((val, key) => {
