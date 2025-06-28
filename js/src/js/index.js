@@ -2520,8 +2520,17 @@
         <canvas class="js-todoChartResultCanvas"></canvas>
       </div>`;
     };
-    displayChartElm.innerHTML = chartHTML();
-    this.displayTodoChart(this.getAchievementRate(), null, 'result', chartType);
+
+    const switchDisplayTodoChart = (aAchievementRate, aChartType) => {
+      if(this.resultData.size) {
+        displayChartElm.innerHTML = chartHTML();
+        this.displayTodoChart(aAchievementRate, null, 'result', aChartType);
+      }
+      else {
+        displayChartElm.innerHTML = 'データがありません。';
+      }
+    };
+    switchDisplayTodoChart(this.getAchievementRate(), chartType);
 
     let optionHTML = `<option value="全ての目標">全ての目標</option>`;
     
@@ -2533,8 +2542,7 @@
     selectTodoResultElm.innerHTML = optionHTML;
 
     selectTodoResultElm.addEventListener('change', function() {
-      displayChartElm.innerHTML = chartHTML();
-      that.displayTodoChart(that.getAchievementRate(this.value), null, 'result', chartType);
+      switchDisplayTodoChart(that.getAchievementRate(this.value), chartType);
     });
 
     const chartTypeCheckboxElms = document.querySelectorAll('.js-chartTypeCheckbox');
@@ -2549,8 +2557,7 @@
         else {
           checkboxDisabledElm.classList.add('checkboxDisabled');
         }
-        displayChartElm.innerHTML = chartHTML();
-        that.displayTodoChart(that.getAchievementRate(), null, 'result', chartType);
+        switchDisplayTodoChart(that.getAchievementRate(), chartType);
       });
     });
   };
