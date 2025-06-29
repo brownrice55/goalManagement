@@ -560,14 +560,25 @@
     });
   };
 
-  Settings.prototype.setDateInInput = function(aDiff, aElm, aDate) {
+  Settings.prototype.setDateInInput = function(aDiff, aElm, aDate, aValueForMin) {
     let getDate = this.getDate(aDiff, aDate);
-
     let [dateY, dateM, dateD] = getDate;
 
     aElm.value = `${dateY}-${dateM}-${dateD}`;
-    aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
+
+    if(aValueForMin && aValueForMin!=10000000) {
+      aElm.min = aValueForMin;
+    }
+    else {
+      aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
+    }
     aElm.max = `${(dateY+50)}-${dateM}-${dateD}`;
+    if(aValueForMin==10000000) {
+      return [getDate, aElm.min];
+    }
+    else if(aValueForMin) {
+      return getDate;
+    }
   };
 
   Settings.prototype.setEventSettings1 = function() {
@@ -2160,7 +2171,7 @@
   };
 
   Todo.prototype.displayTodoChart = function(aDisplayOfTodaysRate, aDisplayOfWeeklyRate, aPage, aChartType) {
-    if(!this.doesTodoExist) {
+    if(!this.doesTodoExist && aDisplayOfWeeklyRate) {
       return;
     }
     Chart.register(ChartDataLabels);
@@ -2512,6 +2523,17 @@
   };
 
   Todo.prototype.displayResult = function() {
+
+    const inputResultPeriodElms = document.querySelectorAll('.js-inputResultPeriod');
+    let diff = 0;
+    this.resultData.forEach(val => {
+      let period = val.period.split(',');
+      let date = new Date(`${period[0]}-${period[1]}-${period[2]}`);
+      diff = Math.floor((new Date() - date)/(1000*60*60*24));
+    });
+    let startDateMin = settings.setDateInInput(-diff, inputResultPeriodElms[0], null, 10000000);
+    let endDateMin = settings.setDateInInput(0, inputResultPeriodElms[1], null, startDateMin[1]);
+
     let chartType = 'doughnut';
 
     const displayChartElm = document.querySelector('.js-displayChart');
