@@ -573,10 +573,7 @@
       aElm.min = (aDiff) ? aElm.value : `${(dateY-1)}-${dateM}-${dateD}`;
     }
     aElm.max = `${(dateY+50)}-${dateM}-${dateD}`;
-    if(aValueForMin==10000000) {
-      return [getDate, aElm.min];
-    }
-    else if(aValueForMin) {
+    if(aValueForMin) {
       return getDate;
     }
   };
@@ -2531,10 +2528,36 @@
       let date = new Date(`${period[0]}-${period[1]}-${period[2]}`);
       diff = Math.floor((new Date() - date)/(1000*60*60*24));
     });
-    let startDateMin = settings.setDateInInput(-diff, inputResultPeriodElms[0], null, 10000000);
-    let endDateMin = settings.setDateInInput(0, inputResultPeriodElms[1], null, startDateMin[1]);
+    let startDate = settings.setDateInInput(-diff, inputResultPeriodElms[0], null, 10000000);
+    let endDate = settings.setDateInInput(0, inputResultPeriodElms[1], null, startDate);
 
+    const resultAlertElm = document.querySelector('.js-resultAlert');
+    let showDisplay = true;
     let chartType = 'doughnut';
+
+    const setValidationForPeriod = (aStartDate, aEndDate) => {
+      let spanHtml = '';
+      if((new Date(aEndDate)-new Date(aStartDate)<0)) {
+        spanHtml = '期間を見直してください';
+        showDisplay = false;
+      }
+      else {
+        showDisplay = true;
+      }
+      resultAlertElm.innerHTML = spanHtml;
+      switchDisplayTodoChart(this.getAchievementRate(), chartType);
+    };
+    
+    inputResultPeriodElms.forEach((elm, index) => {
+      elm.addEventListener('change', function() {
+        if(!index) {
+          setValidationForPeriod(this.value, inputResultPeriodElms[1].value);
+        }
+        else {
+          setValidationForPeriod(inputResultPeriodElms[0].value, this.value);
+        }
+      })
+    });
 
     const displayChartElm = document.querySelector('.js-displayChart');
     const chartHTML = () => {
@@ -2544,7 +2567,7 @@
     };
 
     const switchDisplayTodoChart = (aAchievementRate, aChartType) => {
-      if(this.resultData.size) {
+      if(this.resultData.size && showDisplay) {
         displayChartElm.innerHTML = chartHTML();
         this.displayTodoChart(aAchievementRate, null, 'result', aChartType);
       }
