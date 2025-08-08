@@ -1,3 +1,7 @@
+<p>2025/8/8追記<br>
+JavaScriptでの制作を一旦止めます。</p>
+<hr>
+
 <p>I'm creating this program to enhance my programming skills and pursue my hobbies.
 Furthermore, this program is incomplete, and I am still uncertain about my programming skills.</p>
 <p>このプログラムは個人の趣味で自分のプログラムの勉強のために書いています。
@@ -34,7 +38,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　年間目標 | 設定　月間目標 | 設定　週間目標 |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/76f26ebc-914f-4dd0-b2ee-54be04e24e06" width="200"> | <img src="https://github.com/user-attachments/assets/ad860986-f72f-4412-b8da-255123475b15" width="200"> | <img src="https://github.com/user-attachments/assets/f9f63469-3ca6-485e-bad8-1fe2bd6c3eb5" width="200"> |
+| <img src="https://github.com/user-attachments/assets/a51fca29-ab50-4b00-b59f-0641f4c51419" width="200"> | <img src="https://github.com/user-attachments/assets/ad860986-f72f-4412-b8da-255123475b15" width="200"> | <img src="https://github.com/user-attachments/assets/f9f63469-3ca6-485e-bad8-1fe2bd6c3eb5" width="200"> |
 
 | 設定　todo |  |  |
 | ---- | ---- | ---- |
@@ -46,7 +50,7 @@ Could you please let me know if there are any errors in my English or code?</p>
 
 | 設定　編集１ | 設定　編集２ | 設定　モーダル |
 | ---- | ---- | ---- |
-| <img src="https://github.com/user-attachments/assets/5e485c72-f01c-44a3-ac35-f8e3c637d646" width="200"> | <img src="https://github.com/user-attachments/assets/c1bcf036-b914-4d2a-9fd8-8e13ab0bff87" width="200"> | <img src="https://github.com/user-attachments/assets/fe40f685-1cdf-43a4-a71f-e5245489fe53" width="200"> |
+| <img src="https://github.com/user-attachments/assets/c3737b42-70ab-42e9-b3a1-6f951025908e" width="200"> | <img src="https://github.com/user-attachments/assets/3ca771f5-fff9-4c5a-bd3c-c6615bf5c7ad" width="200"> | <img src="https://github.com/user-attachments/assets/fe40f685-1cdf-43a4-a71f-e5245489fe53" width="200"> |
 
 | 設定後home |  |  |
 | ---- | ---- | ---- |
