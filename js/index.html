@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="./dest/css/index.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+  <title>Document</title>
+</head>
+<body>
+  <header class="header mb-4 js-header">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <div class="navbar-brand">Goal Management</div>
+        <button class="navbar-toggler js-globalNavBtn" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse js-navbarNav" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item py-2 px-3 active js-globalNav">毎日のtodo</li>
+            <li class="px-3 dropdown">
+              <span class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                設定
+              </span>
+              <ul class="dropdown-menu">
+                <li class="nav-item py-2 px-4 js-globalNavSettings">新規登録・目標一覧</li>
+                <li class="nav-item py-2 px-4 js-globalNavSettings d-none">todo設定</li><!--後で変更-->
+                <li class="nav-item py-2 px-4 js-globalNavSettings">ご褒美設定</li>
+              </ul>
+            </li>
+            <li class="nav-item py-2 px-3 js-globalNav">結果</li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <main class="container js-main">
+    <section class="js-section">
+      <div class="my-2 py-3 border-bottom js-todaysTodoArea"></div>
+      <div class="my-2 py-3 border-bottom js-notAchievedTodoArea"></div>
+      <div class="my-2 py-3 border-bottom js-doneTodoArea"></div>
+      <div class="my-3 p-4 pb-2 bg-light">
+        <p>現在アクティブの達成したいことリスト</p>
+        <ul class="js-todoListArea"></ul>
+      </div>
+      <div class="my-3 p-4 pb-2 bg-light js-todoRewardsArea"></div>
+
+    </section>
+    <section class="js-section">
+      <div class="js-settingsSection">
+        <div class="mt-5">
+          <p>あなたが達成したいことは何ですか？</p>
+          <span class="small text-danger d-none js-inputAlert"></span>
+          <input class="form-control js-inputGoal" type="text" id="inputGoal">
+          <p class="small mt-2">例）（良い発音の）英語で自信を持って自分の意見を言えるようになる</p>
+        </div>
+        <div>
+          <p class="mt-5">いつからいつまでの期間で達成したいですか？</p>
+          <div class="form-check">
+            <input class="form-check-input js-inputSettingsTop" type="radio" name="radioPeriod" id="radioPeriod1" checked>
+            <label class="form-check-label" for="radioPeriod1">期間あり</label>
+          </div>
+          <div class="d-flex flex-row justify-content-center mt-3 js-selectPeriodArea">
+            <div class="flex-fill">
+              <input class="form-control js-inputSettingsTop" type="date" id="periodStart" name="periodStart" value="" min="" max="">
+            </div>
+            <div class="flex-fill align-self-center text-center">から</div>
+            <div class="flex-fill">
+              <input class="form-control d-none js-inputSettingsTop" type="date" id="periodEnd" name="periodEnd" value="" min="" max="">
+              <select name="selectPeriod2" id="selectPeriod2" class="form-select">
+                <option value="w1">1ヶ月後</option>
+                <option value="m1">3ヶ月後</option>
+                <option value="m2">半年後</option>
+                <option value="m3">1年後</option>
+                <option value="2">2年後</option>
+                <option value="3">3年後</option>
+                <option value="4">4年後</option>
+                <option value="5">5年後</option>
+                <option value="6">6年後</option>
+                <option value="7">7年後</option>
+                <option value="8">8年後</option>
+                <option value="9">9年後</option>
+                <option value="10">10年後</option>
+                <option value="custom">カスタム</option>
+              </select>
+              <div class="modal fade js-modal" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="btn-close js-periodCancelBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <input class="form-control js-inputSettingsTop" type="date" id="modalEndPeriod" name="modalEndPeriod" value="" min="" max="">
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary js-periodCancelBtn" data-bs-dismiss="modal">キャンセル</button>
+                      <button type="button" class="btn btn-primary js-periodCustomBtn" data-bs-dismiss="modal">設定する</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex-fill align-self-center text-center">の期間</div>
+          </div>
+          <div class="form-check mt-3">
+            <input class="form-check-input js-inputRadioNone" type="radio" name="radioPeriod" id="radioPeriod2">
+            <label class="form-check-label" for="radioPeriod2">期間なし（todoの設定のみ）</label>
+          </div>
+        </div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
+        <div class="border-top py-2">
+          <p class="py-3">登録済みの達成したいことリスト</p>
+          <div class="js-goalList"></div>
+        </div>
+      </div>
+      <div class="d-none js-settingsSection">
+        <div>
+          <p class="small mb-1 text-secondary js-goalPeriod"></p>
+          <span class="small text-danger d-none js-inputAlert"></span>
+          <input type="text" class="form-control js-inputGoal" id="inputGoal2">
+        </div>
+        <p class="p-2">
+          上記を達成するための年ごとの目標を書きましょう。<br>
+          2年目以降の目標は、後から立てることもできます。
+        </p>
+        <div class="js-inputArea"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
+      </div>
+      <div class="d-none js-settingsSection">
+        <div>
+          <p class="small mb-1 text-secondary js-goalPeriod"></p>
+          <div class="d-none">
+            <span class="small text-danger d-none js-inputAlert"></span>
+            <input type="text" class="form-control js-inputGoal" id="inputGoal3">
+          </div>
+          <div class="d-none">
+            <select name="selectPeriod3" id="selectPeriod3" class="form-select js-selectGoals"></select>
+          </div>
+        </div>
+        <p class="p-2">
+          上記を達成するための月ごとの目標を書きましょう。<br>
+          後で変更することもできます。
+        </p>
+        <div class="js-inputArea"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
+      </div>
+      <div class="d-none js-settingsSection">
+        <div>
+          <p class="small mb-1 text-secondary js-goalPeriod"></p>
+          <div class="d-none">
+            <span class="small text-danger d-none js-inputAlert"></span>
+            <input type="text" class="form-control js-inputGoal" id="inputGoal4">
+          </div>
+          <div class="d-none">
+            <select name="selectPeriod4" id="selectPeriod4" class="form-select js-selectGoals"></select>
+          </div>
+        </div>
+        <p class="p-2">
+          上記を達成するための週ごと（月〜日）の目標を書きましょう。<br>
+          後で変更することもできます。
+        </p>
+        <div class="js-inputArea"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-saveAndNextBtn" disabled>保存して次へ</button>
+        </div>
+      </div>
+      <div class="d-none js-settingsSection">
+        <p class="small mb-1 text-secondary js-goalPeriod"></p>
+        <div>
+          <select name="selectPeriod5" id="selectPeriod5" class="form-select js-selectGoals"></select>
+        </div>
+        <p class="p-2">
+          上記を達成するための毎日のtodoを書きましょう。<br>
+          後で変更することもできます。
+        </p>
+        <div class="js-inputArea"></div>
+        <div class="text-end py-3">
+          <button class="btn btn-primary px-2 px-3 m-2 js-addTodoInputBtn">
+            todoを追加する
+          </button>
+        </div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 mx-2 js-backBtn">戻る</button>
+          <button class="btn btn-primary px-5 py-3 mx-2 js-completeBtn" disabled>完了する</button>
+        </div>
+      </div>
+      <div class="d-none js-settingsSection">
+        <p>ご褒美を設定する目標</p>
+        <div>
+          <select name="selectPeriod6" id="selectPeriod6" class="form-select js-selectRewards"></select>
+        </div>
+        <div class="js-formAreaRewards"></div>
+        <div class="text-center pt-3 pb-5">
+          <button class="btn btn-primary px-5 py-3 js-cancelChangesBtn" disabled>キャンセル</button>
+          <button class="btn btn-primary px-5 py-3 js-saveRewardsBtn" disabled>設定する</button>
+        </div>
+      </div>
+    </section>
+    <section class="js-section">
+      <div class="my-3">
+        <p>達成率<span class="text-danger ps-2 small js-resultAlert"></span></p>
+      </div>
+      <div class="d-flex flex-row justify-content-center mt-3">
+        <div class="flex-fill align-self-center text-center">期間</div>
+        <div class="flex-fill">
+          <input class="form-control js-inputResultPeriod" type="date" id="resultPeriodStart1" name="resultPeriodStart1" value="" min="" max="">
+        </div>
+        <div class="flex-fill align-self-center text-center">から</div>
+        <div class="flex-fill">
+          <input class="form-control js-inputResultPeriod" type="date" id="resultPeriodStart2" name="resultPeriodStart2" value="" min="" max="">
+        </div>
+      </div>
+      <div class="my-4">
+        <p>ブラフの種類</p>
+        <div class="d-flex align-items-stretch">
+          <div class="form-check pe-5">
+            <input class="form-check-input js-chartTypeCheckbox" type="radio" name="resultRadio" id="resultRadio1" data-type="doughnut" checked>
+            <label class="form-check-label text-nowrap" for="resultRadio1">円グラフ</label>
+          </div>
+          <div class="form-check w-100">
+            <input class="form-check-input js-chartTypeCheckbox" type="radio" name="resultRadio" id="resultRadio2" data-type="line">
+            <label class="form-check-label text-nowrap" for="resultRadio2">折れ線グラフ</label>
+            <div class="d-flex align-items-center w-100 checkboxDisabled js-checkboxDisabled">
+              <div class="small">目盛りの間隔</div>
+              <div class="px-3">
+                <select class="form-select">
+                  <option value="1">1週間</option>
+                  <option value="2">1ヶ月</option>
+                  <option value="3">3ヶ月</option>
+                </select>
+              </div>
+              <div class="small">ごと</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="my-4">
+        <p>表示対象</p>
+        <select name="selectResult" id="selectResult" class="form-select js-selectTodoResult"></select>
+      </div>
+      <div class="my-4 p-4 bg-light js-displayChart"></div>
+    </section>
+  </main>
+  <footer>
+
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="./dest/js/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
+</body>
+</html>
