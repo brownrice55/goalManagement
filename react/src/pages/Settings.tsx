@@ -1,4 +1,5 @@
 import Header from "../components/Header";
+import FormSettings0 from "../components/settings/FormSettings0";
 
 export default function Settings() {
   return (
@@ -8,7 +9,7 @@ export default function Settings() {
         description="設定のページです"
         keywords="目標設定, 登録"
       />
-      <p>設定</p>
+      <FormSettings0 />
     </>
   );
 }
