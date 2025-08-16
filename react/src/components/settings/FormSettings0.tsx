@@ -10,7 +10,10 @@ import { getData } from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 import "./settings.css";
 
-export default function FormPractice0() {
+type FormSettings0Props = {
+  onUpdate: (value: number) => void;
+};
+export default function FormSettings0({ onUpdate }: FormSettings0Props) {
   const originalData = getData();
   const data = originalData ? originalData : new Map();
   const [show, setShow] = useState(false);
@@ -73,8 +76,28 @@ export default function FormPractice0() {
   });
 
   const onsubmit: SubmitHandler<Inputs> = (values) => {
+    const diff: number =
+      values.period === "custom"
+        ? (new Date(values.customDate).getTime() -
+            new Date(values.date).getTime()) /
+          86400000
+        : 0;
+    if (diff && diff <= 7) {
+      values.status = 4; //todo
+    } else if (values.period === "m1" || (diff && diff <= 31)) {
+      values.status = 3; //week
+    } else if (
+      values.period === "m3" ||
+      values.period === "m6" ||
+      (diff && diff <= 365)
+    ) {
+      values.status = 2; //month
+    } else {
+      values.status = 1; //year
+    }
     data.set(nextId, values);
     localStorage.setItem("goalManagement", JSON.stringify([...data]));
+    onUpdate(values.status);
   };
 
   const onerror: SubmitErrorHandler<Inputs> = (err) => console.log(err);
@@ -133,6 +156,16 @@ export default function FormPractice0() {
             type="text"
             {...register("goal", {
               required: "必須です",
+              validate: (val) => {
+                if (data.size) {
+                  const isDuplicate = [...data].some(
+                    ([_, val2]) => val === val2.goal
+                  );
+                  if (isDuplicate) {
+                    return "既に保存している目標名と重複しています";
+                  }
+                }
+              },
             })}
           />
           <p className="text-danger pt-2 small">{errors.goal?.message}</p>
