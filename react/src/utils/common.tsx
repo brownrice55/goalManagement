@@ -45,3 +45,25 @@ export function getTheNumberOfDaysInAMonth(
   }
   return daysOfTheEachMonths[aMonth - 1];
 }
+
+export function getDateForAnnualGoal(
+  aMultiplier: number,
+  aStateDateString: string,
+  isStart: boolean
+) {
+  const stateDateString = aStateDateString.split("-").map(Number);
+  const startYear = stateDateString[0];
+  const startMonth = stateDateString[1];
+
+  let daysOfTheYear = getDaysOfTheYear(startYear, startMonth);
+  if (isStart) {
+    ++daysOfTheYear;
+  }
+
+  const diff = daysOfTheYear * aMultiplier;
+  const getDate = getDateArray(diff, aStateDateString);
+
+  const [dateY, dateM, dateD] = getDate;
+  const date = `${dateY}/${dateM}/${dateD}`;
+  return date;
+}

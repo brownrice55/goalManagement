@@ -16,9 +16,13 @@ import type { Inputs } from "../../types/inputs.type";
 import "./settings.css";
 
 type FormSettings0Props = {
-  onUpdate: (value: number) => void;
+  keyNumber: number;
+  onUpdate: (value: number, value2: number) => void;
 };
-export default function FormSettings0({ onUpdate }: FormSettings0Props) {
+export default function FormSettings0({
+  keyNumber,
+  onUpdate,
+}: FormSettings0Props) {
   const originalData = getData();
   const data = originalData ? originalData : new Map();
   const [show, setShow] = useState(false);
@@ -48,18 +52,21 @@ export default function FormSettings0({ onUpdate }: FormSettings0Props) {
 
   const [isCustom, setIsCustom] = useState<boolean>(false);
 
+  const currentDataValue = keyNumber ? data.get(keyNumber) : {};
   const defaultValues = {
-    goal: "",
-    period: "m1",
-    date: dateValue[0],
-    hasPeriod: "true",
-    customDate: customDateValue[0],
+    goal: keyNumber ? currentDataValue?.goal : "",
+    period: keyNumber ? currentDataValue?.period : "m1",
+    date: keyNumber ? currentDataValue?.date : dateValue[0],
+    hasPeriod: keyNumber ? currentDataValue?.hasPeriod : "true",
+    customDate: keyNumber ? currentDataValue?.customDate : customDateValue[0],
   };
 
   const keysArray: number[] = originalData.size
     ? Array.from(originalData.keys())
     : [];
-  const nextId: number = originalData.size
+  const nextId: number = keyNumber
+    ? keyNumber
+    : originalData.size
     ? keysArray[keysArray.length - 1] + 1
     : 1;
 
@@ -107,7 +114,7 @@ export default function FormSettings0({ onUpdate }: FormSettings0Props) {
     }
     data.set(nextId, values);
     localStorage.setItem("goalManagement", JSON.stringify([...data]));
-    onUpdate(values.status);
+    onUpdate(values.status, nextId);
   };
 
   const onerror: SubmitErrorHandler<Inputs> = (err) => console.log(err);

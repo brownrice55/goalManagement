@@ -8,9 +8,12 @@ import FormSettings4 from "../components/settings/FormSettings4";
 
 export default function Settings() {
   const [status, setStatus] = useState<number>(0);
-  const handleUpdate = (updatedStatus: number) => {
+  const handleUpdate = (updatedStatus: number, updatedKeyNumber: number) => {
     setStatus(updatedStatus);
+    setKeyNumber(updatedKeyNumber);
   };
+
+  const [keyNumber, setKeyNumber] = useState<number>(0);
   return (
     <>
       <Header
@@ -19,15 +22,15 @@ export default function Settings() {
         keywords="目標設定, 登録"
       />
       {status === 0 ? (
-        <FormSettings0 onUpdate={handleUpdate} />
+        <FormSettings0 keyNumber={keyNumber} onUpdate={handleUpdate} />
       ) : status === 1 ? (
-        <FormSettings1 onUpdate={handleUpdate} />
+        <FormSettings1 keyNumber={keyNumber} onUpdate={handleUpdate} />
       ) : status === 2 ? (
-        <FormSettings2 onUpdate={handleUpdate} />
+        <FormSettings2 keyNumber={keyNumber} onUpdate={handleUpdate} />
       ) : status === 3 ? (
-        <FormSettings3 onUpdate={handleUpdate} />
+        <FormSettings3 keyNumber={keyNumber} onUpdate={handleUpdate} />
       ) : status === 4 ? (
-        <FormSettings4 onUpdate={handleUpdate} />
+        <FormSettings4 keyNumber={keyNumber} onUpdate={handleUpdate} />
       ) : (
         ""
       )}

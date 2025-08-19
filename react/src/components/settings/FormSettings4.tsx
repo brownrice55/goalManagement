@@ -1,6 +1,10 @@
 type FormSettings4Props = {
-  onUpdate: (value: number) => void;
+  keyNumber: number;
+  onUpdate: (value: number, value2: number) => void;
 };
-export default function FormSettings4({ onUpdate }: FormSettings4Props) {
+export default function FormSettings4({
+  keyNumber,
+  onUpdate,
+}: FormSettings4Props) {
   return <p>FormSettings4</p>;
 }
