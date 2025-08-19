@@ -6,7 +6,12 @@ import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { getData } from "../../utils/common";
+import {
+  getData,
+  getDateArray,
+  getDaysOfTheYear,
+  getTheNumberOfDaysInAMonth,
+} from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 import "./settings.css";
 
@@ -24,12 +29,7 @@ export default function FormSettings0({ onUpdate }: FormSettings0Props) {
   const [periodClassName, setPeriodClassName] = useState<string>("mt-3 mb-4");
 
   const setDateInInput = (aDiff: number, aDate: string) => {
-    const now = aDate ? new Date(aDate) : new Date();
-    now.setDate(now.getDate() + aDiff);
-
-    const dateY = now.getFullYear();
-    const dateM = now.getMonth() + 1;
-    const dateD = now.getDate();
+    const [dateY, dateM, dateD] = getDateArray(aDiff, aDate);
     const dateMstring = dateM < 10 ? `0${dateM}` : String(dateM);
     const dateDstring = dateD < 10 ? `0${dateD}` : String(dateD);
 
@@ -82,14 +82,24 @@ export default function FormSettings0({ onUpdate }: FormSettings0Props) {
             new Date(values.date).getTime()) /
           86400000
         : 0;
+    const [dateY, dateM] = getDateArray(0, values.date);
+    const daysOfTheYear = getDaysOfTheYear(dateY, dateM);
+    const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
+      dateM,
+      daysOfTheYear
+    );
+
     if (diff && diff <= 7) {
       values.status = 4; //todo
-    } else if (values.period === "m1" || (diff && diff <= 31)) {
+    } else if (
+      values.period === "m1" ||
+      (diff && diff <= theNumberOfDaysInAMonth)
+    ) {
       values.status = 3; //week
     } else if (
       values.period === "m3" ||
       values.period === "m6" ||
-      (diff && diff <= 365)
+      (diff && diff <= daysOfTheYear)
     ) {
       values.status = 2; //month
     } else {
