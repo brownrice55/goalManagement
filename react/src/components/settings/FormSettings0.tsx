@@ -58,12 +58,13 @@ export default function FormSettings0({
     ? data.get(keyNumber)
     : {
         goal: "",
-        goals: [""],
         status: 0,
         date: "",
         hasPeriod: "",
         period: "",
         customDate: "",
+        annualGoals: [""],
+        diff: 0,
       };
   const defaultValues = {
     goal: keyNumber ? currentDataValue?.goal : "",
@@ -124,6 +125,7 @@ export default function FormSettings0({
     } else {
       values.status = 1; //year
     }
+    values.diff = diff;
     data.set(nextId, values);
     localStorage.setItem("goalManagement", JSON.stringify([...data]));
     onUpdate(values.status, nextId);

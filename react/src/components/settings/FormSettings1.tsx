@@ -3,7 +3,12 @@ import { useForm } from "react-hook-form";
 import type { SubmitHandler, SubmitErrorHandler } from "react-hook-form";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { getData, getDateForAnnualGoal } from "../../utils/common";
+import {
+  getData,
+  getDateForAnnualGoal,
+  getDaysOfTheYear,
+  getDateArray,
+} from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 
 type FormSettings1Props = {
@@ -16,11 +21,47 @@ export default function FormSettings1({
 }: FormSettings1Props) {
   const data = getData();
   const currentDataValue = data.get(keyNumber);
-  const arrayLength = Number(currentDataValue?.period);
 
-  const endDate = currentDataValue
-    ? getDateForAnnualGoal(arrayLength, currentDataValue.date, false)
-    : "";
+  const getCustomYearAndRemainder = (aDiff: number) => {
+    if (!currentDataValue || !currentDataValue.date) {
+      return;
+    }
+    const tentativeYearNum = Math.floor(aDiff / 365);
+    const array = currentDataValue?.date.split("-").map(Number);
+    const daysOfTheYearArray = Array(tentativeYearNum + 1);
+    for (let cnt = 0; cnt < tentativeYearNum + 1; ++cnt) {
+      daysOfTheYearArray[cnt] = getDaysOfTheYear(array[0] + cnt, array[1]);
+    }
+
+    const sum = daysOfTheYearArray.reduce((accumulator, currentValue) => {
+      return accumulator + currentValue;
+    }, 0);
+
+    const yearNum =
+      sum >= aDiff ? daysOfTheYearArray.length - 1 : daysOfTheYearArray.length;
+
+    return yearNum;
+  };
+
+  const customYearAndRemainder = getCustomYearAndRemainder(
+    currentDataValue ? currentDataValue?.diff : 0
+  );
+
+  const arrayLength =
+    currentDataValue?.period === "custom"
+      ? customYearAndRemainder
+      : Number(currentDataValue?.period);
+
+  const endDate =
+    currentDataValue?.period === "custom"
+      ? currentDataValue?.customDate.replace(/-/g, "/")
+      : currentDataValue
+      ? getDateForAnnualGoal(
+          arrayLength ? arrayLength : 1,
+          currentDataValue.date,
+          false
+        )
+      : "";
 
   const startDateArray = currentDataValue
     ? new Array(arrayLength)
@@ -37,9 +78,22 @@ export default function FormSettings1({
         )
     : [];
 
+  if (
+    currentDataValue?.period === "custom" &&
+    endDateArray &&
+    endDateArray.length
+  ) {
+    const endDataLast = endDateArray?.at(-1)?.replace(/\//g, "-");
+    if (endDataLast) {
+      const startDateLast = getDateArray(1, endDataLast);
+      startDateArray.push(startDateLast.join("/"));
+    }
+    endDateArray.push(currentDataValue?.customDate.replace(/-/g, "/"));
+  }
+
   const defaultValues = {
     goal: currentDataValue?.goal,
-    goals: [],
+    annualGoals: [],
   };
 
   const {
@@ -55,7 +109,7 @@ export default function FormSettings1({
   const onsubmit: SubmitHandler<Inputs> = (values) => {
     if (currentDataValue) {
       currentDataValue.goal = values.goal;
-      currentDataValue.goals = values.goals;
+      currentDataValue.annualGoals = values.annualGoals;
       currentDataValue.status = values.status;
       data.set(keyNumber, currentDataValue);
       localStorage.setItem("goalManagement", JSON.stringify([...data]));
@@ -98,32 +152,30 @@ export default function FormSettings1({
         </Form.Group>
 
         <Form.Group>
-          {Array(arrayLength)
-            .fill(0)
-            .map((_, index) => (
-              <div key={index}>
-                <p>
-                  {index + 1}年目の目標（{startDateArray[index]}から
-                  {endDateArray[index]}まで）
-                  {!index && <span className="text-danger">※</span>}
+          {startDateArray.map((_, index) => (
+            <div key={index}>
+              <p>
+                {index + 1}年目の目標（{startDateArray[index]}から
+                {endDateArray[index]}まで）
+                {!index && <span className="text-danger">※</span>}
+              </p>
+              <Form.Control
+                className={!index ? "mb-3" : "mb-4"}
+                type="text"
+                {...register(`annualGoals.${index}`, {
+                  required: !index ? "必須です" : false,
+                })}
+              />
+              <p className="text-danger small">
+                {errors.annualGoals?.[index]?.message}
+              </p>
+              {!index && (
+                <p className="mb-5 small text-secondary">
+                  例）英語テストAを受験して一次試験に合格する
                 </p>
-                <Form.Control
-                  className={!index ? "mb-3" : "mb-4"}
-                  type="text"
-                  {...register(`goals.${index}`, {
-                    required: !index ? "必須です" : false,
-                  })}
-                />
-                <p className="text-danger small">
-                  {errors.goals?.[index]?.message}
-                </p>
-                {!index && (
-                  <p className="mb-5 small text-secondary">
-                    例）英語テストAを受験して一次試験に合格する
-                  </p>
-                )}
-              </div>
-            ))}
+              )}
+            </div>
+          ))}
         </Form.Group>
 
         <Form.Control
