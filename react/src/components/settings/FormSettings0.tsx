@@ -65,6 +65,10 @@ export default function FormSettings0({
         customDate: "",
         annualGoals: [""],
         diff: 0,
+        monthlyGoals: [""],
+        monthlyGoalsPeriod: [[0, 0, 0]],
+        startDateArray: [""],
+        endDateArray: [""],
       };
   const defaultValues = {
     goal: keyNumber ? currentDataValue?.goal : "",

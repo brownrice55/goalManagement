@@ -78,6 +78,27 @@ export default function FormSettings1({
         )
     : [];
 
+  const getDateForMonthlyGoal = () => {
+    const monthlyArray = [];
+    const last = endDateArray.at(-1);
+    const [yearEnd, monthEnd] = last ? last.split("/").map(Number) : [0, 0];
+    startDateArray.forEach((val, index) => {
+      const [year, month] = val.split("/").map(Number);
+      for (let cnt = 0; cnt < 12; ++cnt) {
+        let newMonth = month + cnt;
+        const newYear = newMonth > 12 ? year + 1 : year;
+        newMonth = newMonth > 12 ? newMonth - 12 : newMonth;
+        if (!cnt && index) {
+          monthlyArray.push([newYear, newMonth, index]);
+        }
+        monthlyArray.push([newYear, newMonth, index + 1]);
+      }
+    });
+    monthlyArray.push([yearEnd, monthEnd, startDateArray.length]);
+    return monthlyArray;
+  };
+  const monthlyGoalsPeriod = getDateForMonthlyGoal();
+
   if (
     currentDataValue?.period === "custom" &&
     endDateArray &&
@@ -110,7 +131,10 @@ export default function FormSettings1({
     if (currentDataValue) {
       currentDataValue.goal = values.goal;
       currentDataValue.annualGoals = values.annualGoals;
+      currentDataValue.monthlyGoalsPeriod = monthlyGoalsPeriod;
       currentDataValue.status = values.status;
+      currentDataValue.startDateArray = startDateArray;
+      currentDataValue.endDateArray = endDateArray;
       data.set(keyNumber, currentDataValue);
       localStorage.setItem("goalManagement", JSON.stringify([...data]));
       onUpdate(values.status, keyNumber);
