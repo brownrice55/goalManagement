@@ -3,7 +3,12 @@ import { useForm } from "react-hook-form";
 import type { SubmitHandler, SubmitErrorHandler } from "react-hook-form";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { getData } from "../../utils/common";
+import {
+  getData,
+  getDateForMonthlyGoalArray,
+  optionArray,
+  getDateArray,
+} from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 
 type FormSettings2Props = {
@@ -17,10 +22,39 @@ export default function FormSettings2({
   const data = getData();
   const currentDataValue = data.get(keyNumber);
 
+  const startDateArray = currentDataValue?.annualGoals
+    ? currentDataValue?.startDateArray
+    : [];
+  const endDateArray = currentDataValue?.annualGoals
+    ? currentDataValue?.endDateArray
+    : [];
+
+  const endDate =
+    currentDataValue && currentDataValue?.period !== "custom"
+      ? getDateArray(currentDataValue?.diff, currentDataValue?.date)
+      : "";
+  const endDateSub = currentDataValue?.annualGoals
+    ? ""
+    : currentDataValue?.period === "1"
+    ? "1年後"
+    : currentDataValue?.period !== "custom"
+    ? optionArray.filter((val) => val[0] === currentDataValue?.period)[0][1]
+    : "";
+
   const [dateFromToText, setDateFromToText] = useState<string>(
-    `${currentDataValue?.startDateArray[0]}から${currentDataValue?.endDateArray[0]}`
+    currentDataValue?.annualGoals
+      ? `${startDateArray[0]}から${endDateArray[0]}`
+      : `${currentDataValue?.date.replace(/-/g, "/")}から${endDateSub}${
+          endDate ? "(" + endDate.join("/") + ")" : ""
+        }`
   );
   const [currentOption, setCurrentOption] = useState<number>(1);
+
+  const monthlyGoalsPeriod = currentDataValue?.annualGoals
+    ? getDateForMonthlyGoalArray(startDateArray, endDateArray)
+    : currentDataValue
+    ? currentDataValue.monthlyGoalsPeriod
+    : [];
 
   const defaultValues = {
     goal: currentDataValue?.goal,
@@ -40,6 +74,9 @@ export default function FormSettings2({
   const onsubmit: SubmitHandler<Inputs> = (values) => {
     if (currentDataValue) {
       currentDataValue.goal = values.goal;
+      if (!currentDataValue.monthlyGoalsPeriod) {
+        currentDataValue.monthlyGoalsPeriod = monthlyGoalsPeriod;
+      }
       currentDataValue.monthlyGoals = values.monthlyGoals;
       currentDataValue.status = values.status;
       data.set(keyNumber, currentDataValue);
@@ -56,7 +93,8 @@ export default function FormSettings2({
   }, [isSubmitSuccessful, reset]);
 
   const handleBack = () => {
-    onUpdate(1, keyNumber);
+    const status = currentDataValue?.annualGoals ? 1 : 0;
+    onUpdate(status, keyNumber);
   };
 
   const handleChangePeriod = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,19 +110,40 @@ export default function FormSettings2({
   return (
     <>
       <Form onSubmit={handleSubmit(onsubmit, onerror)} noValidate>
-        <p className="mt-3">{dateFromToText}までに達成したいこと</p>
+        <p className="mt-3">
+          {dateFromToText}までに達成したいこと
+          {!currentDataValue?.annualGoals && (
+            <span className="text-danger">※</span>
+          )}
+        </p>
         <Form.Group className="mb-3">
-          <Form.Select
-            {...register("period", {
-              onChange: (e) => handleChangePeriod(e),
-            })}
-          >
-            {currentDataValue?.annualGoals.map((val, index) => (
-              <option key={index} value={index + 1}>
-                {index + 1}年目：{val}
-              </option>
-            ))}
-          </Form.Select>
+          {currentDataValue?.annualGoals ? (
+            <>
+              <Form.Select
+                {...register("period", {
+                  onChange: (e) => handleChangePeriod(e),
+                })}
+              >
+                {currentDataValue?.annualGoals.map((val, index) => (
+                  <option key={index} value={index + 1}>
+                    {index + 1}年目：{val}
+                  </option>
+                ))}
+              </Form.Select>
+            </>
+          ) : (
+            <>
+              <Form.Control
+                type="text"
+                {...register(`monthlyGoals.0`, {
+                  required: "必須です",
+                })}
+              />
+              <p className="text-danger small mt-2">
+                {errors.monthlyGoals?.[0]?.message}
+              </p>
+            </>
+          )}
           <div className="text-danger pt-2 small">{errors.goal?.message}</div>
           <p className="pt-2 pb-4">
             上記を達成するための月ごとの目標を書きましょう。
@@ -94,7 +153,7 @@ export default function FormSettings2({
         </Form.Group>
 
         <Form.Group>
-          {currentDataValue?.monthlyGoalsPeriod.map((val, index) => (
+          {monthlyGoalsPeriod.map((val, index) => (
             <div key={index}>
               {val[2] === currentOption ? (
                 <div>

@@ -11,6 +11,8 @@ import {
   getDateArray,
   getDaysOfTheYear,
   getTheNumberOfDaysInAMonth,
+  optionArray,
+  getDiff,
 } from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 import "./settings.css";
@@ -100,14 +102,15 @@ export default function FormSettings0({
   });
 
   const onsubmit: SubmitHandler<Inputs> = (values) => {
-    const diff: number =
-      values.period === "custom"
-        ? (new Date(values.customDate).getTime() -
-            new Date(values.date).getTime()) /
-          86400000
-        : 0;
     const [dateY, dateM] = getDateArray(0, values.date);
     const daysOfTheYear = getDaysOfTheYear(dateY, dateM);
+    const diffArray = getDiff(values, dateY, dateM);
+    const diff: number =
+      values.period === "1"
+        ? daysOfTheYear
+        : Array.isArray(diffArray)
+        ? Number(diffArray[0])
+        : 0;
     const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
       dateM,
       daysOfTheYear
@@ -123,6 +126,7 @@ export default function FormSettings0({
     } else if (
       values.period === "m3" ||
       values.period === "m6" ||
+      values.period === "1" ||
       (diff && diff <= daysOfTheYear)
     ) {
       values.status = 2; //month
@@ -130,6 +134,9 @@ export default function FormSettings0({
       values.status = 1; //year
     }
     values.diff = diff;
+    values.monthlyGoalsPeriod = Array.isArray(diffArray)
+      ? (diffArray[1] as number[][])
+      : [[0, 0, 0]];
     data.set(nextId, values);
     localStorage.setItem("goalManagement", JSON.stringify([...data]));
     onUpdate(values.status, nextId);
@@ -262,9 +269,11 @@ export default function FormSettings0({
                     onChange: (e) => handleChangePeriod(e),
                   })}
                 >
-                  <option value="m1">1ヶ月</option>
-                  <option value="m3">3ヶ月</option>
-                  <option value="m6">半年</option>
+                  {optionArray.map((val) => (
+                    <option key={val[0]} value={val[0]}>
+                      {val[1]}
+                    </option>
+                  ))}
                   {Array(10)
                     .fill(0)
                     .map((_, index) => (
