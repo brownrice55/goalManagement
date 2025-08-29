@@ -70,17 +70,25 @@ export function getDateForAnnualGoal(
 
 export function getDateForMonthlyGoalArray(
   aStartDateArray: string[],
-  aEndDateArray: string[]
+  aEndDateArray: string[],
+  aIsCustom: boolean
 ) {
   const monthlyArray = [];
-  const last = aEndDateArray.at(-1);
-  const [yearEnd, monthEnd] = last ? last.split("/").map(Number) : [0, 0];
+  const last = aIsCustom ? aEndDateArray : aEndDateArray.at(-1);
+  const [yearEnd, monthEnd] = last
+    ? aIsCustom
+      ? last[0]
+      : last.split("/").map(Number)
+    : [0, 0, 0];
   aStartDateArray.forEach((val: string, index: number) => {
-    const [year, month] = val.split("/").map(Number);
+    const [year, month] = aIsCustom ? val : val.split("/").map(Number);
     for (let cnt = 0; cnt < 12; ++cnt) {
       let newMonth = month + cnt;
       const newYear = newMonth > 12 ? year + 1 : year;
       newMonth = newMonth > 12 ? newMonth - 12 : newMonth;
+      if (aIsCustom && newYear == yearEnd && newMonth == monthEnd) {
+        return monthlyArray.push([newYear, newMonth, index]);
+      }
       if (!cnt && index) {
         monthlyArray.push([newYear, newMonth, index]);
       }
@@ -88,6 +96,7 @@ export function getDateForMonthlyGoalArray(
     }
   });
   monthlyArray.push([yearEnd, monthEnd, aStartDateArray.length]);
+
   return monthlyArray;
 }
 
@@ -145,18 +154,20 @@ export function getDiff(aValues: Inputs, aYear: number, aMonth: number) {
     let daysOfTheYear = getDaysOfTheYear(aYear, aMonth);
     let days = getTheNumberOfDaysInAMonth(aMonth, daysOfTheYear);
     const monthlyGoalsPeriod = [[aYear, aMonth, 1]];
-    const getNextYearAndMonth = (aCnt: number) => {
-      let nextYear = aYear;
-      let nextMonth = aMonth + aCnt;
-      if (nextMonth > 12) {
-        nextYear = aYear + aCnt;
-        nextMonth = nextMonth - 12;
-        daysOfTheYear = getDaysOfTheYear(nextYear, nextMonth);
-      }
-      return [nextYear, nextMonth, daysOfTheYear];
-    };
+
+    let isNewYear = false;
+    let nextYear = aYear;
+    let nextMonth = aMonth;
     for (let cnt = 1; cnt <= aTimes; ++cnt) {
-      const [nextYear, nextMonth, daysOfTheYear] = getNextYearAndMonth(cnt);
+      nextMonth = aMonth + cnt;
+      if (nextMonth > 12) {
+        nextMonth = nextMonth - 12;
+        if (!isNewYear) {
+          nextYear = nextYear + 1;
+          daysOfTheYear = getDaysOfTheYear(nextYear, nextMonth);
+          isNewYear = true;
+        }
+      }
       if (cnt < aTimes) {
         days += getTheNumberOfDaysInAMonth(nextMonth, daysOfTheYear);
       }
@@ -170,6 +181,9 @@ export function getDiff(aValues: Inputs, aYear: number, aMonth: number) {
   }
   if (aValues.period === "m6") {
     return getDiffFrom3monthTo1year(6, aYear, aMonth);
+  }
+  if (aValues.period === "1") {
+    return getDiffFrom3monthTo1year(12, aYear, aMonth);
   }
   return 0;
 }

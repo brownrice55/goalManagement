@@ -108,9 +108,12 @@ export default function FormSettings0({
     const diff: number =
       values.period === "1"
         ? daysOfTheYear
+        : values.period === "custom"
+        ? diffArray
         : Array.isArray(diffArray)
         ? Number(diffArray[0])
         : 0;
+
     const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
       dateM,
       daysOfTheYear

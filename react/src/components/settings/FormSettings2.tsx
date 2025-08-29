@@ -31,8 +31,10 @@ export default function FormSettings2({
 
   const endDate =
     currentDataValue && currentDataValue?.period !== "custom"
-      ? getDateArray(currentDataValue?.diff, currentDataValue?.date)
-      : "";
+      ? "(" +
+        getDateArray(currentDataValue?.diff, currentDataValue?.date).join("/") +
+        ")"
+      : currentDataValue?.customDate.replace(/-/g, "/");
   const endDateSub = currentDataValue?.annualGoals
     ? ""
     : currentDataValue?.period === "1"
@@ -44,17 +46,22 @@ export default function FormSettings2({
   const [dateFromToText, setDateFromToText] = useState<string>(
     currentDataValue?.annualGoals
       ? `${startDateArray[0]}から${endDateArray[0]}`
-      : `${currentDataValue?.date.replace(/-/g, "/")}から${endDateSub}${
-          endDate ? "(" + endDate.join("/") + ")" : ""
-        }`
+      : `${currentDataValue?.date.replace(
+          /-/g,
+          "/"
+        )}から${endDateSub}${endDate}`
   );
   const [currentOption, setCurrentOption] = useState<number>(1);
 
   const monthlyGoalsPeriod = currentDataValue?.annualGoals
-    ? getDateForMonthlyGoalArray(startDateArray, endDateArray)
-    : currentDataValue
-    ? currentDataValue.monthlyGoalsPeriod
-    : [];
+    ? getDateForMonthlyGoalArray(startDateArray, endDateArray, false)
+    : currentDataValue && currentDataValue.period === "custom"
+    ? getDateForMonthlyGoalArray(
+        [currentDataValue?.date.split("-").map(Number)],
+        [currentDataValue?.customDate.split("-").map(Number)],
+        true
+      )
+    : currentDataValue.monthlyGoalsPeriod;
 
   const defaultValues = {
     goal: currentDataValue?.goal,
@@ -135,16 +142,13 @@ export default function FormSettings2({
             <>
               <Form.Control
                 type="text"
-                {...register(`monthlyGoals.0`, {
+                {...register("goal", {
                   required: "必須です",
                 })}
               />
-              <p className="text-danger small mt-2">
-                {errors.monthlyGoals?.[0]?.message}
-              </p>
+              <p className="text-danger small mt-2">{errors.goal?.message}</p>
             </>
           )}
-          <div className="text-danger pt-2 small">{errors.goal?.message}</div>
           <p className="pt-2 pb-4">
             上記を達成するための月ごとの目標を書きましょう。
             <br />
