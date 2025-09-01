@@ -13,6 +13,7 @@ import {
   getTheNumberOfDaysInAMonth,
   optionArray,
   getDiff,
+  getDateForAnnualGoal,
 } from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 import "./settings.css";
@@ -69,8 +70,9 @@ export default function FormSettings0({
         diff: 0,
         monthlyGoals: [""],
         monthlyGoalsPeriod: [[0, 0, 0]],
-        startDateArray: [""],
-        endDateArray: [""],
+        startDateArray: [[0, 0, 0]],
+        endDateArray: [[0, 0, 0]],
+        endDate: [0, 0, 0],
       };
   const defaultValues = {
     goal: keyNumber ? currentDataValue?.goal : "",
@@ -103,21 +105,37 @@ export default function FormSettings0({
 
   const onsubmit: SubmitHandler<Inputs> = (values) => {
     const [dateY, dateM] = getDateArray(0, values.date);
-    const daysOfTheYear = getDaysOfTheYear(dateY, dateM);
+    const daysOfTheYear: number = getDaysOfTheYear(dateY, dateM);
     const diffArray = getDiff(values, dateY, dateM);
     const diff: number =
       values.period === "1"
         ? daysOfTheYear
         : values.period === "custom"
-        ? diffArray
-        : Array.isArray(diffArray)
-        ? Number(diffArray[0])
+        ? Array.isArray(diffArray)
+          ? Number(diffArray[0])
+          : 0
         : 0;
 
     const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
       dateM,
       daysOfTheYear
     );
+
+    if (
+      values.period === "m1" ||
+      values.period === "m3" ||
+      values.period === "m6" ||
+      values.period === "1" ||
+      values.period === "custom"
+    ) {
+      values.endDate = getDateArray(diff, values.date);
+    } else {
+      values.endDate = getDateForAnnualGoal(
+        Number(values.period),
+        values.date,
+        false
+      );
+    }
 
     if (diff && diff <= 7) {
       values.status = 4; //todo

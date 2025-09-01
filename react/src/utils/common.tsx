@@ -63,28 +63,26 @@ export function getDateForAnnualGoal(
   const diff = daysOfTheYear * aMultiplier;
   const getDate = getDateArray(diff, aStateDateString);
 
-  const [dateY, dateM, dateD] = getDate;
-  const date = `${dateY}/${dateM}/${dateD}`;
-  return date;
+  return getDate;
 }
 
 export function getDateForMonthlyGoalArray(
-  aStartDateArray: string[],
-  aEndDateArray: string[],
+  aStartDateArray: number[][],
+  aEndDateArray: number[][],
   aIsCustom: boolean
 ) {
   const monthlyArray = [];
   const last = aIsCustom ? aEndDateArray : aEndDateArray.at(-1);
-  const [yearEnd, monthEnd] = last
-    ? aIsCustom
-      ? last[0]
-      : last.split("/").map(Number)
-    : [0, 0, 0];
-  aStartDateArray.forEach((val: string, index: number) => {
-    const [year, month] = aIsCustom ? val : val.split("/").map(Number);
+  let lastArray = last ? (aIsCustom ? last[0] : last) : [[0, 0, 0]];
+  if (!Array.isArray(lastArray)) {
+    lastArray = [lastArray];
+  }
+  const [yearEnd, monthEnd] = lastArray;
+  aStartDateArray.forEach((val: number[], index: number) => {
+    const [year, month] = val;
     for (let cnt = 0; cnt < 12; ++cnt) {
-      let newMonth = month + cnt;
-      const newYear = newMonth > 12 ? year + 1 : year;
+      let newMonth: number = month + cnt;
+      const newYear: number = newMonth > 12 ? year + 1 : year;
       newMonth = newMonth > 12 ? newMonth - 12 : newMonth;
       if (aIsCustom && newYear == yearEnd && newMonth == monthEnd) {
         return monthlyArray.push([newYear, newMonth, index]);
@@ -115,7 +113,7 @@ export function getWeekArray(aYear: number, aMonth: number, aDate: number) {
 
   const weekArray = [];
   if (firstMonday !== aDate) {
-    weekArray.push([aDate, firstMonday - 1]);
+    weekArray.push([aYear, aMonth, aDate, firstMonday - 1]);
   }
   for (let cnt = 0; cnt < 5; ++cnt) {
     const startOfWeek = firstMonday + cnt * 7;
@@ -124,9 +122,9 @@ export function getWeekArray(aYear: number, aMonth: number, aDate: number) {
       return weekArray;
     }
     if (endOfweek <= theNumberOfDaysInAMonth) {
-      weekArray.push([startOfWeek, endOfweek]);
+      weekArray.push([aYear, aMonth, startOfWeek, endOfweek]);
     } else {
-      weekArray.push([startOfWeek, theNumberOfDaysInAMonth]);
+      weekArray.push([aYear, aMonth, startOfWeek, theNumberOfDaysInAMonth]);
     }
   }
 }
@@ -139,14 +137,15 @@ export const optionArray = [
 
 export function getDiff(aValues: Inputs, aYear: number, aMonth: number) {
   if (aValues.period === "custom") {
-    return (
+    return [
       (new Date(aValues.customDate).getTime() -
         new Date(aValues.date).getTime()) /
-      86400000
-    );
+        86400000,
+      [],
+    ];
   }
 
-  const getDiffFrom3monthTo1year = (
+  const getDiffFrom1monthTo1year = (
     aTimes: number,
     aYear: number,
     aMonth: number
@@ -176,14 +175,17 @@ export function getDiff(aValues: Inputs, aYear: number, aMonth: number) {
     return [days, monthlyGoalsPeriod];
   };
 
+  if (aValues.period === "m1") {
+    return getDiffFrom1monthTo1year(1, aYear, aMonth);
+  }
   if (aValues.period === "m3") {
-    return getDiffFrom3monthTo1year(3, aYear, aMonth);
+    return getDiffFrom1monthTo1year(3, aYear, aMonth);
   }
   if (aValues.period === "m6") {
-    return getDiffFrom3monthTo1year(6, aYear, aMonth);
+    return getDiffFrom1monthTo1year(6, aYear, aMonth);
   }
   if (aValues.period === "1") {
-    return getDiffFrom3monthTo1year(12, aYear, aMonth);
+    return getDiffFrom1monthTo1year(12, aYear, aMonth);
   }
   return 0;
 }

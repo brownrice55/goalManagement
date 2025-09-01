@@ -2,13 +2,14 @@ export type Inputs = {
   goal: string;
   annualGoals: string[];
   monthlyGoals: string[];
-  monthlyGoalsPeriod: number[][];
+  monthlyGoalsPeriod: (number | number[])[][];
   status: number;
   date: string;
   hasPeriod: string;
   period: string;
   customDate: string;
   diff: number;
-  startDateArray: string[];
-  endDateArray: string[];
+  startDateArray: number[][];
+  endDateArray: number[][];
+  endDate: number[];
 };

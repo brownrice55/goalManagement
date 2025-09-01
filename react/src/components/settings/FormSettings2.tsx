@@ -7,7 +7,6 @@ import {
   getData,
   getDateForMonthlyGoalArray,
   optionArray,
-  getDateArray,
 } from "../../utils/common";
 import type { Inputs } from "../../types/inputs.type";
 
@@ -22,50 +21,47 @@ export default function FormSettings2({
   const data = getData();
   const currentDataValue = data.get(keyNumber);
 
-  const startDateArray = currentDataValue?.annualGoals
+  const startDateArray: number[][] = currentDataValue?.annualGoals
     ? currentDataValue?.startDateArray
-    : [];
+    : [[0, 0, 0]];
   const endDateArray = currentDataValue?.annualGoals
     ? currentDataValue?.endDateArray
-    : [];
+    : [[0, 0, 0]];
 
-  const endDate =
-    currentDataValue && currentDataValue?.period !== "custom"
-      ? "(" +
-        getDateArray(currentDataValue?.diff, currentDataValue?.date).join("/") +
-        ")"
-      : currentDataValue?.customDate.replace(/-/g, "/");
+  const endDate = currentDataValue?.endDate.join("/");
   const endDateSub = currentDataValue?.annualGoals
     ? ""
     : currentDataValue?.period === "1"
     ? "1年後"
     : currentDataValue?.period !== "custom"
-    ? optionArray.filter((val) => val[0] === currentDataValue?.period)[0][1]
+    ? optionArray.filter((val) => val[0] === currentDataValue?.period)[0][1] +
+      "後"
     : "";
 
+  const endDateString = endDateSub ? `${endDateSub}(${endDate})` : endDate;
   const [dateFromToText, setDateFromToText] = useState<string>(
     currentDataValue?.annualGoals
-      ? `${startDateArray[0]}から${endDateArray[0]}`
-      : `${currentDataValue?.date.replace(
-          /-/g,
-          "/"
-        )}から${endDateSub}${endDate}`
+      ? `${startDateArray[0][0]}/${startDateArray[0][1]}/${startDateArray[0][2]}から${endDateArray[0][0]}/${endDateArray[0][1]}/${endDateArray[0][2]}`
+      : `${currentDataValue?.date.replace(/-/g, "/")}から${endDateString}`
   );
   const [currentOption, setCurrentOption] = useState<number>(1);
 
-  const monthlyGoalsPeriod = currentDataValue?.annualGoals
-    ? getDateForMonthlyGoalArray(startDateArray, endDateArray, false)
-    : currentDataValue && currentDataValue.period === "custom"
-    ? getDateForMonthlyGoalArray(
-        [currentDataValue?.date.split("-").map(Number)],
-        [currentDataValue?.customDate.split("-").map(Number)],
-        true
-      )
-    : currentDataValue.monthlyGoalsPeriod;
+  const monthlyGoalsPeriod: (number | number[])[][] | undefined =
+    currentDataValue?.annualGoals
+      ? getDateForMonthlyGoalArray(startDateArray, endDateArray, false)
+      : currentDataValue && currentDataValue.period === "custom"
+      ? getDateForMonthlyGoalArray(
+          [currentDataValue?.date.split("-").map(Number)],
+          [currentDataValue?.customDate.split("-").map(Number)],
+          true
+        )
+      : currentDataValue?.monthlyGoalsPeriod;
 
   const defaultValues = {
     goal: currentDataValue?.goal,
-    monthlyGoals: [],
+    monthlyGoals: currentDataValue?.monthlyGoals
+      ? currentDataValue?.monthlyGoals
+      : [],
   };
 
   const {
@@ -81,8 +77,13 @@ export default function FormSettings2({
   const onsubmit: SubmitHandler<Inputs> = (values) => {
     if (currentDataValue) {
       currentDataValue.goal = values.goal;
-      if (!currentDataValue.monthlyGoalsPeriod) {
-        currentDataValue.monthlyGoalsPeriod = monthlyGoalsPeriod;
+      if (
+        !currentDataValue.monthlyGoalsPeriod ||
+        currentDataValue.annualGoals
+      ) {
+        if (monthlyGoalsPeriod) {
+          currentDataValue.monthlyGoalsPeriod = monthlyGoalsPeriod;
+        }
       }
       currentDataValue.monthlyGoals = values.monthlyGoals;
       currentDataValue.status = values.status;
@@ -100,17 +101,19 @@ export default function FormSettings2({
   }, [isSubmitSuccessful, reset]);
 
   const handleBack = () => {
-    const status = currentDataValue?.annualGoals ? 1 : 0;
+    const status = currentDataValue && currentDataValue?.annualGoals ? 1 : 0;
     onUpdate(status, keyNumber);
   };
 
   const handleChangePeriod = (e: React.ChangeEvent<HTMLInputElement>) => {
     const targetValue = Number(e.target.value);
-    setDateFromToText(
-      `${currentDataValue?.startDateArray[targetValue - 1]}から${
-        currentDataValue?.endDateArray[targetValue - 1]
-      }`
-    );
+    const startDate = currentDataValue?.startDateArray[targetValue - 1];
+    const endDate = currentDataValue?.endDateArray[targetValue - 1];
+    if (startDate && endDate) {
+      setDateFromToText(
+        `${startDate[0]}/${startDate[1]}/${startDate[2]}から${endDate[0]}/${endDate[1]}/${endDate[2]}`
+      );
+    }
     setCurrentOption(targetValue);
   };
 
@@ -157,32 +160,33 @@ export default function FormSettings2({
         </Form.Group>
 
         <Form.Group>
-          {monthlyGoalsPeriod.map((val, index) => (
-            <div key={index}>
-              {val[2] === currentOption ? (
-                <div>
-                  <p>
-                    {val[0]}年{val[1]}月の目標
-                    {(!index || index === 1) && (
-                      <span className="text-danger">※</span>
-                    )}
-                  </p>
-                  <Form.Control
-                    className={!index || index === 1 ? "mb-3" : "mb-4"}
-                    type="text"
-                    {...register(`monthlyGoals.${index}`, {
-                      required: !index || index === 1 ? "必須です" : false,
-                    })}
-                  />
-                  <p className="text-danger small">
-                    {errors.monthlyGoals?.[index]?.message}
-                  </p>
-                </div>
-              ) : (
-                ""
-              )}
-            </div>
-          ))}
+          {monthlyGoalsPeriod &&
+            monthlyGoalsPeriod.map((val, index) => (
+              <div key={index}>
+                {val[2] === currentOption ? (
+                  <div>
+                    <p>
+                      {val[0]}年{val[1]}月の目標
+                      {(!index || index === 1) && (
+                        <span className="text-danger">※</span>
+                      )}
+                    </p>
+                    <Form.Control
+                      className={!index || index === 1 ? "mb-3" : "mb-4"}
+                      type="text"
+                      {...register(`monthlyGoals.${index}`, {
+                        required: !index || index === 1 ? "必須です" : false,
+                      })}
+                    />
+                    <p className="text-danger small">
+                      {errors.monthlyGoals?.[index]?.message}
+                    </p>
+                  </div>
+                ) : (
+                  ""
+                )}
+              </div>
+            ))}
         </Form.Group>
 
         <Form.Control

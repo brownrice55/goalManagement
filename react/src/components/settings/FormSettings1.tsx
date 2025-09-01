@@ -52,16 +52,7 @@ export default function FormSettings1({
       ? customYearAndRemainder
       : Number(currentDataValue?.period);
 
-  const endDate =
-    currentDataValue?.period === "custom"
-      ? currentDataValue?.customDate.replace(/-/g, "/")
-      : currentDataValue
-      ? getDateForAnnualGoal(
-          arrayLength ? arrayLength : 1,
-          currentDataValue.date,
-          false
-        )
-      : "";
+  const endDate = currentDataValue?.endDate.join("/");
 
   const startDateArray = currentDataValue
     ? new Array(arrayLength)
@@ -83,12 +74,12 @@ export default function FormSettings1({
     endDateArray &&
     endDateArray.length
   ) {
-    const endDataLast = endDateArray?.at(-1)?.replace(/\//g, "-");
+    const endDataLast = endDateArray?.at(-1)?.join("-");
     if (endDataLast) {
       const startDateLast = getDateArray(1, endDataLast);
-      startDateArray.push(startDateLast.join("/"));
+      startDateArray.push(startDateLast);
     }
-    endDateArray.push(currentDataValue?.customDate.replace(/-/g, "/"));
+    endDateArray.push(currentDataValue?.customDate.split("-").map(Number));
   }
 
   const defaultValues = {
@@ -157,8 +148,10 @@ export default function FormSettings1({
           {startDateArray.map((_, index) => (
             <div key={index}>
               <p>
-                {index + 1}年目の目標（{startDateArray[index]}から
-                {endDateArray[index]}まで）
+                {index + 1}年目の目標（{startDateArray[index][0]}/
+                {startDateArray[index][1]}/{startDateArray[index][2]}から
+                {endDateArray[index][0]}/{endDateArray[index][1]}/
+                {endDateArray[index][2]}まで）
                 {!index && <span className="text-danger">※</span>}
               </p>
               <Form.Control
