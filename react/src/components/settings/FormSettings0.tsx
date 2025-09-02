@@ -107,14 +107,19 @@ export default function FormSettings0({
     const [dateY, dateM] = getDateArray(0, values.date);
     const daysOfTheYear: number = getDaysOfTheYear(dateY, dateM);
     const diffArray = getDiff(values, dateY, dateM);
-    const diff: number =
-      values.period === "1"
-        ? daysOfTheYear
-        : values.period === "custom"
-        ? Array.isArray(diffArray)
-          ? Number(diffArray[0])
-          : 0
-        : 0;
+    let diff: number = 0;
+    if (values.period === "1") {
+      diff = daysOfTheYear;
+    } else if (
+      values.period === "custom" ||
+      values.period === "m1" ||
+      values.period === "m3" ||
+      values.period === "m6"
+    ) {
+      diff = Array.isArray(diffArray) ? Number(diffArray[0]) : 0;
+    } else {
+      diff = 0;
+    }
 
     const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
       dateM,

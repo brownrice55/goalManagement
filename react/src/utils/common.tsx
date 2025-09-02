@@ -98,22 +98,34 @@ export function getDateForMonthlyGoalArray(
   return monthlyArray;
 }
 
-export function getWeekArray(aYear: number, aMonth: number, aDate: number) {
+export function getWeekArray(
+  aYear: number,
+  aMonth: number,
+  aStartDate: number,
+  aEndDate: number
+) {
   const daysOfTheYear = getDaysOfTheYear(aYear, aMonth);
-  const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
+  let theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
     aMonth,
     daysOfTheYear
   );
+  if (theNumberOfDaysInAMonth <= aEndDate) {
+    theNumberOfDaysInAMonth = aEndDate;
+  }
 
-  const firstDayOfTheMonth = new Date(`${aYear}-0${aMonth}-0${aDate}`);
+  const firstDayOfTheMonth = new Date(`${aYear}-0${aMonth}-0${aStartDate}`);
   const dayIndexOfFirstDayOfTheMonth = firstDayOfTheMonth.getDay();
 
   const addendArray = [1, 7, 6, 5, 4, 3, 2];
-  const firstMonday = aDate + addendArray[dayIndexOfFirstDayOfTheMonth];
+  const firstMonday = aStartDate + addendArray[dayIndexOfFirstDayOfTheMonth];
 
   const weekArray = [];
-  if (firstMonday !== aDate) {
-    weekArray.push([aYear, aMonth, aDate, firstMonday - 1]);
+  if (aEndDate && aEndDate <= firstMonday) {
+    weekArray.push([aYear, aMonth, 1, aEndDate]);
+    return weekArray;
+  }
+  if (firstMonday !== aStartDate) {
+    weekArray.push([aYear, aMonth, aStartDate, firstMonday - 1]);
   }
   for (let cnt = 0; cnt < 5; ++cnt) {
     const startOfWeek = firstMonday + cnt * 7;

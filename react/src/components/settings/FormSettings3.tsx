@@ -22,10 +22,26 @@ export default function FormSettings3({
   const [monthlyGoalsPeriodArray, setMonthlyGoalsPeriodArray] = useState<
     number[]
   >(monthlyGoalsPeriodInitial);
+  const startDateArray: number[] = currentDataValue?.date
+    .split("-")
+    .map(Number) ?? [0, 0, 0];
+  const endDateArray: number[] = currentDataValue?.endDate ?? [0, 0, 0];
+  const startDate =
+    monthlyGoalsPeriodArray[0] === startDateArray[0] &&
+    monthlyGoalsPeriodArray[1] === startDateArray[1]
+      ? startDateArray[2]
+      : 1;
+  const endDate =
+    monthlyGoalsPeriodArray[0] === endDateArray[0] &&
+    monthlyGoalsPeriodArray[1] === endDateArray[1]
+      ? endDateArray[2]
+      : 0;
+
   const weeklyGoalsPeriod = getWeekArray(
     monthlyGoalsPeriodArray[0],
     monthlyGoalsPeriodArray[1],
-    1
+    startDate,
+    endDate
   );
 
   const defaultValues = {
