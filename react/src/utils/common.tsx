@@ -109,7 +109,7 @@ export function getWeekArray(
     aMonth,
     daysOfTheYear
   );
-  if (theNumberOfDaysInAMonth <= aEndDate) {
+  if (aEndDate && theNumberOfDaysInAMonth >= aEndDate) {
     theNumberOfDaysInAMonth = aEndDate;
   }
 

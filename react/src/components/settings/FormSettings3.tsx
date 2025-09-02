@@ -44,6 +44,11 @@ export default function FormSettings3({
     endDate
   );
 
+  const lastMonthWeeklyGoalsPeriod =
+    currentDataValue?.period === "m1"
+      ? getWeekArray(endDateArray[0], endDateArray[1], 1, endDateArray[2])
+      : [[0, 0, 0]];
+
   const defaultValues = {
     goal: currentDataValue?.goal,
     monthlyGoals: [],
@@ -62,6 +67,7 @@ export default function FormSettings3({
   const onsubmit: SubmitHandler<Inputs> = (values) => {
     if (currentDataValue) {
       currentDataValue.status = values.status;
+      currentDataValue.monthlyGoals = values.monthlyGoals;
       data.set(keyNumber, currentDataValue);
       localStorage.setItem("goalManagement", JSON.stringify([...data]));
       onUpdate(values.status, keyNumber);
@@ -92,12 +98,15 @@ export default function FormSettings3({
     <>
       <Form onSubmit={handleSubmit(onsubmit, onerror)} noValidate>
         <p className="mt-3">
-          {!currentDataValue?.monthlyGoalsPeriod ? (
-            <span className="text-danger">※</span>
-          ) : (
+          {currentDataValue?.monthlyGoals ? (
             <span>
               {monthlyGoalsPeriodArray[0]}年{monthlyGoalsPeriodArray[1]}
               月に達成したいこと
+            </span>
+          ) : (
+            <span>
+              {currentDataValue?.date.replace(/-/g, "/")}から1ヶ月後（
+              {currentDataValue?.endDate.join("/")}）までに達成したいこと
             </span>
           )}
         </p>
@@ -136,8 +145,12 @@ export default function FormSettings3({
             後で変更することもできます。
           </p>
         </Form.Group>
-
         <Form.Group>
+          {currentDataValue?.period === "m1" && (
+            <p>
+              {monthlyGoalsPeriodArray[0]}年{monthlyGoalsPeriodArray[1]}月
+            </p>
+          )}
           {weeklyGoalsPeriod?.map((val, index) => (
             <div key={index}>
               {val[0] === monthlyGoalsPeriodArray[0] &&
@@ -166,8 +179,29 @@ export default function FormSettings3({
               )}
             </div>
           ))}
+          {weeklyGoalsPeriod && currentDataValue?.period === "m1" && (
+            <>
+              <p className="mt-5">
+                {endDateArray[0]}年{endDateArray[1]}月
+              </p>
+              {lastMonthWeeklyGoalsPeriod?.map((val, index) => (
+                <div key={index + weeklyGoalsPeriod?.length}>
+                  <p>
+                    {val[0]}/{val[1]}/{val[2]}から{val[0]}/{val[1]}/{val[3]}
+                    の目標
+                  </p>
+                  <Form.Control
+                    className="mb-4"
+                    type="text"
+                    {...register(
+                      `monthlyGoals.${index + weeklyGoalsPeriod?.length}`
+                    )}
+                  />
+                </div>
+              ))}
+            </>
+          )}
         </Form.Group>
-
         <Form.Control
           type="hidden"
           {...register("status", {

@@ -120,6 +120,7 @@ export default function FormSettings0({
     } else {
       diff = 0;
     }
+    diff = diff ? diff - 1 : 0;
 
     const theNumberOfDaysInAMonth = getTheNumberOfDaysInAMonth(
       dateM,
