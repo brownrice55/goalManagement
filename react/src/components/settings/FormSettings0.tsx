@@ -70,6 +70,8 @@ export default function FormSettings0({
         diff: 0,
         monthlyGoals: [""],
         monthlyGoalsPeriod: [[0, 0, 0]],
+        weeklyGoals: [""],
+        weeklyGoalsPeriod: [[0, 0, 0]],
         startDateArray: [[0, 0, 0]],
         endDateArray: [[0, 0, 0]],
         endDate: [0, 0, 0],

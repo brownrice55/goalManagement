@@ -3,6 +3,8 @@ export type Inputs = {
   annualGoals: string[];
   monthlyGoals: string[];
   monthlyGoalsPeriod: (number | number[])[][];
+  weeklyGoals: string[];
+  weeklyGoalsPeriod: (number | number[])[][];
   status: number;
   date: string;
   hasPeriod: string;

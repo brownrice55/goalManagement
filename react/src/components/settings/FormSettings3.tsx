@@ -51,7 +51,9 @@ export default function FormSettings3({
 
   const defaultValues = {
     goal: currentDataValue?.goal,
-    monthlyGoals: [],
+    weeklyGoals: currentDataValue?.weeklyGoals
+      ? currentDataValue?.weeklyGoals
+      : [],
   };
 
   const {
@@ -67,7 +69,12 @@ export default function FormSettings3({
   const onsubmit: SubmitHandler<Inputs> = (values) => {
     if (currentDataValue) {
       currentDataValue.status = values.status;
-      currentDataValue.monthlyGoals = values.monthlyGoals;
+      currentDataValue.weeklyGoals = values.weeklyGoals;
+      if (weeklyGoalsPeriod) {
+        currentDataValue.weeklyGoalsPeriod = lastMonthWeeklyGoalsPeriod
+          ? weeklyGoalsPeriod.concat(lastMonthWeeklyGoalsPeriod)
+          : weeklyGoalsPeriod;
+      }
       data.set(keyNumber, currentDataValue);
       localStorage.setItem("goalManagement", JSON.stringify([...data]));
       onUpdate(values.status, keyNumber);
@@ -166,12 +173,12 @@ export default function FormSettings3({
                   <Form.Control
                     className={!index || index === 1 ? "mb-3" : "mb-4"}
                     type="text"
-                    {...register(`monthlyGoals.${index}`, {
+                    {...register(`weeklyGoals.${index}`, {
                       required: !index || index === 1 ? "必須です" : false,
                     })}
                   />
                   <p className="text-danger small">
-                    {errors.monthlyGoals?.[index]?.message}
+                    {errors.weeklyGoals?.[index]?.message}
                   </p>
                 </div>
               ) : (
@@ -194,7 +201,7 @@ export default function FormSettings3({
                     className="mb-4"
                     type="text"
                     {...register(
-                      `monthlyGoals.${index + weeklyGoalsPeriod?.length}`
+                      `weeklyGoals.${index + weeklyGoalsPeriod?.length}`
                     )}
                   />
                 </div>
