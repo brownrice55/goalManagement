@@ -18,12 +18,9 @@ export default function FormSettings4({
   const currentDataValue = data.get(keyNumber);
 
   const defaultValues = {
-    todo: "",
+    todo: [""],
     originalKey: 0,
     weeklyGoals: 1,
-    frequencyChecks: [true, false, false, false],
-    youbiChecks: [true, true, true, true, true, true, true],
-    othersChecks: [false, false],
   };
 
   const {
@@ -60,11 +57,66 @@ export default function FormSettings4({
   const youbiTextArray = ["月", "火", "水", "木", "金", "土", "日"];
   const othersTextArray = ["前倒しOK", "隔週"];
 
-  const inputFieldArray = [""];
-  const [form, setForm] = useState<string[]>(inputFieldArray);
+  const [frequency, setFrequency] = useState<boolean[][]>([
+    [true, false, false, false],
+  ]);
+  const [youbi, setYoubi] = useState<boolean[][]>([Array(7).fill(true)]);
+
+  const [formFields, setFormFields] = useState([{ todo: "" }]);
+  const [customClass, setCustomClass] = useState<string[]>([
+    "d-flex checkboxDisabled",
+  ]);
+
   const handleAddInput = () => {
-    const newForm = [...form, ""];
-    setForm(newForm);
+    setFormFields([...formFields, { todo: "" }]);
+    const addedFrequency = [true, false, false, false];
+    const newFrequency = [...frequency];
+    newFrequency.push(addedFrequency);
+    setFrequency(newFrequency);
+    const addedYoubi = Array(7).fill(true);
+    const newYoubi = [...youbi];
+    newYoubi.push(addedYoubi);
+    setYoubi(newYoubi);
+    const addedClass = "d-flex checkboxDisabled";
+    const newCustomClass = [...customClass];
+    newCustomClass.push(addedClass);
+    setCustomClass(newCustomClass);
+  };
+
+  const handleYoubi = (aCnt: number, aIndex: number) => {
+    const newYoubi = [...youbi];
+    newYoubi[aCnt][aIndex] = !youbi[aCnt][aIndex];
+    setYoubi(newYoubi);
+  };
+
+  const handleFrequency = (aCnt: number, aIndex: number) => {
+    const resetFrequency = Array(4).fill(false);
+    resetFrequency[aIndex] = true;
+    const newFrequency = [...frequency];
+    newFrequency[aCnt] = resetFrequency;
+    setFrequency(newFrequency);
+    let resetYoubi = Array(7).fill(false);
+    const newCustomClass = [...customClass];
+    if (aIndex === 3) {
+      //custom
+      newCustomClass[aCnt] = "d-flex";
+    } else {
+      newCustomClass[aCnt] = "d-flex checkboxDisabled";
+      if (aIndex === 0) {
+        resetYoubi = Array(7).fill(true);
+      } else if (aIndex === 1) {
+        for (let cnt = 0; cnt < 5; ++cnt) {
+          resetYoubi[cnt] = true;
+        }
+      } else {
+        resetYoubi[5] = true;
+        resetYoubi[6] = true;
+      }
+    }
+    setCustomClass(newCustomClass);
+    const newYoubi = [...youbi];
+    newYoubi[aCnt] = resetYoubi;
+    setYoubi(newYoubi);
   };
 
   return (
@@ -84,11 +136,11 @@ export default function FormSettings4({
             )}
           </Form.Select>
         </Form.Group>
-        {form.map((_, cnt) => (
+        {formFields.map((_, cnt) => (
           <Form.Group className="my-5" key={cnt}>
             <Form.Control
               type="text"
-              {...register("todo", {
+              {...register(`todo.${cnt}`, {
                 required: "必須です",
               })}
             />
@@ -96,25 +148,28 @@ export default function FormSettings4({
               {frequencyTextArray.map((val, index) => (
                 <Form.Check
                   type="radio"
-                  key={index}
-                  id={`frequency-${cnt}-${index}`}
-                  value="true"
+                  key={cnt + "_" + index}
+                  id={`frequency_${cnt}-${index}`}
                   label={val}
                   className="pe-4 pt-3"
-                  {...register(`frequencyChecks.${index}`)}
+                  checked={frequency[cnt][index]}
+                  {...(register(`frequencyChecks.${cnt}.${index}`),
+                  { onChange: () => handleFrequency(cnt, index) })}
                 />
               ))}
             </div>
-            <div className="d-flex checkboxDisabled">
+            <div className={customClass[cnt]}>
               {youbiTextArray.map((val, index) => (
                 <Form.Check
                   type="checkbox"
-                  key={index}
-                  id={`youbi-${cnt}-${index}`}
-                  value="true"
+                  key={cnt + "_" + index}
+                  id={`youbi_${cnt}-${index}`}
+                  value={"true"}
                   label={val}
                   className="pe-4 pt-3"
-                  {...register(`youbiChecks.${index}`)}
+                  checked={youbi[cnt][index]}
+                  {...(register(`youbiChecks.${cnt}.${index}`),
+                  { onChange: () => handleYoubi(cnt, index) })}
                 />
               ))}
             </div>
@@ -122,12 +177,12 @@ export default function FormSettings4({
               {othersTextArray.map((val, index) => (
                 <Form.Check
                   type="checkbox"
-                  key={index}
-                  id={`others-${cnt}-${index}`}
+                  key={cnt + "_" + index}
+                  id={`others_${cnt}-${index}`}
                   value="true"
                   label={val}
                   className="pe-4 pt-3"
-                  {...register(`othersChecks.${index}`)}
+                  {...register(`othersChecks.${cnt}.${index}`)}
                 />
               ))}
             </div>

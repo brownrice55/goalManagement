@@ -1,8 +1,8 @@
 export type InputsTodo = {
-  todo: string;
+  todo: string[];
   originalKey: number;
   weeklyGoals: number;
-  frequencyChecks: boolean[];
-  youbiChecks: boolean[];
-  othersChecks: boolean[];
+  frequencyChecks: boolean[][];
+  youbiChecks: boolean[][];
+  othersChecks: boolean[][];
 };
