@@ -1,5 +1,5 @@
 export type InputsTodo = {
-  todo: string[];
+  todo: string[][];
   originalKey: number;
   weeklyGoals: number;
   frequencyChecks: boolean[][][];

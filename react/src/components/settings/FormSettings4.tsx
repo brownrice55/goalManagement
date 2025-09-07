@@ -18,7 +18,6 @@ export default function FormSettings4({
   const currentDataValue = data.get(keyNumber);
 
   const defaultValues = {
-    todo: [""],
     originalKey: 0,
     weeklyGoals: 1,
   };
@@ -64,6 +63,9 @@ export default function FormSettings4({
     () => [""]
   );
   const [formFields, setFormFields] = useState<string[][]>(arrayFormFields);
+
+  const arrayTodo = Array.from({ length: activeWeeklyGoalsLength }, () => [""]);
+  const [todo, setTodo] = useState<string[][]>(arrayTodo);
 
   const arrayFrequency = Array.from({ length: activeWeeklyGoalsLength }, () => [
     [true, false, false, false],
@@ -149,6 +151,18 @@ export default function FormSettings4({
     setSelectIndex(targetValue);
   };
 
+  const handleTodo = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+    aSelectIndex: number,
+    aCnt: number
+  ) => {
+    const newTodo = [...todo];
+    newTodo[aSelectIndex][aCnt] = e.target.value;
+    setTodo(newTodo);
+  };
+
   return (
     <>
       <Form onSubmit={handleSubmit(onsubmit, onerror)} noValidate>
@@ -171,10 +185,22 @@ export default function FormSettings4({
           <Form.Group className="my-5" key={cnt}>
             <Form.Control
               type="text"
-              {...register(`todo.${cnt}`, {
-                required: "必須です",
-              })}
+              value={todo[selectIndex][cnt]}
+              {...register(
+                `todo.${selectIndex}.${cnt}`,
+                selectIndex === 0 && cnt === 0
+                  ? {
+                      required: "必須です",
+                      onChange: (e) => handleTodo(e, selectIndex, cnt),
+                    }
+                  : undefined
+              )}
             />
+            <p className="text-danger small mt-2">
+              {selectIndex === 0 &&
+                cnt === 0 &&
+                errors.todo?.[selectIndex]?.[cnt]?.message}
+            </p>
             <div className="d-flex">
               {frequencyTextArray.map((val, index) => (
                 <Form.Check
@@ -234,7 +260,7 @@ export default function FormSettings4({
             戻る
           </Button>
           <Button variant="primary" type="submit" className="py-3 px-5">
-            保存して次へ
+            完了する
           </Button>
         </div>
       </Form>
