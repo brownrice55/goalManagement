@@ -70,11 +70,12 @@ export default function FormSettings4({
   const arrayFrequency = Array.from({ length: activeWeeklyGoalsLength }, () => [
     [true, false, false, false],
   ]);
-  const [frequency, setFrequency] = useState<boolean[][][]>(arrayFrequency);
+  const [frequencyChecks, setFrequencyChecks] =
+    useState<boolean[][][]>(arrayFrequency);
   const arrayYoubi = Array.from({ length: activeWeeklyGoalsLength }, () => [
     [true, true, true, true, true, true, true],
   ]);
-  const [youbi, setYoubi] = useState<boolean[][][]>(arrayYoubi);
+  const [youbiChecks, setYoubiChecks] = useState<boolean[][][]>(arrayYoubi);
 
   const arrayCustomClass = Array.from(
     { length: activeWeeklyGoalsLength },
@@ -85,27 +86,43 @@ export default function FormSettings4({
   const [selectIndex, setSelectIndex] = useState<number>(0);
 
   const handleAddInput = () => {
-    const newFormFields = [...formFields];
-    newFormFields[selectIndex].push("");
-    setFormFields(newFormFields);
+    setFormFields((prev) =>
+      prev.map((fields, index) =>
+        index === selectIndex ? [...fields, ""] : fields
+      )
+    );
+
     const addedFrequency = [true, false, false, false];
-    const newFrequency = [...frequency];
-    newFrequency[selectIndex].push(addedFrequency);
-    setFrequency(newFrequency);
+    setFrequencyChecks((prev) =>
+      prev.map((fields, index) =>
+        index === selectIndex ? [...fields, addedFrequency] : fields
+      )
+    );
+
     const addedYoubi = Array(7).fill(true);
-    const newYoubi = [...youbi];
-    newYoubi[selectIndex].push(addedYoubi);
-    setYoubi(newYoubi);
+    setYoubiChecks((prev) =>
+      prev.map((fields, index) =>
+        index === selectIndex ? [...fields, addedYoubi] : fields
+      )
+    );
+
     const addedClass = "d-flex checkboxDisabled";
-    const newCustomClass = [...customClass];
-    newCustomClass[selectIndex].push(addedClass);
-    setCustomClass(newCustomClass);
+    setCustomClass((prev) =>
+      prev.map((fields, index) =>
+        index === selectIndex ? [...fields, addedClass] : fields
+      )
+    );
   };
 
   const handleYoubi = (aSelectIndex: number, aCnt: number, aIndex: number) => {
-    const newYoubi = [...youbi];
-    newYoubi[aSelectIndex][aCnt][aIndex] = !youbi[aSelectIndex][aCnt][aIndex];
-    setYoubi(newYoubi);
+    setYoubiChecks((prev) => {
+      const newYoubi = [...prev];
+      newYoubi[aSelectIndex] = [...newYoubi[aSelectIndex]];
+      newYoubi[aSelectIndex][aCnt] = [...newYoubi[aSelectIndex][aCnt]];
+      newYoubi[aSelectIndex][aCnt][aIndex] =
+        !youbiChecks[aSelectIndex][aCnt][aIndex];
+      return newYoubi;
+    });
   };
 
   const handleFrequency = (
@@ -115,9 +132,9 @@ export default function FormSettings4({
   ) => {
     const resetFrequency = Array(4).fill(false);
     resetFrequency[aIndex] = true;
-    const newFrequency = [...frequency];
+    const newFrequency = [...frequencyChecks];
     newFrequency[aSelectIndex][aCnt] = resetFrequency;
-    setFrequency(newFrequency);
+    setFrequencyChecks(newFrequency);
     let resetYoubi = Array(7).fill(false);
     const newCustomClass = [...customClass];
     if (aIndex === 3) {
@@ -137,9 +154,9 @@ export default function FormSettings4({
       }
     }
     setCustomClass(newCustomClass);
-    const newYoubi = [...youbi];
+    const newYoubi = [...youbiChecks];
     newYoubi[aSelectIndex][aCnt] = resetYoubi;
-    setYoubi(newYoubi);
+    setYoubiChecks(newYoubi);
   };
 
   const handleSelect = (
@@ -158,9 +175,11 @@ export default function FormSettings4({
     aSelectIndex: number,
     aCnt: number
   ) => {
-    const newTodo = [...todo];
-    newTodo[aSelectIndex][aCnt] = e.target.value;
-    setTodo(newTodo);
+    setTodo((prev) => {
+      const newTodo = prev.map((arr) => [...arr]);
+      newTodo[aSelectIndex][aCnt] = e.target.value;
+      return newTodo;
+    });
   };
 
   return (
@@ -181,72 +200,71 @@ export default function FormSettings4({
             )}
           </Form.Select>
         </Form.Group>
-        {formFields[selectIndex]?.map((_, cnt) => (
-          <Form.Group className="my-5" key={cnt}>
-            <Form.Control
-              type="text"
-              value={todo[selectIndex][cnt]}
-              {...register(
-                `todo.${selectIndex}.${cnt}`,
-                selectIndex === 0 && cnt === 0
-                  ? {
-                      required: "必須です",
-                      onChange: (e) => handleTodo(e, selectIndex, cnt),
-                    }
-                  : undefined
-              )}
-            />
-            <p className="text-danger small mt-2">
-              {selectIndex === 0 &&
-                cnt === 0 &&
-                errors.todo?.[selectIndex]?.[cnt]?.message}
-            </p>
-            <div className="d-flex">
-              {frequencyTextArray.map((val, index) => (
-                <Form.Check
-                  type="radio"
-                  key={selectIndex + "_" + cnt + "_" + index}
-                  id={`frequency_${selectIndex}_${cnt}_${index}`}
-                  label={val}
-                  className="pe-4 pt-3"
-                  checked={frequency[selectIndex][cnt][index]}
-                  {...(register(
-                    `frequencyChecks.${selectIndex}.${cnt}.${index}`
-                  ),
-                  { onChange: () => handleFrequency(selectIndex, cnt, index) })}
-                />
-              ))}
-            </div>
-            <div className={customClass[selectIndex][cnt]}>
-              {youbiTextArray.map((val, index) => (
-                <Form.Check
-                  type="checkbox"
-                  key={selectIndex + "_" + cnt + "_" + index}
-                  id={`youbi_${selectIndex}_${cnt}_${index}`}
-                  value={"true"}
-                  label={val}
-                  className="pe-4 pt-3"
-                  checked={youbi[selectIndex][cnt][index]}
-                  {...(register(`youbiChecks.${selectIndex}.${cnt}.${index}`),
-                  { onChange: () => handleYoubi(selectIndex, cnt, index) })}
-                />
-              ))}
-            </div>
-            <div className="d-flex">
-              {othersTextArray.map((val, index) => (
-                <Form.Check
-                  type="checkbox"
-                  key={selectIndex + "_" + cnt + "_" + index}
-                  id={`others_${selectIndex}_${cnt}_${index}`}
-                  value="true"
-                  label={val}
-                  className="pe-4 pt-3"
-                  {...register(`othersChecks.${selectIndex}.${cnt}.${index}`)}
-                />
-              ))}
-            </div>
-          </Form.Group>
-        ))}
+        {formFields[selectIndex]?.map((_, cnt) => {
+          const registerResult = register(`todo.${selectIndex}.${cnt}`, {
+            required: selectIndex === 0 && cnt === 0 ? "必須です" : false,
+          });
+          const { onChange, ...restRegister } = registerResult;
+
+          return (
+            <Form.Group className="my-5" key={cnt}>
+              <Form.Control
+                type="text"
+                value={todo[selectIndex][cnt] ?? ""}
+                onChange={(e) => {
+                  onChange(e);
+                  handleTodo(e, selectIndex, cnt);
+                  if (registerResult?.onChange) registerResult.onChange(e);
+                }}
+                {...restRegister}
+              />
+              <p className="text-danger small mt-2">
+                {selectIndex === 0 &&
+                  cnt === 0 &&
+                  errors.todo?.[selectIndex]?.[cnt]?.message}
+              </p>
+
+              <div className="d-flex">
+                {frequencyTextArray.map((val, index) => (
+                  <Form.Check
+                    type="radio"
+                    key={selectIndex + "_" + cnt + "_" + index}
+                    id={`frequency_${selectIndex}_${cnt}_${index}`}
+                    label={val}
+                    className="pe-4 pt-3"
+                    checked={frequencyChecks[selectIndex][cnt][index]}
+                    onChange={() => handleFrequency(selectIndex, cnt, index)}
+                  />
+                ))}
+              </div>
+              <div className={customClass[selectIndex][cnt]}>
+                {youbiTextArray.map((val, index) => (
+                  <Form.Check
+                    type="checkbox"
+                    key={selectIndex + "_" + cnt + "_" + index}
+                    id={`youbi_${selectIndex}_${cnt}_${index}`}
+                    label={val}
+                    className="pe-4 pt-3"
+                    checked={youbiChecks[selectIndex][cnt][index]}
+                    onChange={() => handleYoubi(selectIndex, cnt, index)}
+                  />
+                ))}
+              </div>
+              <div className="d-flex">
+                {othersTextArray.map((val, index) => (
+                  <Form.Check
+                    type="checkbox"
+                    key={selectIndex + "_" + cnt + "_" + index}
+                    id={`others_${selectIndex}_${cnt}_${index}`}
+                    label={val}
+                    className="pe-4 pt-3"
+                    {...register(`othersChecks.${selectIndex}.${cnt}.${index}`)}
+                  />
+                ))}
+              </div>
+            </Form.Group>
+          );
+        })}
         <Form.Group className="text-end mb-5">
           <Button onClick={handleAddInput}>todoを追加する</Button>
         </Form.Group>
